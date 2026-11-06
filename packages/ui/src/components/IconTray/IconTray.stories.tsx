@@ -28,8 +28,26 @@ function Demo() {
   );
 }
 
+// The phone player's full tray, at an iPhone SE's width: adding a bookmark and opening the list join the others.
+function WithBookmarks() {
+  const [rate, setRate] = useState(1);
+  return (
+    <div style={{ width: 'min(100%, 21.5em)' }}>
+      <IconTray label="Player options">
+        <SpeedControl value={rate} onChange={setRate} fixedDecimal />
+        <SleepTimerControl compact value={null} onChange={fn()} />
+        <TrayButton icon="chapters" label="Chapters" onClick={fn()} />
+        <TrayButton icon="bookmark" label="Add bookmark" onClick={fn()} />
+        <TrayButton icon="bookmarks" label="Bookmarks" onClick={fn()} />
+        <TrayButton icon="history" label="History" onClick={fn()} />
+      </IconTray>
+    </div>
+  );
+}
+
 const meta = { title: 'Playback/IconTray', component: Demo } satisfies Meta<typeof Demo>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+export const Bookmarks: Story = { render: () => <WithBookmarks /> };

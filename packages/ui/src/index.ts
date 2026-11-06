@@ -58,6 +58,8 @@ export { FilterChip } from './components/FilterChip';
 export { SegmentedControl } from './components/SegmentedControl';
 export type { SegmentOption } from './components/SegmentedControl';
 export { ActivityRow } from './components/ActivityRow';
+export { ActionRow } from './components/ActionRow';
+export type { RowAction } from './components/ActionRow';
 export { StatGrid } from './components/StatGrid';
 export type { Stat } from './components/StatGrid';
 export { GrabSheet } from './components/GrabSheet';
