@@ -387,3 +387,10 @@ Every custom property declared in `global.css` or `depth.css` is named in this f
 - **Don't** introduce a fixed brand accent or a second chrome hue.
 - **Don't** use uppercase tracked eyebrows above titles. Hierarchy comes from size and weight.
 - **Don't** use raster badges with text baked in. A status is a tonal chip.
+
+## History and activity
+
+- **ActivityRow:** one entry in a log. A phone stacks it in two lines: the 3.2em thumbnail, the title over its detail, then the time over the duration. Once its own container passes 40em it becomes columns that line up down the day: time, thumbnail, title and detail, a note (the device), then the bold duration. The row is a link when it has an `href`, a button with only `onOpen`, and plain text with neither. It has no outline and lights up with the row hover tone.
+- **StatGrid:** headline figures as tonal Wall cards, a 13px bold label over a value in the section-title size (the feature size from 40em), laid out by `auto-fit` so a phone gets two across and a wide page up to four.
+- **ImageTile play button:** a 2.8em dark disc (`--overlay`, `--overlay-strong` on hover) with a filled play glyph over the art's bottom-right corner. Unlike the add button it is always visible, because a shelf tile has to be playable on a phone. It never opens the tile.
+- **BarList name width:** `nameMax` lets the name column grow past 9em on a wide card, so a book title isn't cut to a few words.

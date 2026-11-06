@@ -26,6 +26,7 @@ import {
   sanitiseDescription,
 } from './bookHelpers';
 import { BackLink } from '../components/BackLink';
+import { BookListening } from '../components/BookListening';
 import styles from './Book.module.css';
 
 interface Props {
@@ -176,6 +177,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
               </ExpandableText>
             </section>
           )}
+
+          <BookListening item={item} />
 
           {chapters.length > 0 && (
             <section className={styles.section} aria-labelledby="chapters">

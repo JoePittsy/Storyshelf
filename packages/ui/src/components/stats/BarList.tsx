@@ -14,11 +14,24 @@ export interface BarListRow {
   colour?: string | null;
 }
 
-/** Horizontal bars: name, bar, value, sub-value. `ranked` adds a place number; `max` fixes the full-width value. */
-export function BarList({ rows, max, ranked }: { rows: BarListRow[]; max?: number; ranked?: boolean }) {
+/**
+ * Horizontal bars: name, bar, value, sub-value. `ranked` adds a place number; `max` fixes the full-width value;
+ * `nameMax` (a CSS length, default 9em) is the widest the name column may grow, for long names on a wide card.
+ */
+export function BarList({
+  rows,
+  max,
+  ranked,
+  nameMax,
+}: {
+  rows: BarListRow[];
+  max?: number;
+  ranked?: boolean;
+  nameMax?: string;
+}) {
   const top = max ?? Math.max(1e-9, ...rows.map((r) => r.value));
   return (
-    <div className={styles.bars} style={{ '--rank-col': ranked ? '1.6em' : '0px' } as CSSProperties}>
+    <div className={styles.bars} style={{ '--rank-col': ranked ? '1.6em' : '0px', ...(nameMax ? { '--name-max': nameMax } : {}) } as CSSProperties}>
       {rows.map((r, i) => (
         <div key={r.key} className={styles.row} title={r.title}>
           <span className={styles.rank}>{ranked ? i + 1 : ''}</span>

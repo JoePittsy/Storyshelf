@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { AbsError, absFetch } from './auth';
 
 // Only the fields the book page uses, from GET /api/items/:id?expanded=1&include=progress (ABS 2.37).
@@ -33,17 +33,25 @@ export interface BookItem {
     chapters: Chapter[];
   };
   /** null (or absent) when the user hasn't started. */
-  userMediaProgress?: { currentTime: number; progress: number; isFinished: boolean } | null;
+  userMediaProgress?: {
+    currentTime: number;
+    progress: number;
+    isFinished: boolean;
+    startedAt?: number;
+    finishedAt?: number | null;
+  } | null;
 }
 
 /** Unauthenticated, so an <img> can load it. Never width 0, which ABS treats as full size. */
 export const coverUrl = (id: string, updatedAt: number, width = 800) =>
   `/api/items/${id}/cover?width=${width}&format=webp&ts=${updatedAt}`;
 
-export const useBook = (id: string) =>
-  useQuery({
+export const bookQuery = (id: string) =>
+  queryOptions({
     queryKey: ['item', id],
     enabled: !!id,
     queryFn: () => absFetch<BookItem>(`/api/items/${encodeURIComponent(id)}?expanded=1&include=progress`),
     retry: (count, e) => !(e instanceof AbsError && e.status === 404) && count < 2,
   });
+
+export const useBook = (id: string) => useQuery(bookQuery(id));

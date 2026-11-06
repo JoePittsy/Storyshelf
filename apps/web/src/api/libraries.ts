@@ -47,6 +47,9 @@ export interface SearchResponse {
 export interface Progress {
   progress: number;
   isFinished: boolean;
+  startedAt?: number;
+  finishedAt?: number | null;
+  hidden?: boolean;
 }
 
 export const PAGE_SIZE = 48;
@@ -102,7 +105,16 @@ export const bookLibraries = (libs: Library[]): Library[] => libs.filter((l) => 
 /** Progress by library item. Podcast episode progress is skipped. */
 export function progressByItem(list: MediaProgress[] = []): Map<string, Progress> {
   const map = new Map<string, Progress>();
-  for (const p of list) if (!p.episodeId) map.set(p.libraryItemId, { progress: p.progress, isFinished: p.isFinished });
+  for (const p of list) {
+    if (p.episodeId) continue;
+    map.set(p.libraryItemId, {
+      progress: p.progress,
+      isFinished: p.isFinished,
+      startedAt: p.startedAt,
+      finishedAt: p.finishedAt,
+      hidden: p.hideFromContinueListening,
+    });
+  }
   return map;
 }
 

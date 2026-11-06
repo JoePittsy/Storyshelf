@@ -8,6 +8,8 @@ import styles from './BookGrid.module.css';
 export interface BookTile extends Pick<Tile, 'item' | 'progress'> {
   /** Short label over the cover's top-left corner, e.g. "#2" for a series sequence. */
   badge?: string;
+  /** A third muted line under the author, e.g. "Finished 3 Oct 2026". */
+  meta?: string;
 }
 
 interface Props {
@@ -31,11 +33,12 @@ export function BookGrid({ tiles, onEndReached }: Props) {
   return (
     <>
       <ul className={styles.grid}>
-        {tiles.map(({ item, progress, badge }) => (
+        {tiles.map(({ item, progress, badge, meta }) => (
           <li key={item.id}>
             <ImageTile
               title={item.media.metadata.title}
               sub={item.media.metadata.authorName}
+              meta={meta}
               imageUrl={coverUrl(item)}
               href={`/book/${item.id}`}
               onOpen={() => void navigate(`/book/${item.id}`)}
