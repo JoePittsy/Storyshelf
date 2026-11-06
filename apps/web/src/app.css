@@ -6,7 +6,7 @@ body {
 /* The page-scale root: full dynamic viewport height, clear of the iPhone notch and home bar. */
 .app {
   min-height: 100dvh;
-  padding: env(safe-area-inset-top) max(1em, env(safe-area-inset-right)) env(safe-area-inset-bottom)
+  padding: 0 max(1em, env(safe-area-inset-right)) env(safe-area-inset-bottom)
     max(1em, env(safe-area-inset-left));
 }
 

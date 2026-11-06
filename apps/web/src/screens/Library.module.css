@@ -1,0 +1,28 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8em;
+}
+.controls > :first-child {
+  flex: 1 1 14em;
+}
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
+  gap: 1.2em 1em;
+}
+.skeleton {
+  aspect-ratio: 1;
+  border-radius: var(--r-tile);
+}
+.sentinel {
+  height: 1px;
+}

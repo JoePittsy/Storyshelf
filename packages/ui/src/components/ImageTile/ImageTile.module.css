@@ -13,6 +13,8 @@
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
   transition: transform var(--dur-fast) var(--ease-fast);
 }
 .main:hover,
@@ -21,6 +23,7 @@
 }
 
 .art {
+  position: relative;
   display: block;
   width: 100%;
   aspect-ratio: 1;

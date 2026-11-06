@@ -1,0 +1,23 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  /* Reach past .app's side padding so the bar spans the screen. */
+  margin: 0 calc(-1 * max(1em, env(safe-area-inset-right))) 0 calc(-1 * max(1em, env(safe-area-inset-left)));
+}
+.name {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.content {
+  flex: 1;
+  padding: 1em max(1em, env(safe-area-inset-right)) 1em max(1em, env(safe-area-inset-left));
+}
+.player {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+.player:empty {
+  display: none;
+}

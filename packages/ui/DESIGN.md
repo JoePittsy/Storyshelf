@@ -314,7 +314,10 @@ A print with its label (ArtCard). The artwork fills the card edge to edge (`obje
 Borderless rows (ItemRow, ChartRow) with a 0.65em radius and 3.2em rounded thumbnails. The title is at Title-at-rest white (500) and the credit in tertiary label on the same line. Hover or focus-within fills the row with Tint Fill, brightens the title to white and reveals the quiet add button. Chart rows are a fixed grid (rank · title · credit · count · add) with zero-padded tabular ranks and counts, and optional ChartHead column labels on the same grid.
 
 ### Tiles
-Square art (ImageTile, 0.7–0.9em radius, or a circle for people) over a two-line caption: title in Title-at-rest, sub in tertiary label. Hover or focus rises the tile 2px and gives the art the Art-lifted shadow.
+Square art (ImageTile, 0.7–0.9em radius, or a circle for people) over a two-line caption: title in Title-at-rest, sub in tertiary label. Hover or focus rises the tile 2px and gives the art the Art-lifted shadow. With `href` the tile is a real link (a plain click still calls `onOpen`), and `overlay` draws over the art, e.g. a ProgressBar.
+
+### Top bar
+TopBar is a sticky header on the frosted material with start, centre and end slots; it pads its top by the safe-area inset and has no tokens of its own.
 
 ### Playback
 Three stateless pieces; the app owns playback and passes values in.

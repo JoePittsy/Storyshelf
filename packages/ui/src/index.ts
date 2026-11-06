@@ -24,6 +24,7 @@ export type { SelectOption } from './components/Select';
 export { SeekBar, PlaybackTime, PlaybackRemaining } from './components/SeekBar';
 export { ToastProvider, useToast } from './components/Toast';
 export { TextField } from './components/TextField';
+export { TopBar } from './components/TopBar';
 export { TopResultCard } from './components/TopResultCard';
 export { TransportButtons } from './components/TransportButtons';
 export { UserAvatar, avatarGradient } from './components/UserAvatar';

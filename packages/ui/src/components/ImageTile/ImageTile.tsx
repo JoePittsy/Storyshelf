@@ -1,3 +1,4 @@
+import type { MouseEvent, ReactNode } from 'react';
 import { AddButton } from '../AddButton';
 import { Artwork } from '../Artwork';
 import styles from './ImageTile.module.css';
@@ -13,6 +14,10 @@ interface Props {
   /** md: roomy shelf tile. sm: compact tile for three-up groups. */
   size?: 'md' | 'sm';
   onOpen: () => void;
+  /** Renders a real link (middle-click, open in new tab). A plain click calls onOpen instead of reloading. */
+  href?: string;
+  /** Drawn over the bottom of the art, e.g. a ProgressBar overlay. */
+  overlay?: ReactNode;
   /** Hover prefetch. */
   onHover?: () => void;
   /** Adds a + on the art's top-right corner, revealed on hover or focus. It never opens the tile. */
@@ -29,20 +34,34 @@ export function ImageTile({
   circular,
   size = 'md',
   onOpen,
+  href,
+  overlay,
   onHover,
   onAdd,
   addLabel,
 }: Props) {
+  const Main = href ? 'a' : 'button';
+  const mainProps = href
+    ? {
+        href,
+        onClick: (e: MouseEvent) => {
+          if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          onOpen();
+        },
+      }
+    : { type: 'button' as const, onClick: onOpen };
   return (
     <div className={`${styles.tile} ${size === 'sm' ? styles.sm : styles.md}`} onMouseEnter={onHover}>
-      <button type="button" className={styles.main} onClick={onOpen}>
+      <Main className={styles.main} {...mainProps}>
         <span className={`${styles.art} ${circular ? styles.round : ''}`} aria-hidden="true">
           <Artwork src={imageUrl} placeholderClassName={styles.ph} />
+          {overlay}
         </span>
         <span className={styles.title}>{title}</span>
         {sub && <span className={styles.sub}>{sub}</span>}
         {meta && <span className={styles.sub}>{meta}</span>}
-      </button>
+      </Main>
       {onAdd && (
         <AddButton variant="corner" className={styles.add} label={addLabel ?? `Add ${title}`} onClick={onAdd} />
       )}

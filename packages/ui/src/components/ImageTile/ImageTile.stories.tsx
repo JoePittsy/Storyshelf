@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { covers, portrait } from '../../../.storybook/fixtures';
+import { ProgressBar } from '../ProgressBar';
 import { ImageTile } from './ImageTile';
 
 const meta = {
@@ -24,6 +25,9 @@ export const Default: Story = {};
 export const Circular: Story = { args: { title: 'Maya Rowan', sub: '412 items', imageUrl: portrait, circular: true } };
 export const Small: Story = { args: { size: 'sm', meta: 'Yesterday' } };
 export const WithAddButton: Story = { args: { onAdd: fn() } };
+export const AsLinkWithProgress: Story = {
+  args: { href: '/book/1', overlay: <ProgressBar value={0.4} label="Progress through Golden Hour" variant="overlay" /> },
+};
 export const NoArt: Story = { args: { imageUrl: null } };
 export const LongTitle: Story = {
   args: {
