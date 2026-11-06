@@ -67,17 +67,26 @@
   gap: 0.4em;
   max-width: 20em;
 }
-.action {
+/* The primary pill, then the quieter progress actions (mark finished, reset) behind a round More button beside it. */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
   align-self: flex-start;
   margin-top: 0.4em;
+}
+.action {
   /* The one thing to press: a large pill, 44px at the least, with room for its context. */
   min-height: 44px;
   padding: 0.7em 1.6em;
   font-size: var(--fs-body);
 }
 @media (width <= 30em) {
-  .action {
+  .actions {
     align-self: stretch;
+  }
+  .action {
+    flex: 1;
     justify-content: center;
   }
 }

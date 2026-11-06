@@ -36,6 +36,7 @@ import { useCoverDock } from './useCoverDock';
 import { BookListening } from '../components/BookListening';
 import { BookBookmarks } from '../components/BookBookmarks';
 import { BookNextInSeries } from '../components/UpNext';
+import { BookProgressMenu } from '../components/BookProgressMenu';
 import styles from './Book.module.css';
 
 interface Props {
@@ -190,9 +191,12 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           <ProgressBar value={now.isFinished ? 1 : now.progress} label={`Progress through ${m.title}`} />
           <p className={styles.line}>{status}</p>
         </div>
-        <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playLabel(resume) === 'Resume' ? undefined : 0))}>
-          {label}
-        </PillButton>
+        <div className={styles.actions}>
+          <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playLabel(resume) === 'Resume' ? undefined : 0))}>
+            {label}
+          </PillButton>
+          <BookProgressMenu itemId={item.id} isFinished={now.isFinished} hasProgress={started || now.isFinished} />
+        </div>
       </HeroBand>
 
       <div className={styles.body}>
