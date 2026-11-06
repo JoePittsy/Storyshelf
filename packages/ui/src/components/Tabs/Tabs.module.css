@@ -73,7 +73,8 @@
     gap: 0;
   }
   .tab {
-    padding-inline: 0.45em;
+    padding-inline: 0.4em;
+    font-size: var(--fs-label);
   }
   .list > .separated {
     margin-inline-start: 0.1em;
@@ -81,7 +82,7 @@
   }
   .hasIcon {
     justify-content: center;
-    min-width: 44px;
+    min-width: 40px;
     box-sizing: border-box;
   }
   .hasIcon .icon {
