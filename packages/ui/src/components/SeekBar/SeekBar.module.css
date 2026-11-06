@@ -149,3 +149,56 @@
     min-height: 32px;
   }
 }
+
+/* The line a tap shows: the mode it chose. Above the middle of the bar, fading in and out in about a second. It
+   never takes the pointer. */
+.flash {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 0.6em;
+  padding: 0.4em 0.8em;
+  background: var(--material-bg);
+  backdrop-filter: var(--material-filter);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-pill);
+  box-shadow: var(--float-shadow);
+  color: var(--text);
+  font-size: var(--fs-small);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+  animation: flash 1s var(--ease-fast) both;
+}
+@keyframes flash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0.4em);
+  }
+  15%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flash {
+    animation-name: flash-fade;
+  }
+  @keyframes flash-fade {
+    0%,
+    100% {
+      opacity: 0;
+      transform: translate(-50%, 0);
+    }
+    15%,
+    70% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+}

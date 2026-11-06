@@ -120,9 +120,9 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
     ? 'Finished'
     : started
       ? [
-          // The button carries the time left, except while it reads Pause.
-          (playingHere || chapterIdx < 0) && fmtLeft((duration - now.currentTime) * 1000),
+          // Always the chapter first, then the time left: the button carries the time left, except while it reads Pause.
           chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`,
+          (playingHere || chapterIdx < 0) && fmtLeft((duration - now.currentTime) * 1000),
         ]
           .filter(Boolean)
           .join(' · ')
@@ -206,6 +206,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
                     lead={<span aria-hidden="true">{i + 1}</span>}
                     title={c.title}
                     aside={fmtClock(c.start)}
+                    asideWideOnly
                     trailing={fmtClock(c.end - c.start, false)}
                     current={i === chapterIdx}
                     onClick={() => jump(c.start, `Chapter ${i + 1}`, started ? now.currentTime : null)}

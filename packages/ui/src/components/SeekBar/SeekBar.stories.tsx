@@ -16,6 +16,7 @@ function Row({
   previewAt,
   slim,
   onSeek,
+  tapModes,
 }: {
   position: number;
   duration: number;
@@ -23,8 +24,11 @@ function Row({
   previewAt?: number;
   slim?: boolean;
   onSeek: (ms: number) => void;
+  /** Names to cycle through on a tap (touch or narrow screens): the bar flashes each one. */
+  tapModes?: string[];
 }) {
   const [position, setPosition] = useState(initial);
+  const [tapped, setTapped] = useState(0);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6em', maxWidth: '40em' }}>
       <PlaybackTime ms={position} />
@@ -34,6 +38,8 @@ function Row({
         markers={markers}
         previewAt={previewAt}
         slim={slim}
+        onTap={tapModes && (() => setTapped((n) => n + 1))}
+        flash={tapModes && tapped > 0 ? tapModes[tapped % tapModes.length] : undefined}
         onSeek={(ms) => {
           setPosition(ms);
           onSeek(ms);
@@ -56,6 +62,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+/** Touch or under 40em (narrow the canvas, or use touch emulation): a tap flashes the next name and seeks nothing; a drag scrubs. */
+export const TapToChangeMode: Story = { args: { tapModes: ['Whole book', 'This chapter', 'Until sleep · 12:30'] } };
 export const AtStart: Story = { args: { position: 0 } };
 export const NearlyDone: Story = { args: { position: 215000 } };
 /** No known duration (nothing loaded): the bar is disabled and does nothing when pressed. */

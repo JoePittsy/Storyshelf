@@ -11,9 +11,23 @@ export interface KeyInput {
 
 const TYPING = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 /** Controls that own the arrow keys (the seek bar, the mode switch). */
-const OWNS_ARROWS = new Set(['slider', 'radio', 'radiogroup', 'listbox', 'tab', 'menu', 'menuitem']);
+const OWNS_ARROWS = new Set([
+  'slider',
+  'radio',
+  'radiogroup',
+  'listbox',
+  'option',
+  'combobox',
+  'spinbutton',
+  'switch',
+  'tab',
+  'tablist',
+  'menu',
+  'menuitem',
+]);
 /** Controls that Space activates natively: toggling play as well would double up. */
 const OWNS_SPACE = new Set(['BUTTON', 'A', 'SUMMARY']);
+const OWNS_SPACE_ROLES = new Set(['button', 'link', 'checkbox']);
 
 /** What a key press means anywhere in the app: a player action, or one of the app's own. */
 export type AppKeyAction = PlayerKeyAction | 'search' | 'help';
@@ -44,7 +58,7 @@ export function playerKeyAction(e: KeyInput): PlayerKeyAction | null {
   switch (e.key) {
     case ' ':
     case 'Spacebar':
-      return OWNS_SPACE.has(tag) || OWNS_ARROWS.has(role) ? null : 'toggle';
+      return OWNS_SPACE.has(tag) || OWNS_SPACE_ROLES.has(role) || OWNS_ARROWS.has(role) ? null : 'toggle';
     case 'ArrowLeft':
       return OWNS_ARROWS.has(role) ? null : 'back';
     case 'ArrowRight':

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { fmtTime } from '../../lib/fmtTime';
 import { markerAt, markerPercents, segmentAt, showTicks } from '../../lib/seekMarkers';
@@ -26,8 +27,22 @@ interface Props {
   readOnly?: boolean;
   /** Replaces the spoken value ("Stops in 12:30"). */
   valueText?: string;
+  /**
+   * What a tap on the bar does on touch and narrow screens (`pointer: coarse` or under 40em). With it, only a drag
+   * scrubs there: a tap without movement calls this instead of seeking, so a stray touch can't lose the listener's
+   * place. Fine pointers on wide screens still click-to-seek. Works on a read-only bar too.
+   */
+  onTap?: () => void;
+  /** A short line shown above the middle of the bar for about a second whenever it changes (e.g. the mode a tap chose). */
+  flash?: string;
   className?: string;
 }
+
+/** Touch and narrow screens, where a tap names the progress mode instead of seeking. */
+const TAP_QUERY = '(pointer: coarse), (width < 40em)';
+/** How far a finger may wander (px) and still be a tap. */
+const TAP_SLOP = 6;
+const FLASH_MS = 1000;
 
 /** Click-and-keyboard seek bar. Stateless: the caller owns the playhead and re-renders it as it moves. */
 export function SeekBar({
@@ -41,6 +56,8 @@ export function SeekBar({
   slim,
   readOnly,
   valueText,
+  onTap,
+  flash,
   className,
 }: Props) {
   const enabled = duration > 0;
@@ -68,10 +85,51 @@ export function SeekBar({
     return rect.width > 0 ? Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) : 0;
   };
 
-  const onClick = (e: MouseEvent<HTMLDivElement>) => seekTo(fraction(e) * duration);
+  // Touch and narrow screens, with a tap action: a drag scrubs, a tap calls onTap.
+  const touchLike = useMediaQuery(TAP_QUERY);
+  const tapMode = !!onTap && touchLike;
+  const gesture = useRef<{ x: number; y: number; dragging: boolean } | null>(null);
+
+  const onClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (!tapMode) seekTo(fraction(e) * duration);
+  };
   const preview = (e: PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' || e.buttons > 0) setHover(fraction(e));
   };
+  const down = (e: PointerEvent<HTMLDivElement>) => {
+    if (!tapMode) return preview(e);
+    gesture.current = { x: e.clientX, y: e.clientY, dragging: false };
+  };
+  const move = (e: PointerEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    if (!tapMode || !g) return preview(e);
+    if (!g.dragging && Math.abs(e.clientX - g.x) > TAP_SLOP) {
+      g.dragging = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    if (g.dragging && enabled && !readOnly) setHover(fraction(e));
+  };
+  const up = (e: PointerEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    gesture.current = null;
+    setHover(null);
+    if (!tapMode || !g) return;
+    if (!g.dragging) onTap?.();
+    else if (!readOnly) seekTo(fraction(e) * duration);
+  };
+  const cancel = () => {
+    gesture.current = null;
+    setHover(null);
+  };
+
+  // The flash shows for a moment each time its text changes.
+  const [spent, setSpent] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setSpent(flash), FLASH_MS);
+    return () => clearTimeout(t);
+  }, [flash]);
+  const flashing = flash && flash !== spent ? flash : null;
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const now = (pct / 100) * duration;
@@ -104,15 +162,17 @@ export function SeekBar({
       ref={root}
       className={[styles.seek, slim && styles.slim, className].filter(Boolean).join(' ')}
       {...(readOnly
-        ? { role: 'progressbar' }
+        ? tapMode
+          ? { role: 'progressbar', onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: cancel }
+          : { role: 'progressbar' }
         : {
             onClick,
             onKeyDown,
-            onPointerDown: preview,
-            onPointerMove: preview,
-            onPointerUp: () => setHover(null),
-            onPointerCancel: () => setHover(null),
-            onPointerLeave: () => setHover(null),
+            onPointerDown: down,
+            onPointerMove: move,
+            onPointerUp: up,
+            onPointerCancel: cancel,
+            onPointerLeave: tapMode ? undefined : () => setHover(null),
             role: 'slider',
             tabIndex: 0,
             'aria-disabled': enabled ? undefined : true,
@@ -144,6 +204,11 @@ export function SeekBar({
           style={{ left: `${(seg.start / duration) * 100}%`, width: `${((seg.end - seg.start) / duration) * 100}%` }}
           aria-hidden="true"
         />
+      )}
+      {flashing && (
+        <span key={flashing} className={styles.flash} aria-hidden="true">
+          {flashing}
+        </span>
       )}
       {shown !== null && (
         <span

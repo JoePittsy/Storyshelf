@@ -41,10 +41,11 @@ describe('MiniPlayer names and readout', () => {
     expect(screen.getByRole('button', { name: 'Open player: The Velveteen Rabbit' })).toBeInTheDocument();
   });
 
-  it('reads time left once, without a minus sign beside the word left', () => {
+  it('reads the scrubber clock, not the time left in words as well, and no minus sign', () => {
     cleanup();
     const { container } = render(<MiniPlayer {...base} onOpen={() => {}} />);
-    expect(container.textContent).toContain('50m left');
+    expect(container.textContent).toMatch(/\d+:\d\d \/ \d+:\d\d/);
+    expect(container.textContent).not.toContain(' left');
     expect(container.textContent).not.toContain('−');
   });
 });

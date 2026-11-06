@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { act, render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { PlaybackRemaining, PlaybackTime } from './PlaybackTime';
 import { SeekBar } from './SeekBar';
 
@@ -146,5 +146,75 @@ describe('SeekBar chapter highlight', () => {
     expect(view({ markers })).toBeNull();
     expect(view({ markers: [markers[0]], previewAt: 50000 })).toBeNull();
     expect(view({ markers, previewAt: 50000, readOnly: true })).toBeNull();
+  });
+});
+
+describe('SeekBar on touch and narrow screens, with onTap', () => {
+  const touch = (matches: boolean) =>
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches,
+      media: q,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+  afterEach(() => vi.unstubAllGlobals());
+  const bar = (onTap: () => void, onSeek = vi.fn()) => {
+    cleanup();
+    render(<SeekBar position={105000} duration={210000} onSeek={onSeek} onTap={onTap} flash={undefined} />);
+    return { el: screen.getByRole('slider', { name: 'Progress' }), onSeek };
+  };
+
+  it('a tap without movement calls onTap and does not seek', () => {
+    touch(true);
+    const onTap = vi.fn();
+    const { el, onSeek } = bar(onTap);
+    fireEvent.pointerDown(el, { clientX: 50, clientY: 5 });
+    fireEvent.pointerUp(el, { clientX: 52, clientY: 5 });
+    fireEvent.click(el, { clientX: 52 });
+    expect(onTap).toHaveBeenCalledTimes(1);
+    expect(onSeek).not.toHaveBeenCalled();
+  });
+
+  it('a drag past the slop seeks on release and is not a tap', () => {
+    touch(true);
+    const onTap = vi.fn();
+    const { el, onSeek } = bar(onTap);
+    fireEvent.pointerDown(el, { clientX: 50, clientY: 5 });
+    fireEvent.pointerMove(el, { clientX: 70, clientY: 5 });
+    fireEvent.pointerUp(el, { clientX: 70, clientY: 5 });
+    expect(onTap).not.toHaveBeenCalled();
+    expect(onSeek).toHaveBeenCalledTimes(1);
+  });
+
+  it('a fine pointer on a wide screen still seeks on click and never calls onTap', () => {
+    touch(false);
+    const onTap = vi.fn();
+    const { el, onSeek } = bar(onTap);
+    fireEvent.click(el, { clientX: 10 });
+    expect(onSeek).toHaveBeenCalledTimes(1);
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  it('a read-only bar can still be tapped', () => {
+    touch(true);
+    cleanup();
+    const onTap = vi.fn();
+    render(<SeekBar position={1} duration={10} onSeek={() => {}} readOnly onTap={onTap} />);
+    const el = screen.getByRole('progressbar');
+    fireEvent.pointerDown(el, { clientX: 5, clientY: 5 });
+    fireEvent.pointerUp(el, { clientX: 5, clientY: 5 });
+    expect(onTap).toHaveBeenCalledTimes(1);
+  });
+
+  it('flashes the line for a second when it changes', () => {
+    vi.useFakeTimers();
+    cleanup();
+    const { rerender } = render(<SeekBar position={1} duration={10} onSeek={() => {}} flash={undefined} />);
+    expect(screen.queryByText('This chapter')).toBeNull();
+    rerender(<SeekBar position={1} duration={10} onSeek={() => {}} flash="This chapter" />);
+    expect(screen.getByText('This chapter')).toBeInTheDocument();
+    act(() => void vi.advanceTimersByTime(1100));
+    expect(screen.queryByText('This chapter')).toBeNull();
+    vi.useRealTimers();
   });
 });

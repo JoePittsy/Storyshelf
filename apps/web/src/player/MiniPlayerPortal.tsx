@@ -2,7 +2,8 @@ import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { MiniPlayer } from '@joepittsy/ui';
 import { usePlayer } from './engine';
-import { useProgress } from './progressMode';
+import { ModeAnnouncer } from './ModeAnnouncer';
+import { useModeTap, useProgress } from './progressMode';
 
 /**
  * The mini player, portalled into the frame's bottom slot whenever a book is loaded. Hidden on the full player. It is
@@ -14,6 +15,7 @@ export function MiniPlayerPortal() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { window: w } = useProgress();
+  const { flash, onTap } = useModeTap();
   // The slot lives in the Frame. A book only loads from inside the Frame, so it is in the DOM by the time one is loaded.
   const slot = document.getElementById('mini-player-slot');
 
@@ -38,6 +40,8 @@ export function MiniPlayerPortal() {
           onSkipForward={() => p.skip(1)}
           onTogglePlay={p.toggle}
           onSeek={w.seekable ? (ms) => p.seek(ms / 1000 + w.start) : undefined}
+          onTap={onTap}
+          flash={flash}
           markers={w.markers}
           timeLabel={w.label}
           onExpand={open}
@@ -45,6 +49,7 @@ export function MiniPlayerPortal() {
         />,
         slot,
       )}
+      {createPortal(<ModeAnnouncer text={flash} />, slot)}
     </>
   );
 }

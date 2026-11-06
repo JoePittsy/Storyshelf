@@ -54,3 +54,10 @@
     align-items: center;
   }
 }
+
+/* Phone widths: the start time gives its room to the title; the duration stays. */
+@media (width < 40em) {
+  .wideOnly {
+    display: none;
+  }
+}

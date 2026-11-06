@@ -13,6 +13,8 @@ export interface Restorable {
   duration: number;
   /** Seconds into the book: where the listener left it. */
   position: number;
+  /** When the server last heard of that place (ms since the epoch, ABS `lastUpdate`); 0 when unknown. */
+  updatedAt: number;
 }
 
 /**
@@ -37,7 +39,41 @@ export function pickRestorable(
     author: item.media.metadata.authorName ?? '',
     duration,
     position: duration > 0 ? clampSeek(position, duration) : position,
+    updatedAt: p?.lastUpdate ?? 0,
   };
+}
+
+/**
+ * Where the first Play of a restored book starts. The server's place wins (the restored snapshot may be hours old and
+ * another device may have moved on); the only thing that beats it is a deliberate move made here since the restore
+ * (a seek, skip or chapter jump), or a start point the caller named outright.
+ */
+export function chooseStart(named: number | undefined, movedHere: number | null, serverTime: number): number {
+  return named ?? movedHere ?? serverTime;
+}
+
+/** What the server now says about a book's place, as far as a snapshot refresh needs it. */
+export interface ServerPlace {
+  id: string;
+  /** Seconds into the book. */
+  position: number;
+  /** ms since the epoch. */
+  lastUpdate: number;
+  isFinished?: boolean;
+}
+
+/**
+ * The position a restored snapshot should move to, or null to leave it. It moves only when the server has heard of a
+ * later place than the snapshot holds, for the same book, and the listener has not moved it here (their move wins and
+ * is on its way to the server).
+ */
+export function refreshedPosition(
+  snapshot: { id: string; updatedAt: number; movedHere: boolean },
+  server: ServerPlace | undefined,
+): number | null {
+  if (!server || server.id !== snapshot.id || snapshot.movedHere || server.isFinished) return null;
+  if (!(server.lastUpdate > snapshot.updatedAt) || !(server.position >= 0)) return null;
+  return server.position;
 }
 
 /** What the player shows for a restored book: paused where it was left, with no session behind it yet. */

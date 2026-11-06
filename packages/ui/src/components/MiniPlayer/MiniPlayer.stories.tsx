@@ -167,6 +167,11 @@ export const ReducedTransparency: Story = {
     ...frame(1440),
   ],
 };
+/** Phone width: a tap on the bar calls onTap and shows the flash; only a drag scrubs. (The flash shows for a second when it changes.) */
+export const TapOnBar: Story = {
+  args: { onTap: fn(), flash: 'This chapter', onSkipForward: undefined, onPrevious: undefined, onNext: undefined },
+  decorators: frame(375),
+};
 /** Passive line (no onSeek, no extras) at phone width. */
 export const Passive: Story = {
   args: {

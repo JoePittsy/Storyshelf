@@ -228,3 +228,28 @@
     text-align: left;
   }
 }
+
+/* The player's shape while the last book is being put back after a reload. */
+.skeletonTitle {
+  width: min(100%, 16em);
+  height: 2.4em;
+  border-radius: var(--r-xs);
+}
+.skeletonControls {
+  width: min(100%, 24em);
+  height: 9em;
+  border-radius: var(--r-card);
+}
+
+/* Touch and narrow: the tap on the bar replaces the visible Book / Chapter / Sleep switch. It stays in the page,
+   visually hidden, for a screen reader, and shows itself again when a keyboard reaches it. */
+@media (pointer: coarse), (width < 40em) {
+  .modeControl:not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

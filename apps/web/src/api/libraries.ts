@@ -54,6 +54,8 @@ export interface Progress {
   startedAt?: number;
   finishedAt?: number | null;
   hidden?: boolean;
+  /** ms since the epoch: when the server last heard of this place. */
+  lastUpdate?: number;
 }
 
 export const PAGE_SIZE = 48;
@@ -118,6 +120,7 @@ export function progressByItem(list: MediaProgress[] = []): Map<string, Progress
       startedAt: p.startedAt,
       finishedAt: p.finishedAt,
       hidden: p.hideFromContinueListening,
+      lastUpdate: p.lastUpdate,
     });
   }
   return map;

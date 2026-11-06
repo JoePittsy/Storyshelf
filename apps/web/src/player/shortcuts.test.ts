@@ -38,6 +38,15 @@ describe('playerKeyAction', () => {
     expect(playerKeyAction({ key: 'ArrowRight', target: on('BUTTON') })).toBe('forward');
   });
 
+  it('leaves keys to any native control that uses them (sliders, tabs, radios, switches, buttons by role)', () => {
+    for (const role of ['tab', 'tablist', 'radiogroup', 'listbox', 'combobox', 'spinbutton', 'switch']) {
+      expect(playerKeyAction({ key: 'ArrowLeft', target: on('DIV', role) })).toBeNull();
+      expect(playerKeyAction({ key: ' ', target: on('DIV', role) })).toBeNull();
+    }
+    expect(playerKeyAction({ key: ' ', target: on('DIV', 'button') })).toBeNull();
+    expect(playerKeyAction({ key: ' ', target: on('SPAN', 'checkbox') })).toBeNull();
+  });
+
   it('leaves the arrows to the seek bar and the mode switch', () => {
     expect(playerKeyAction({ key: 'ArrowLeft', target: on('DIV', 'slider') })).toBeNull();
     expect(playerKeyAction({ key: 'ArrowRight', target: on('BUTTON', 'radio') })).toBeNull();

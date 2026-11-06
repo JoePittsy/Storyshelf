@@ -24,10 +24,12 @@ import { useBook } from '../api/items';
 import { narratorPath } from '../api/libraries';
 import { usePlayer } from '../player/engine';
 import { ProgressModeControl } from '../player/ProgressModeControl';
-import { useProgress } from '../player/progressMode';
+import { ModeAnnouncer } from '../player/ModeAnnouncer';
+import { useModeTap, useProgress } from '../player/progressMode';
 import { SKIP_OPTIONS } from '../player/settings';
 import { ChaptersSheet } from '../player/ChaptersSheet';
 import { usePlayerJump } from '../player/useUndoableJump';
+import { useRestoreSettled } from '../player/restoreStatus';
 import { ShortcutList } from '../frame/ShortcutList';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
@@ -67,6 +69,7 @@ function ChapterList() {
             lead={<span aria-hidden="true">{i + 1}</span>}
             title={c.title}
             aside={fmtClock(c.start)}
+            trailing={fmtClock(c.end - c.start, false)}
             current={i === p.chapterIndex}
             onClick={() => jumpTo(c.start, `Chapter ${i + 1}`)}
           />
@@ -83,7 +86,8 @@ export function NowPlaying() {
   const hasHistory = useLocation().key !== 'default';
   const wide = useMediaQuery(WIDE);
   // The shortcuts are for a keyboard; a touch screen has nothing to press them with.
-  const touch = useMediaQuery('(pointer: coarse)');
+  const touch = useMediaQuery('(pointer: coarse), (hover: none)');
+  const restoreSettled = useRestoreSettled();
   const bar = useRef<HTMLDivElement>(null);
   const [sheet, setSheet] = useState<'chapters' | 'settings' | null>(null);
   // The player only knows the author's name; the book (cached from the book page) has their ids.
@@ -125,7 +129,21 @@ export function NowPlaying() {
   const { previousChapter, nextChapter } = usePlayerJump();
 
   const { window: w } = useProgress();
-  if (!p.item) return <Navigate to="/" replace />;
+  const { flash, onTap } = useModeTap();
+  if (!p.item) {
+    // A reload lands here before the last book has been put back: wait for that to settle, then go only if there is nothing to show.
+    if (!restoreSettled)
+      return (
+        <main className={styles.page} aria-busy="true">
+          <div className={styles.player} role="status" aria-label="Loading">
+            <div className={`skeleton ${styles.art}`} />
+            <div className={`skeleton ${styles.skeletonTitle}`} />
+            <div className={`skeleton ${styles.skeletonControls}`} />
+          </div>
+        </main>
+      );
+    return <Navigate to="/" replace />;
+  }
   const rel = Math.max(0, p.position - w.start) * 1000;
   const span = (w.end - w.start) * 1000;
   const chapter = p.chapters[p.chapterIndex];
@@ -183,7 +201,8 @@ export function NowPlaying() {
 
           <div className={styles.controls}>
             <div className={styles.seek}>
-              <ProgressModeControl className={styles.mode} />
+              {/* Touch and narrow: a tap on the bar steps through the modes; this stays for a screen reader and keyboard. */}
+              <ProgressModeControl className={`${styles.mode} ${styles.modeControl}`} />
               <SeekBar
                 position={rel}
                 duration={span}
@@ -192,7 +211,10 @@ export function NowPlaying() {
                 valueText={w.label}
                 label={`Progress through ${p.item.title}`}
                 markers={w.markers}
+                onTap={onTap}
+                flash={flash}
               />
+              <ModeAnnouncer text={flash} />
               <div className={styles.times}>
                 {w.label ? (
                   <span>{w.label}</span>

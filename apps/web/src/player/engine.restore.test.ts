@@ -19,6 +19,7 @@ vi.mock('./session', async (orig) => ({
   openSession: vi.fn(() => Promise.resolve(session)),
   closeSession: vi.fn(() => Promise.resolve()),
   syncSession: vi.fn(() => Promise.resolve(session)),
+  saveProgress: vi.fn(() => Promise.resolve()),
   trackUrl: () => '/t/1',
 }));
 
@@ -53,7 +54,7 @@ const chapters = [
   { id: 0, start: 0, end: 300, title: 'One' },
   { id: 1, start: 300, end: 1000, title: 'Two' },
 ];
-const book = { id: 'li_1', title: 'The Book', author: 'An Author', duration: 1000, position: 450 };
+const book = { id: 'li_1', title: 'The Book', author: 'An Author', duration: 1000, position: 450, updatedAt: 1000 };
 
 let engine: typeof import('./engine');
 let sessionApi: typeof import('./session');
@@ -104,6 +105,51 @@ describe('restoring the last book', () => {
     expect(snapshot()).toMatchObject({ status: 'loading', restored: false });
     await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_1', expect.any(Array)));
     await vi.waitFor(() => expect(snapshot().position).toBe(320));
+  });
+
+  it("an unmoved restored book starts from the server's place, not the stale snapshot", async () => {
+    engine.restore(book, chapters); // snapshot says 450; the server's session says 100
+    engine.toggle();
+    await vi.waitFor(() => expect(snapshot().position).toBe(100));
+  });
+
+  it('hero Resume (play with no start) and the mini player agree on that place', async () => {
+    engine.restore(book, chapters);
+    void engine.play('li_1');
+    await vi.waitFor(() => expect(snapshot().position).toBe(100));
+  });
+
+  it('a move made on the restored book is saved to the server, once, after a short pause', async () => {
+    vi.useFakeTimers();
+    try {
+      engine.restore(book, chapters);
+      engine.seek(10);
+      engine.seek(320);
+      expect(sessionApi.saveProgress).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(600);
+      expect(sessionApi.saveProgress).toHaveBeenCalledTimes(1);
+      expect(sessionApi.saveProgress).toHaveBeenCalledWith('li_1', 320, 1000);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a refreshed snapshot shows the newer server place, and its chapter', () => {
+    engine.restore(book, chapters);
+    const progress = new Map([['li_1', { progress: 0.1, currentTime: 100, isFinished: false, lastUpdate: 2000 }]]);
+    engine.refreshRestored(progress);
+    expect(snapshot()).toMatchObject({ position: 100, chapterIndex: 0, restored: true });
+  });
+
+  it('a refresh with nothing newer, or after a local move, changes nothing', () => {
+    engine.restore(book, chapters);
+    const older = new Map([['li_1', { progress: 0.1, currentTime: 100, isFinished: false, lastUpdate: 1000 }]]);
+    engine.refreshRestored(older);
+    expect(snapshot().position).toBe(450);
+    engine.seek(320);
+    const newer = new Map([['li_1', { progress: 0.1, currentTime: 100, isFinished: false, lastUpdate: 9000 }]]);
+    engine.refreshRestored(newer);
+    expect(snapshot().position).toBe(320);
   });
 
   it('starting another book behaves as before and drops the restored book', async () => {

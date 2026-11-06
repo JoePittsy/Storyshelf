@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { ListMusic, Loader2, Maximize2, Play, SkipBack, SkipForward } from 'lucide-react';
-import { fmtLeft } from '../../lib/fmtLeft';
 import { fmtTime } from '../../lib/fmtTime';
 import type { SeekMarker } from '../../lib/seekMarkers';
 import { Artwork } from '../Artwork';
@@ -40,6 +39,10 @@ interface Props {
   onOpen: () => void;
   /** Makes the top edge a slim seek bar. Omit for a passive progress line. */
   onSeek?: (ms: number) => void;
+  /** Touch and narrow screens: a tap on the bar (a drag still scrubs) calls this, e.g. to change what the bar spans. See SeekBar. */
+  onTap?: () => void;
+  /** A line shown briefly above the bar's middle when it changes, e.g. the mode a tap chose. */
+  flash?: string;
   /** Chapter starts: ticks (when there is room) and a named hover preview. Only used with onSeek. */
   markers?: SeekMarker[];
   /** Holds the seek preview open at this position (ms) without a pointer. For stories and docs. */
@@ -61,6 +64,8 @@ interface Props {
   modeControl?: ReactNode;
   className?: string;
 }
+
+const noop = () => {};
 
 /**
  * A bottom player bar for an app frame. A progress line runs flush along its top edge (a slim seek bar when `onSeek`
@@ -93,6 +98,8 @@ export function MiniPlayer({
   onTogglePlay,
   onOpen,
   onSeek,
+  onTap,
+  flash,
   markers,
   previewAt,
   rate,
@@ -110,13 +117,16 @@ export function MiniPlayer({
   const playLabel = playing ? 'Pause' : 'Play';
   return (
     <section className={[styles.mini, className].filter(Boolean).join(' ')} aria-label="Now playing">
-      {onSeek ? (
+      {onSeek || onTap ? (
         <SeekBar
           slim
           className={styles.seek}
           position={position}
           duration={duration}
-          onSeek={onSeek}
+          onSeek={onSeek ?? noop}
+          readOnly={!onSeek}
+          onTap={onTap}
+          flash={flash}
           markers={markers}
           previewAt={previewAt}
           label={`Progress through ${title}`}
@@ -211,7 +221,6 @@ export function MiniPlayer({
                   <span className={styles.clock}>
                     {fmtTime(position)} / {fmtTime(duration)}
                   </span>
-                  <span className={styles.left}>{fmtLeft(duration - position)}</span>
                 </span>
               )
             )}

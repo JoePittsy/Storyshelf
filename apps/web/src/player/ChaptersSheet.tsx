@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ListRow, Sheet } from '@joepittsy/ui';
 import { fmtClock } from '../screens/bookHelpers';
 import { usePlayer } from './engine';
@@ -8,9 +9,14 @@ import styles from './ChaptersSheet.module.css';
 export function ChaptersSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const p = usePlayer();
   const { jumpTo } = usePlayerJump();
+  const list = useRef<HTMLUListElement>(null);
+  // Open at the chapter you are in, not the top of a long list.
+  useEffect(() => {
+    if (open) list.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'center' });
+  }, [open]);
   return (
     <Sheet open={open} onClose={onClose} title="Chapters" doneLabel="Done">
-      <ul className={styles.chapters}>
+      <ul ref={list} className={styles.chapters}>
         {p.chapters.map((c, i) => (
           <ListRow
             key={c.id}
@@ -18,6 +24,7 @@ export function ChaptersSheet({ open, onClose }: { open: boolean; onClose: () =>
             lead={<span aria-hidden="true">{i + 1}</span>}
             title={c.title}
             aside={fmtClock(c.start)}
+            asideWideOnly
             trailing={fmtClock(c.end - c.start, false)}
             current={i === p.chapterIndex}
             onClick={() => {

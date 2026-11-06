@@ -23,14 +23,23 @@
   transform-origin: left center;
   transition: transform 1s linear;
 }
-/* Seekable form: a 1.8em hit area (at least 32px) with its slim track on the top edge, reaching above and below it.
-   The preview rises above the bar, outside it, so nothing clips it. */
+/* Seekable form: the hit area lies wholly inside the bar, in the band of padding above the content row, so a tap on
+   the page just above the bar can never seek (and the row's own buttons below it keep their taps). Its slim track
+   sits in the middle of that band. The preview rises above the bar, outside it, so nothing clips it. */
 .mini .seek {
-  --hit: max(32px, 1.8em);
   position: absolute;
-  inset: calc(var(--hit) / -2) 0 auto;
-  height: var(--hit);
+  inset: 0 0 auto;
+  height: 0.75em;
+  min-height: 0;
   z-index: 1;
+}
+/* A finger needs more than that band. A tap here only names the progress mode (see SeekBar's onTap) and only a drag
+   scrubs, so a stray touch just above the bar can no longer move the listener's place: the area may reach above it. */
+@media (pointer: coarse), (width < 40em) {
+  .mini .seek {
+    inset: -0.6em 0 auto;
+    height: 1.5em;
+  }
 }
 
 .row {
@@ -241,10 +250,6 @@
 .clock {
   font-size: var(--fs-small);
   color: var(--text);
-}
-.left {
-  font-size: var(--fs-small);
-  color: var(--text-3);
 }
 
 @media (prefers-reduced-motion: reduce) {

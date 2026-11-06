@@ -89,6 +89,19 @@ export async function syncSession(
   return fresh;
 }
 
+/**
+ * PATCH /api/me/progress/:id: records a place with no playback session (ABS 2.37: `currentTime`, `duration`, `progress`;
+ * the server stamps `lastUpdate` itself). For a move made on a restored book before it has been played.
+ */
+export function saveProgress(libraryItemId: string, currentTime: number, duration: number): Promise<void> {
+  return absFetch<void>(`/api/me/progress/${libraryItemId}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ currentTime, duration, progress: duration > 0 ? Math.min(1, currentTime / duration) : 0 }),
+    keepalive: true,
+  });
+}
+
 /** POST /api/session/:id/close with keepalive: true. Never rejects (best effort). */
 export async function closeSession(s: PlaybackSession, p?: Progress): Promise<void> {
   try {

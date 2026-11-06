@@ -35,7 +35,8 @@ export function useUndoableJump(go: (seconds: number) => void) {
   );
 }
 
-const UNDO_MS = 8000;
+/** A jump can lose a long listen, so Undo stays long enough to reach for. */
+const UNDO_MS = 12000;
 
 /**
  * Every chapter move on the player (the chapter lists, previous/next buttons, the [ and ] keys) goes through here so

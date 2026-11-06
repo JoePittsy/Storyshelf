@@ -9,13 +9,15 @@ interface Props {
   aside?: ReactNode;
   /** Right-aligned figure at the end, e.g. a duration. Tabular. */
   trailing?: ReactNode;
+  /** Drops the aside under 40em, so a phone gives the width to the title (the trailing figure stays). */
+  asideWideOnly?: boolean;
   /** Marks the row as the current one: highlighted, and `aria-current="true"` for assistive tech. */
   current?: boolean;
   onClick: () => void;
 }
 
 /** A selectable row: a full-width button with a title and up to two right-aligned figures. Render inside a ul. */
-export function ListRow({ lead, title, aside, trailing, current, onClick }: Props) {
+export function ListRow({ lead, title, aside, asideWideOnly, trailing, current, onClick }: Props) {
   return (
     <li>
       <button
@@ -26,7 +28,9 @@ export function ListRow({ lead, title, aside, trailing, current, onClick }: Prop
       >
         {lead != null && <span className={`${styles.figure} ${styles.lead}`}>{lead}</span>}
         <span className={styles.title}>{title}</span>
-        {aside != null && <span className={styles.figure}>{aside}</span>}
+        {aside != null && (
+          <span className={`${styles.figure}${asideWideOnly ? ' ' + styles.wideOnly : ''}`}>{aside}</span>
+        )}
         {trailing != null && <span className={`${styles.figure} ${styles.trailing}`}>{trailing}</span>}
       </button>
     </li>

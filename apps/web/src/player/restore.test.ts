@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InProgressItem } from '../api/history';
 import type { Progress } from '../api/libraries';
-import { pickRestorable, restoredPatch, restoredSeek } from './restore';
+import { chooseStart, pickRestorable, refreshedPosition, restoredPatch, restoredSeek } from './restore';
 
 const inProgress = (id: string, extra: Partial<InProgressItem> = {}): InProgressItem => ({
   id,
@@ -23,7 +23,7 @@ const chapters = [
 describe('pickRestorable', () => {
   it('takes the most recently played book of this library, with where it was left', () => {
     const got = pickRestorable([inProgress('a'), inProgress('b')], prog([['a', {}], ['b', {}]]), 'lib1');
-    expect(got).toEqual({ id: 'a', title: 'Title a', author: 'An Author', duration: 1000, position: 200 });
+    expect(got).toEqual({ id: 'a', title: 'Title a', author: 'An Author', duration: 1000, position: 200, updatedAt: 0 });
   });
   it('skips other libraries, podcasts and hidden books', () => {
     const items = [
@@ -51,7 +51,7 @@ describe('pickRestorable', () => {
 
 describe('restoredPatch', () => {
   it('is a paused book at its place, flagged restored, in its chapter', () => {
-    const r = { id: 'a', title: 'T', author: 'A', duration: 1000, position: 450 };
+    const r = { id: 'a', title: 'T', author: 'A', duration: 1000, position: 450, updatedAt: 0 };
     expect(restoredPatch(r, '/cover', chapters)).toMatchObject({
       status: 'paused',
       restored: true,
@@ -68,5 +68,43 @@ describe('restoredSeek', () => {
     expect(restoredSeek(50, 1000, chapters)).toEqual({ position: 50, chapterIndex: 0 });
     expect(restoredSeek(5000, 1000, chapters).position).toBe(1000);
     expect(restoredSeek(-10, 1000, chapters).position).toBe(0);
+  });
+});
+
+describe('chooseStart', () => {
+  it("takes the server's place when nothing was moved here", () => {
+    expect(chooseStart(undefined, null, 1234)).toBe(1234);
+  });
+  it('a move made here since the restore beats the server', () => {
+    expect(chooseStart(undefined, 320, 1234)).toBe(320);
+  });
+  it('a start the caller named outright beats both', () => {
+    expect(chooseStart(0, 320, 1234)).toBe(0);
+  });
+  it('a move to the very start is still a move', () => {
+    expect(chooseStart(undefined, 0, 1234)).toBe(0);
+  });
+});
+
+describe('refreshedPosition', () => {
+  const snap = { id: 'a', updatedAt: 1000, movedHere: false };
+  const server = { id: 'a', position: 900, lastUpdate: 2000 };
+  it('moves to a later place for the same book', () => {
+    expect(refreshedPosition(snap, server)).toBe(900);
+  });
+  it('leaves the snapshot when the server is no newer', () => {
+    expect(refreshedPosition(snap, { ...server, lastUpdate: 1000 })).toBeNull();
+    expect(refreshedPosition(snap, { ...server, lastUpdate: 500 })).toBeNull();
+  });
+  it('leaves a place the listener moved here', () => {
+    expect(refreshedPosition({ ...snap, movedHere: true }, server)).toBeNull();
+  });
+  it('ignores another book, a missing record and a finished book', () => {
+    expect(refreshedPosition(snap, { ...server, id: 'b' })).toBeNull();
+    expect(refreshedPosition(snap, undefined)).toBeNull();
+    expect(refreshedPosition(snap, { ...server, isFinished: true })).toBeNull();
+  });
+  it('an unknown snapshot time (0) is refreshed by any recorded place', () => {
+    expect(refreshedPosition({ ...snap, updatedAt: 0 }, server)).toBe(900);
   });
 });

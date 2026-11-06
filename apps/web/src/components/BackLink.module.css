@@ -16,6 +16,7 @@
   .back {
     display: inline-flex;
     align-items: center;
+    gap: 0.35em; /* the space after the arrow, which a flex container drops */
     min-height: 44px;
     margin-bottom: 0.4em;
   }

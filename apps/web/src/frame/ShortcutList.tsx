@@ -6,7 +6,7 @@ const KEYS: [keys: string, does: string][] = [
   ['Left / Right', 'Skip back / forward'],
   ['[ / ]', 'Previous / next chapter'],
   ['U', 'Undo a chapter jump'],
-  ['/', 'Search the library'],
+  ['/', 'Search'],
   ['?', 'Show these shortcuts'],
 ];
 

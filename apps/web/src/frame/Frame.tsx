@@ -9,6 +9,7 @@ import { usePlayer } from '../player/engine';
 import { RestoreLastBook } from '../player/RestoreLastBook';
 import { appKeyAction } from '../player/shortcuts';
 import { usePlayerJump } from '../player/useUndoableJump';
+import { useToast } from '@joepittsy/ui';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { useRouteTrail } from './routeTrail';
 import styles from './Frame.module.css';
@@ -40,7 +41,7 @@ export function Frame() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [params] = useSearchParams();
-  const { data: libs = [] } = useLibraries();
+  const { data: libs = [], isPending: libsPending } = useLibraries();
   const current = pickLibrary(libs, params.get('library'), storedLibrary());
   // Opened from the account menu, whose panel has closed by then: focus goes back to the account button.
   const [help, setHelp] = useState<'menu' | 'key' | null>(null);
@@ -74,7 +75,7 @@ export function Frame() {
       <a href="#main" className={styles.skip} onClick={skipToContent}>
         Skip to content
       </a>
-      <RestoreLastBook libraryId={current} />
+      <RestoreLastBook libraryId={current} librariesPending={libsPending} />
       <GlobalKeys onSearch={focusSearch} onHelp={() => setHelp('key')} />
       <TopBar
         className={`${styles.bar}${immersive ? ' ' + styles.hidden : ''}`}
@@ -149,27 +150,33 @@ function useSearchFocus(goToLibrary: () => void, onLibrary: boolean) {
 }
 
 /**
- * The keyboard shortcuts that work on every route (the player's, "/" and "?"). Player keys need a book to act on; none
+ * The keyboard shortcuts that work on every route (the player's, "/" and "?"). Player keys need a book to act on, and a
+ * bare Space never starts a restored book (it says to press Play); none
  * of them fire while a sheet or dialog is open, which has its own keys. Its own component, so the frame doesn't
  * re-render with the player.
  */
 function GlobalKeys({ onSearch, onHelp }: { onSearch: () => void; onHelp: () => void }) {
   const p = usePlayer();
+  const { showToast } = useToast();
   const { previousChapter, nextChapter } = usePlayerJump();
-  const latest = useRef({ p, onSearch, onHelp, previousChapter, nextChapter });
+  const latest = useRef({ p, onSearch, onHelp, previousChapter, nextChapter, showToast });
   useEffect(() => {
-    latest.current = { p, onSearch, onHelp, previousChapter, nextChapter };
+    latest.current = { p, onSearch, onHelp, previousChapter, nextChapter, showToast };
   });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
       const action = appKeyAction(e);
       if (!action) return;
-      const { p, onSearch, onHelp, previousChapter, nextChapter } = latest.current;
+      const { p, onSearch, onHelp, previousChapter, nextChapter, showToast } = latest.current;
       if (action === 'search') onSearch();
       else if (action === 'help') onHelp();
       else if (!p.item) return;
-      else if (action === 'toggle') p.toggle();
+      else if (action === 'toggle') {
+        // A restored book has no session: a bare key never starts one, a play button or the lock screen does.
+        if (p.restored) showToast('Press Play to resume', 'info', { replaceKey: 'restore-hint' });
+        else p.toggle();
+      }
       else if (action === 'back') p.skip(-1);
       else if (action === 'forward') p.skip(1);
       else if (action === 'previousChapter') previousChapter();

@@ -7,12 +7,14 @@ import { diag } from './diag';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
 import { supportedMimeTypes } from './mime';
 import { isRepeatFailure, srcNotSupportedError } from './failure';
-import { restoredPatch, restoredSeek, type Restorable } from './restore';
+import type { Progress as LibraryProgress } from '../api/libraries';
+import { chooseStart, refreshedPosition, restoredPatch, restoredSeek, type Restorable } from './restore';
 import { createRetryOnce, decide, stalledFor, STALL_MS, type Intent } from './resume';
 import {
   UnsupportedFormatError,
   closeSession,
   openSession,
+  saveProgress,
   syncSession,
   trackUrl,
   type PlaybackSession,
@@ -97,6 +99,10 @@ const retry = createRetryOnce();
 let recovering = false;
 let token = 0; // bumped by every play()/stop() so a slow session open can tell it was superseded
 let lastRequest: { itemId: string; from?: number } | null = null;
+// A restored book has no session, so nothing here syncs it. These hold what Play needs to start from the right place.
+let movedHere: number | null = null; // book seconds: a deliberate seek, skip or chapter jump made since the restore
+let restoredAt = 0; // ms: when the server last heard of the place the snapshot shows
+let moveTimer: ReturnType<typeof setTimeout> | undefined;
 let syncChain: Promise<void> = Promise.resolve();
 let mimes: string[] | null = null;
 
@@ -294,8 +300,11 @@ function seekBook(t: number): void {
   if (!session && state.restored) {
     // Nothing is loaded: move the place Play will start from.
     const r = restoredSeek(t, state.duration, state.chapters);
-    if (lastRequest) lastRequest = { ...lastRequest, from: r.position };
+    movedHere = r.position;
     set(r);
+    // Nothing is syncing this book, so tell the server now: another device then sees the move, and it isn't a place only this tab knows.
+    clearTimeout(moveTimer);
+    moveTimer = setTimeout(flushMoved, MOVE_SAVE_MS);
     return;
   }
   if (!session || !audio) return;
@@ -306,6 +315,20 @@ function seekBook(t: number): void {
   set({ position: target, chapterIndex: chapterIndexAt(state.chapters, target) });
   if (state.status !== 'playing') void syncIfDue();
   mediaPosition();
+}
+
+const MOVE_SAVE_MS = 500;
+
+/** Send a move made on a session-less restored book as progress (PATCH /api/me/progress/:id). Best effort: Play still honours it. */
+function flushMoved(): void {
+  clearTimeout(moveTimer);
+  moveTimer = undefined;
+  if (movedHere === null || !state.restored || !state.item) return;
+  const id = state.item.id;
+  saveProgress(id, movedHere, state.duration).then(
+    () => emitSaved(),
+    (e: unknown) => diag.log('move not saved', errInfo(e)),
+  );
 }
 
 function accountPlayingTime(): number {
@@ -431,12 +454,14 @@ if (typeof document !== 'undefined') {
     if (document.visibilityState === 'hidden') {
       note('visibilitychange hidden');
       void syncIfDue();
+      flushMoved();
       diag.flush();
     } else wake('visibilitychange visible');
   });
   addEventListener('pagehide', () => {
     note('pagehide');
     void syncIfDue();
+    flushMoved();
     diag.flush();
   });
   addEventListener('pageshow', (e) => wake(`pageshow${e.persisted ? ' (from cache)' : ''}`));
@@ -469,6 +494,11 @@ export async function play(itemId: string, from?: number): Promise<void> {
     return;
   }
   // Everything up to the first await runs inside the click.
+  // A restored book starts from the server's place unless the listener moved it here since (see `chooseStart`).
+  const local = state.restored && state.item?.id === itemId ? movedHere : null;
+  clearTimeout(moveTimer);
+  moveTimer = undefined;
+  movedHere = null;
   const old = detach();
   unlock(a);
   const mine = ++token;
@@ -486,9 +516,10 @@ export async function play(itemId: string, from?: number): Promise<void> {
   }
   if (mine !== token) return void closeSession(s);
   session = s;
-  clock = startClock(from ?? s.currentTime);
+  const startAt = chooseStart(from, local, s.currentTime);
+  clock = startClock(startAt);
   const item: PlayerItem = { id: itemId, title: s.displayTitle, author: s.displayAuthor, coverUrl: coverFor(itemId) };
-  const start = clampSeek(from ?? s.currentTime, totalDuration(s.audioTracks));
+  const start = clampSeek(startAt, totalDuration(s.audioTracks));
   const { track: tr, offset } = locate(s.audioTracks, start);
   set({
     item,
@@ -509,9 +540,28 @@ export async function play(itemId: string, from?: number): Promise<void> {
 export function restore(r: Restorable, chapters: Chapter[]): void {
   if (state.status !== 'idle' || state.item) return;
   const patch = restoredPatch(r, coverFor(r.id), chapters);
-  lastRequest = { itemId: r.id, from: r.position };
+  lastRequest = { itemId: r.id }; // no `from`: Play starts from the server's place, or from a move made here
+  movedHere = null;
+  restoredAt = r.updatedAt;
   set(patch);
   setMetadata(patch.item, chapters[patch.chapterIndex]?.title ?? '');
+}
+
+/**
+ * The server's progress has been fetched again (the tab woke, or got focus): if it has a later place for the restored
+ * book than the snapshot, show that, so the mini player never reads as truth with another device's place behind it.
+ * A place moved here is left alone.
+ */
+export function refreshRestored(progress: Map<string, LibraryProgress>): void {
+  if (!state.restored || !state.item) return;
+  const p = progress.get(state.item.id);
+  const server = p && { id: state.item.id, position: p.currentTime ?? 0, lastUpdate: p.lastUpdate ?? 0, isFinished: p.isFinished };
+  const pos = refreshedPosition({ id: state.item.id, updatedAt: restoredAt, movedHere: movedHere !== null }, server);
+  if (pos === null || !server) return;
+  restoredAt = server.lastUpdate;
+  const r = restoredSeek(pos, state.duration, state.chapters);
+  set(r);
+  setMetadata(state.item, state.chapters[r.chapterIndex]?.title ?? '');
 }
 
 export function toggle(): void {
@@ -557,6 +607,8 @@ export async function stop(): Promise<void> {
     audio.load();
   }
   lastRequest = null;
+  movedHere = null;
+  clearTimeout(moveTimer);
   set({ ...initial(), rate: state.rate, skipBack: state.skipBack, skipForward: state.skipForward });
   updateMetadata(null, '');
   updatePlaybackState('none');

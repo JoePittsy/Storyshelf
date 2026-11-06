@@ -1,5 +1,6 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePlayer } from './engine';
+import { modeFlash, nextMode } from './modeTap';
 import { progressWindow, resolveMode, type ProgressMode, type ProgressWindow } from './progressWindow';
 
 const KEY = 'storyshelf.progressMode';
@@ -70,4 +71,26 @@ export function useProgress(): {
     sleepActive,
     window: progressWindow(mode, p),
   };
+}
+
+/**
+ * Tapping the progress bar (touch and narrow screens) steps to the next mode. Returns the line to flash above the bar,
+ * (`flash`); the caller also reads it out in a live region, so a tap is never silent.
+ */
+export function useModeTap(): { flash: string | undefined; onTap: () => void } {
+  const p = usePlayer();
+  const { mode, setMode, sleepActive } = useProgress();
+  const [flash, setFlash] = useState<string | undefined>(undefined);
+  const latest = useRef({ p, mode, sleepActive });
+  useEffect(() => {
+    latest.current = { p, mode, sleepActive };
+  });
+  const onTap = useCallback(() => {
+    const { p, mode, sleepActive } = latest.current;
+    const next = nextMode(mode, { sleepActive, hasChapters: p.chapters.length > 0 });
+    setMode(next);
+    const w = progressWindow(next, p);
+    setFlash(modeFlash(next, w.label));
+  }, [setMode]);
+  return { flash, onTap };
 }

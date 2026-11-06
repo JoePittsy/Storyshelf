@@ -19,8 +19,7 @@ export function BackLink() {
   };
   return (
     <Link to="/" className={styles.back} aria-label={`Back to ${label}`} onClick={onClick}>
-      <span aria-hidden="true">← </span>
-      {label}
+      <span aria-hidden="true">←</span> {label}
     </Link>
   );
 }
