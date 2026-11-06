@@ -9,6 +9,7 @@ import { play } from './player/engine';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { PlayerToasts } from './player/PlayerToasts';
 import { AuthorList } from './screens/AuthorList';
+import { History, HistoryFinished, HistoryLog, HistoryStats } from './screens/History';
 import { Library } from './screens/Library';
 import { NarratorList } from './screens/NarratorList';
 import { NarratorRedirect } from './screens/NarratorRedirect';
@@ -55,13 +56,18 @@ function PlayableBook() {
   return <Book onPlay={start} onChapter={start} />;
 }
 
+/** The library with its Continue listening tiles wired to the player (REQ-54). */
+function PlayableLibrary() {
+  return <Library onPlay={(id) => void play(id)} />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/sign-in" element={<SignIn />} />
       <Route element={<RequireSession />}>
         <Route element={<Frame />}>
-          <Route path="/" element={<Library />} />
+          <Route path="/" element={<PlayableLibrary />} />
           <Route path="/authors" element={<AuthorList />} />
           <Route path="/narrators" element={<NarratorList />} />
           <Route path="/series" element={<SeriesList />} />
@@ -70,6 +76,11 @@ function AppRoutes() {
           <Route path="/now-playing" element={<NowPlaying />} />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<Series />} />
+          <Route path="/history" element={<History />}>
+            <Route index element={<HistoryLog />} />
+            <Route path="finished" element={<HistoryFinished />} />
+            <Route path="stats" element={<HistoryStats />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

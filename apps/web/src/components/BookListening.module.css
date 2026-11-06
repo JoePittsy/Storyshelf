@@ -1,0 +1,13 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.more {
+  align-self: flex-start;
+}

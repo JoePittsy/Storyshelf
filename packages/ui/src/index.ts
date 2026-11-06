@@ -54,3 +54,6 @@ export { PersonLink } from './components/PersonLink';
 export { FilterChip } from './components/FilterChip';
 export { SegmentedControl } from './components/SegmentedControl';
 export type { SegmentOption } from './components/SegmentedControl';
+export { ActivityRow } from './components/ActivityRow';
+export { StatGrid } from './components/StatGrid';
+export type { Stat } from './components/StatGrid';

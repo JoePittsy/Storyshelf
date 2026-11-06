@@ -29,6 +29,7 @@ import {
 } from './bookHelpers';
 import { BackLink } from '../components/BackLink';
 import { useCoverDock } from './useCoverDock';
+import { BookListening } from '../components/BookListening';
 import styles from './Book.module.css';
 
 interface Props {
@@ -204,6 +205,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
               </ExpandableText>
             </SectionCard>
           )}
+
+          <BookListening item={item} />
 
           {chapters.length > 0 && (
             <SectionCard title="Chapters">

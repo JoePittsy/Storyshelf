@@ -6,7 +6,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: var(--rank-col) minmax(5em, 9em) minmax(3em, 1fr) auto minmax(0, max-content);
+  grid-template-columns: var(--rank-col) minmax(5em, var(--name-max, 9em)) minmax(3em, 1fr) auto minmax(0, max-content);
   align-items: center;
   column-gap: 0.7em;
   font-size: var(--fs-label);

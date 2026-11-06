@@ -1,0 +1,18 @@
+.shelf {
+  container-type: inline-size;
+}
+/* Phone: two and a bit across, so the next tile peeks and the row reads as scrollable. */
+.tile {
+  flex: none;
+  width: 9.5em;
+}
+@container (min-width: 40em) {
+  .tile {
+    width: 11em;
+  }
+}
+@container (min-width: 72em) {
+  .tile {
+    width: 12.5em;
+  }
+}

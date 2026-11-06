@@ -14,6 +14,15 @@ import { Book } from './Book';
 
 const absFetch = vi.mocked(auth.absFetch);
 
+/** The book, and an empty listening history for the "Your listening" section. */
+const serve = (book: unknown) =>
+  absFetch.mockImplementation((path: string) => {
+    if (path.startsWith('/api/me/item/listening-sessions'))
+      return Promise.resolve({ sessions: [], total: 0, numPages: 0, page: 0, itemsPerPage: 100 });
+    if (path === '/api/me/listening-stats') return Promise.resolve({ totalTime: 0, days: {}, today: 0, items: {} });
+    return Promise.resolve(book);
+  });
+
 const item = {
   id: 'li_1',
   updatedAt: 1,
@@ -57,7 +66,7 @@ afterEach(() => {
 
 describe('Book screen', () => {
   it('REQ-13/14 shows details, time left and a Resume button', async () => {
-    absFetch.mockResolvedValue(item);
+    serve(item);
     const { onPlay } = renderBook();
     expect(await screen.findByRole('heading', { level: 1, name: 'The Hobbit' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Rob Inglis, open' }).length).toBeGreaterThan(0);
@@ -68,7 +77,7 @@ describe('Book screen', () => {
   });
 
   it('REQ-15 marks the current chapter and selecting one reports its start', async () => {
-    absFetch.mockResolvedValue(item);
+    serve(item);
     const { onChapter } = renderBook();
     const current = await screen.findByRole('button', { name: /Roast Mutton/ });
     expect(current).toHaveAttribute('aria-current', 'true');
@@ -92,7 +101,7 @@ describe('Book screen', () => {
   }, 10000);
 
   it('REQ-31/REQ-36 links author, narrator and series names to their pages, encoding the narrator', async () => {
-    absFetch.mockResolvedValue({
+    serve({
       ...item,
       media: {
         ...item.media,

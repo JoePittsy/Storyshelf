@@ -37,3 +37,10 @@ export const LongTitle: Story = {
   },
 };
 export const TitleOnly: Story = { args: { sub: null } };
+export const WithPlayButton: Story = {
+  args: {
+    onPlay: fn(),
+    href: '/book/1',
+    overlay: <ProgressBar value={0.14} label="Progress through Golden Hour" variant="overlay" />,
+  },
+};
