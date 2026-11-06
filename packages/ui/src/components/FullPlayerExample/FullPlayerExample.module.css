@@ -1,0 +1,14 @@
+/* Story-only styling for the cover in the composition. */
+.art {
+  aspect-ratio: 1;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--bg-1);
+  box-shadow: var(--hero-shadow);
+}
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

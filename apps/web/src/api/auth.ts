@@ -123,7 +123,13 @@ export async function absFetch<T>(path: string, init: RequestInit = {}): Promise
     await refreshOnce();
     res = await send();
   }
-  return (await check(res)).json() as Promise<T>;
+  const text = await (await check(res)).text();
+  // ABS answers some writes (sync, close) with the text "OK"; treat non-JSON or empty as no value.
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return undefined as T;
+  }
 }
 
 export function onSignedOut(cb: () => void): () => void {

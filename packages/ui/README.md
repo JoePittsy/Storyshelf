@@ -39,7 +39,7 @@ export function App() {
 
 `react`, `react-dom` and `@fontsource-variable/manrope` are peer dependencies. The package does not bundle the font (so its SIL OFL 1.1 licence travels with the font package, and the CSS stays small); `--font-sans` falls back to the system UI fonts if you skip the import. Tokens are plain custom properties on `:root`, so a consumer can override any of them (start with `--tint`).
 
-Playback components (`SeekBar`, `WavyProgress`, `TransportButtons`) are stateless: pass `position` and `duration` in milliseconds and handlers, and keep playback state in the app.
+Playback components (`SeekBar`, `WavyProgress`, `TransportButtons`, `MiniPlayer`, `SkipButton`, `SpeedControl`, `SleepTimerControl`) are stateless: pass `position` and `duration` in milliseconds and handlers, and keep playback state in the app.
 
 ### From source, inside this workspace
 

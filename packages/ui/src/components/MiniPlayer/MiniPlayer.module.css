@@ -1,0 +1,125 @@
+.mini {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.7em 0.8em calc(0.7em + env(safe-area-inset-bottom));
+  background: var(--material-bg);
+  -webkit-backdrop-filter: var(--material-filter);
+  backdrop-filter: var(--material-filter);
+  box-shadow: var(--material-edge);
+  color: var(--text);
+}
+
+/* The thin progress line along the top edge: scaled, not resized, so it stays on the compositor. */
+.line {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 0.2em;
+  background: var(--track);
+  overflow: hidden;
+}
+.fill {
+  width: 100%;
+  height: 100%;
+  background: var(--on-art);
+  transform-origin: left center;
+  transition: transform 1s linear;
+}
+
+.open {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  flex: 1;
+  min-width: 0;
+  padding: 0.2em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.art {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3.2em;
+  height: 3.2em;
+  border-radius: var(--r-thumb);
+  background: var(--bg-1);
+  overflow: hidden;
+}
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.noArt {
+  color: var(--text-3);
+  font-size: var(--fs-glyph-sm);
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  min-width: 0;
+}
+.title,
+.subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.title {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text);
+}
+.subtitle {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+
+/* Play-pause: the room inverted, as a circle (the same as TransportButtons). */
+.play {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.6em;
+  height: 2.6em;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: var(--text);
+  color: var(--bg);
+  cursor: pointer;
+}
+.spinner {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+  /* No spin: a dimmed, still ring, with aria-busy carrying the state. */
+  .spinner {
+    animation: none;
+    opacity: 0.6;
+  }
+}

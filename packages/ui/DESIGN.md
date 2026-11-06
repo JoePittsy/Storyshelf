@@ -321,10 +321,14 @@ Square art (ImageTile, 0.7–0.9em radius, or a circle for people) over a two-li
 TopBar is a sticky header on the frosted material with start, centre and end slots; it pads its top by the safe-area inset and has no tokens of its own.
 
 ### Playback
-Three stateless pieces; the app owns playback and passes values in.
+Stateless pieces (SeekBar, WavyProgress and EqBars first, then the controls below); the app owns playback and passes values in.
 - **SeekBar:** a slider (`position`, `duration`, `onSeek`). A tall hit area around a thin `--track` line, which grows on hover; click to scrub, arrow keys move 5 seconds, Home and End jump. With no duration it is disabled. **PlaybackTime** and **PlaybackRemaining** print the times in tabular numerals.
 - **WavyProgress:** the played part is a 0.32em `--title-rest` stroke shaped as a sine wave, 0.16em amplitude and 2em wavelength, travelling slowly forward, its height ramping up from flat over the first wavelength so a just-started item shows a short flat line; a 0.35em gap; then the flat 0.32em `--track`. Paused, the wave eases to a straight line over 0.6s and stops; under reduced motion it is a still, flat line.
 - **EqBars:** three bars on the compositor meaning "this is the current item". Still when paused and under reduced motion.
+- **SkipButton:** a circular arrow with the seconds inside it, in two sizes (2.6em, 3.4em), quiet like the transport buttons. Named "Back 30 seconds" or "Forward 30 seconds".
+- **SpeedControl and SleepTimerControl:** a quiet pill trigger ("1.3×", or a moon and "Sleep", "12:30", "End of chapter") that opens a native popover on the frosted material. The popover is in the top layer, so nothing clips it, closes on Esc and outside click, and is placed with CSS anchor positioning, flipping to stay on screen. Speed is a range slider plus preset pills; sleep is a list of options ending in "Off". Remaining time reads m:ss, or h:mm:ss from an hour.
+- **MiniPlayer:** the frosted material in a bottom slot, padded by the safe-area inset. A 0.2em progress line runs along its top edge; art and title are one button ("Open player"), then skip back and the inverted play-pause circle, which shows a spinner (and `aria-busy`) while loading.
+- **Sheet:** the Dialog surface as a bottom sheet under 40em wide (full width, rounded on top, safe-area padding) and a centred panel above that. It is a native `<dialog>`, so Esc and a backdrop click close it.
 
 ### Dialog
 One modal (Dialog): a native `<dialog>` opened with `showModal()`, so the page behind is inert, Tab stays inside, Esc closes it and focus returns to the opener. Raised Navy, 1.2em radius, the Floating shadow, widths of 26, 36 or 64em. The sentence-case title names the dialog, beside a 2.2em round close button. The action row is right-aligned: secondary actions first, the primary or danger pill last. An outside click closes it, except in a form dialog, so a stray click can't lose typed text.
