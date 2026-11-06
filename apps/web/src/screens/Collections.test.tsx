@@ -156,12 +156,12 @@ describe('Series page', () => {
     expect(screen.getByTestId('where')).toHaveTextContent('/author/a9');
   });
 
-  it('REQ-30 Continue plays the book in progress from its saved place', async () => {
+  it('REQ-30 Continue plays the book in progress from where the server has it', async () => {
     serve(seriesRoutes);
     const onPlay = vi.fn();
     renderAt('/series/s1', onPlay);
     await userEvent.click(await screen.findByRole('button', { name: /^Continue #1/ }));
-    expect(onPlay).toHaveBeenCalledWith('b1', 1);
+    expect(onPlay).toHaveBeenCalledWith('b1', undefined); // no start named: the player carries on from the server's place
     // It plays; it does not open the book page.
     expect(screen.getByTestId('where')).toHaveTextContent('/series/s1');
   });

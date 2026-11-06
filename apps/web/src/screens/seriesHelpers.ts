@@ -124,11 +124,10 @@ export function nextBookLabel(
   return `${head} · ${fmtLeft((duration - at) * 1000)}`;
 }
 
-/** Where the series button plays from: the saved place for "Continue", the top otherwise (undefined: the player decides). */
-export function nextBookStart(
-  next: { label: NextLabel },
-  progress: Map<string, { currentTime?: number }>,
-  id: string,
-): number | undefined {
-  return next.label === 'Continue' ? progress.get(id)?.currentTime : 0;
+/**
+ * Where the series button plays from: the top for a book to start or hear again, and nowhere in particular for
+ * "Continue" (undefined), so the player carries on from the server's place like every other Resume button.
+ */
+export function nextBookStart(next: { label: NextLabel }): number | undefined {
+  return next.label === 'Continue' ? undefined : 0;
 }

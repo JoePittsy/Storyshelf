@@ -76,7 +76,7 @@ describe('Book screen', () => {
     expect(screen.getByText('Chapter 2 of 2')).toBeInTheDocument();
     expect(screen.getByText('There and back again.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Resume · 8h 57m left' }));
-    expect(onPlay).toHaveBeenCalledWith(3730);
+    expect(onPlay).toHaveBeenCalledWith(undefined); // carries on from the server's place
   });
 
   it('REQ-15 marks the current chapter and selecting one reports its start', async () => {

@@ -56,7 +56,7 @@ export function App() {
 /** The book screen with its play buttons wired to the player (REQ-14, REQ-15). */
 function PlayableBook() {
   const { id = '' } = useParams();
-  const start = (from: number) => void play(id, from);
+  const start = (from?: number) => void play(id, from);
   return <Book onPlay={start} onChapter={start} />;
 }
 

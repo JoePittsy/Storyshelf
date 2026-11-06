@@ -24,7 +24,6 @@ import {
   descriptionSource,
   fmtClock,
   fmtLong,
-  playFrom,
   playLabel,
   sanitiseDescription,
 } from './bookHelpers';
@@ -38,7 +37,8 @@ import { BookListening } from '../components/BookListening';
 import styles from './Book.module.css';
 
 interface Props {
-  onPlay?: (fromSeconds: number) => void;
+  /** `fromSeconds` left out: carry on where the server (or the player) has it. */
+  onPlay?: (fromSeconds?: number) => void;
   onChapter?: (startSeconds: number) => void;
 }
 
@@ -188,7 +188,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           <ProgressBar value={now.isFinished ? 1 : now.progress} label={`Progress through ${m.title}`} />
           <p className={styles.line}>{status}</p>
         </div>
-        <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playFrom(resume)))}>
+        <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playLabel(resume) === 'Resume' ? undefined : 0))}>
           {label}
         </PillButton>
       </HeroBand>

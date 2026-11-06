@@ -108,11 +108,10 @@ describe('nextBook', () => {
 });
 
 describe('nextBookStart', () => {
-  it('plays from the saved place when continuing, and from the top otherwise', () => {
-    const progress = new Map([['b', { currentTime: 4100 }]]);
-    expect(nextBookStart({ label: 'Continue' }, progress, 'b')).toBe(4100);
-    expect(nextBookStart({ label: 'Start' }, progress, 'b')).toBe(0);
-    expect(nextBookStart({ label: 'Listen again' }, progress, 'b')).toBe(0);
+  it("carries on from the server's place when continuing (no start named), and from the top otherwise", () => {
+    expect(nextBookStart({ label: 'Continue' })).toBeUndefined();
+    expect(nextBookStart({ label: 'Start' })).toBe(0);
+    expect(nextBookStart({ label: 'Listen again' })).toBe(0);
   });
 });
 

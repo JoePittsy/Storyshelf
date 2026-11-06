@@ -42,7 +42,10 @@ export function Series({ onPlay }: Props) {
       ).map((t, i) => ({ item: t.item, progress: t.progress, badge: sequenceBadge(books[i]?.sequence ?? null) })),
     [books, progress.data],
   );
-  const firstCover = books[0] ? coverUrl(books[0].item) : null;
+  const next = nextBook(books, progress.data ?? new Map());
+  // The art is the book the button continues, not book one.
+  const heroBook = next?.book.item ?? books[0]?.item;
+  const firstCover = heroBook ? coverUrl(heroBook) : null;
   // The cover's colour washes the hero and, via the frame, the page ground, as on the book page.
   const wash = usePanelColor(firstCover);
   const description = useMemo(
@@ -69,7 +72,6 @@ export function Series({ onPlay }: Props) {
   const ids = authorIds.data;
   // Link only when every name resolves to an author; a half-linked credit reads as broken.
   const linkable = !!ids && names.length > 0 && names.every((n) => ids.has(n));
-  const next = nextBook(books, progress.data ?? new Map());
   const count = books.length;
   const playingNext = !!next && player.item?.id === next.book.item.id && player.status === 'playing';
 
@@ -107,7 +109,7 @@ export function Series({ onPlay }: Props) {
             onClick={() =>
               playingNext
                 ? player.toggle()
-                : onPlay?.(next.book.item.id, nextBookStart(next, progress.data ?? new Map(), next.book.item.id))
+                : onPlay?.(next.book.item.id, nextBookStart(next))
             }
           >
             {playingNext ? 'Pause' : nextBookLabel(next, progress.data ?? new Map())}
