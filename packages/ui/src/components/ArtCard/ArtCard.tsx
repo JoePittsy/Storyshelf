@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { useImageFallback } from '../../hooks/useImageFallback';
 import { AddButton } from '../AddButton';
+import { Artwork } from '../Artwork';
 import styles from './ArtCard.module.css';
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   sub?: ReactNode;
   /** Cover image: shown first, so the card is never empty. */
   imageUrl?: string | null;
+  /** `contain` shows the whole cover over a blurred copy of itself. Default `cover`. The photo always crops (faces). */
+  artFit?: 'cover' | 'contain';
   /** Second image (a portrait, say): fades in over the cover when it arrives, so a late photo never reshuffles the card. */
   photoUrl?: string | null;
   /** The whole card is one button. */
@@ -43,6 +46,7 @@ export function ArtCard({
   title,
   sub,
   imageUrl,
+  artFit = 'cover',
   photoUrl,
   onOpen,
   openLabel,
@@ -77,7 +81,13 @@ export function ArtCard({
       onContextMenu={onContextMenu}
       onMouseEnter={onMouseEnter}
     >
-      {cover && !photoIn && <img className={styles.fill} src={cover} alt="" loading="lazy" onError={onCoverError} />}
+      {cover &&
+        !photoIn &&
+        (artFit === 'contain' ? (
+          <Artwork src={cover} fit="contain" className={styles.fill} placeholder={null} />
+        ) : (
+          <img className={styles.fill} src={cover} alt="" loading="lazy" onError={onCoverError} />
+        ))}
       {photo && (
         <img
           className={`${styles.fill} ${styles.photo}`}

@@ -69,14 +69,15 @@ export function createMorphOverlay({ src, color }: { src?: string; color?: strin
   const blur = node('filter', { id: `${id}-b`, x: '-20%', y: '-20%', width: '140%', height: '140%' }, defs);
   node('feGaussianBlur', { stdDeviation: '10' }, blur);
 
-  node('path', {}, svg);
-  const path = svg.lastChild as SVGPathElement;
-  path.setAttribute('fill', `url(#${id}-g)`);
+  const path = node('path', { fill: `url(#${id}-g)` }, svg);
+  // The images are also clipped to the blob, so a half-faded square never shows outside the liquid.
+  const blobClip = node('path', {}, node('clipPath', { id: `${id}-blob` }, defs));
+  const covers = node('g', { 'clip-path': `url(#${id}-blob)` }, svg);
 
   const square = (name: string) => {
     const clip = node('clipPath', { id: `${id}-${name}` }, defs);
     const clipRect = node('rect', {}, clip);
-    const g = node('g', { 'clip-path': `url(#${id}-${name})` }, svg);
+    const g = node('g', { 'clip-path': `url(#${id}-${name})` }, covers);
     let images: SVGImageElement[] = [];
     if (src) {
       // A blurred copy fills behind the contained cover, matching the artwork's own contain treatment.
@@ -104,6 +105,7 @@ export function createMorphOverlay({ src, color }: { src?: string; color?: strin
     update(a: MorphBox, b: MorphBox, t: number) {
       const shape = morphShape(a, b, t);
       path.setAttribute('d', shape.d);
+      blobClip.setAttribute('d', shape.d);
       const [x1, y1, x2, y2] = shape.axis;
       for (const [k, v] of Object.entries({ x1, y1, x2, y2 })) grad.setAttribute(k, String(v));
       place(from, shape.from, shape.fromOpacity);
@@ -125,7 +127,11 @@ export function morphBetween(from: Element, to: Element, opts: MorphOptions = {}
   let a = measureBox(from);
   let b = measureBox(to);
   if (!a || !b) return Promise.resolve();
-  const src = opts.src ?? from.querySelector('img')?.currentSrc ?? to.querySelector('img')?.currentSrc ?? undefined;
+  const src =
+    opts.src ??
+    from.querySelector<HTMLImageElement>('img:not([aria-hidden])')?.currentSrc ??
+    to.querySelector<HTMLImageElement>('img:not([aria-hidden])')?.currentSrc ??
+    undefined;
 
   return new Promise((resolve) => {
     const hidden = [from, to].filter((el): el is HTMLElement => el instanceof HTMLElement);

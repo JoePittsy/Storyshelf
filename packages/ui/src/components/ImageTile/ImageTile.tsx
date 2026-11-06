@@ -12,6 +12,8 @@ interface Props {
   imageUrl?: string | null;
   /** Circles for people; squares for everything else. */
   circular?: boolean;
+  /** `cover` crops the art to the square (default); `contain` shows a whole cover over a blurred copy of itself. */
+  artFit?: 'cover' | 'contain';
   /** md: roomy shelf tile. sm: compact tile for three-up groups. */
   size?: 'md' | 'sm';
   onOpen: () => void;
@@ -36,6 +38,7 @@ export function ImageTile({
   meta,
   imageUrl,
   circular,
+  artFit = 'cover',
   size = 'md',
   onOpen,
   href,
@@ -61,7 +64,7 @@ export function ImageTile({
     <div className={`${styles.tile} ${size === 'sm' ? styles.sm : styles.md}`} onMouseEnter={onHover}>
       <Main className={styles.main} {...mainProps}>
         <span className={`${styles.art} ${circular ? styles.round : ''}`} aria-hidden="true">
-          <Artwork src={imageUrl} placeholderClassName={styles.ph} />
+          <Artwork src={imageUrl} fit={artFit} placeholderClassName={styles.ph} />
           {overlay}
         </span>
         <span className={styles.title}>{title}</span>

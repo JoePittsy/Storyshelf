@@ -40,6 +40,7 @@ export function BookGrid({ tiles, onEndReached }: Props) {
               sub={item.media.metadata.authorName}
               meta={meta}
               imageUrl={coverUrl(item)}
+              artFit="contain"
               href={`/book/${item.id}`}
               onOpen={() => void navigate(`/book/${item.id}`)}
               overlay={

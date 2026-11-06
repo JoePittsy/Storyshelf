@@ -66,7 +66,7 @@ export function Series() {
       <HeroBand
         kind="Series"
         title={series.data.name}
-        art={<Artwork src={first ? coverUrl(first.item) : null} placeholderClassName={styles.ph} lazy={false} />}
+        art={<Artwork src={first ? coverUrl(first.item) : null} fit="contain" placeholderClassName={styles.ph} lazy={false} />}
       >
         {names.length > 0 && (
           <p className={styles.line}>

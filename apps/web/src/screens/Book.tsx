@@ -158,7 +158,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         art={
           // Hidden, not removed, while docked so the hero doesn't reflow.
           <div ref={setCoverEl} className={styles.hero} style={docked ? { visibility: 'hidden' } : undefined}>
-            <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
+            <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
           </div>
         }
         title={m.title}
@@ -188,7 +188,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           <SectionCard className={styles.side} title="Details">
             {docked && (
               <div className={styles.docked} aria-hidden="true" ref={dockRef}>
-                <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
+                <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
               </div>
             )}
             <DetailList items={details} />

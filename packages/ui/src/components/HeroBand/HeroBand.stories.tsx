@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { covers } from '../../../.storybook/fixtures';
+import { covers, portraitCover } from '../../../.storybook/fixtures';
+import { Artwork } from '../Artwork';
 import { PersonChip } from '../PersonChip';
 import { HeroBand } from './HeroBand';
 
@@ -29,6 +30,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 export const NoWash: Story = { args: { wash: null } };
+
+const art = (src: string, fit: 'cover' | 'contain') => <Artwork src={src} fit={fit} lazy={false} />;
+export const SquareCover: Story = { args: { art: art(covers.ocean, 'cover') } };
+export const SquareContain: Story = { args: { art: art(covers.ocean, 'contain') } };
+/** A 2:3 print cover in the square frame: `cover` crops the edge text. */
+export const PortraitCover: Story = { args: { art: art(portraitCover, 'cover'), wash: '217, 164, 65' } };
+/** The whole cover shows over a blurred copy of itself; the frame stays square. */
+export const PortraitContain: Story = { args: { art: art(portraitCover, 'contain'), wash: '217, 164, 65' } };
 export const NoArt: Story = {
   args: {
     art: (

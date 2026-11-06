@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { covers } from '../../../.storybook/fixtures';
+import { covers, portraitCover } from '../../../.storybook/fixtures';
 import { SegmentedControl } from '../SegmentedControl';
 import { MiniPlayer } from './MiniPlayer';
 
@@ -140,7 +140,13 @@ export const Phone375ManyChapters: Story = {
 export const Paused: Story = { args: { playing: false, markers: chapters(12) }, decorators: frame(1440) };
 /** Loading or buffering: a spinner on the play button, which is marked aria-busy. */
 export const Busy: Story = { args: { busy: true, playing: false, markers: chapters(12) }, decorators: frame(1440) };
-export const NoArt: Story = { args: { art: undefined, markers: chapters(12) }, decorators: frame(1440) };
+export const SquareCover: Story = { args: { art: covers.sunset, artFit: 'cover' }, decorators: frame(1440) };
+export const SquareContain: Story = { args: { art: covers.sunset, artFit: 'contain' }, decorators: frame(1440) };
+/** A 2:3 print cover in the 3.2em square: `cover` crops the edge text. */
+export const PortraitCover: Story = { args: { art: portraitCover, artFit: 'cover' }, decorators: frame(1440) };
+/** The whole cover shows over a blurred copy of itself. */
+export const PortraitContain: Story = { args: { art: portraitCover, artFit: 'contain' }, decorators: frame(1440) };
+export const NoArt: Story ={ args: { art: undefined, markers: chapters(12) }, decorators: frame(1440) };
 /** The preview held open at 31:00, clamped inside the bar. */
 export const PreviewOpen: Story = { args: { markers: chapters(12), previewAt: 1860000 }, decorators: frame(1440) };
 /** Under prefers-reduced-transparency the bar is the same: it is already an opaque surface. */

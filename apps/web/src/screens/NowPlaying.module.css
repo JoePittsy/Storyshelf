@@ -14,6 +14,7 @@
   width: 100%;
 }
 .art {
+  position: relative;
   width: min(100%, 22em);
   aspect-ratio: 1;
   overflow: hidden;

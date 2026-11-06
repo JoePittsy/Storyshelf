@@ -36,6 +36,7 @@ export function ContinueShelf({ libraryId, onPlay }: Props) {
             title={item.media.metadata.title}
             sub={item.media.metadata.authorName}
             imageUrl={coverUrl(item)}
+            artFit="contain"
             href={`/book/${item.id}`}
             onOpen={() => void navigate(`/book/${item.id}`)}
             onPlay={() => onPlay(item.id)}

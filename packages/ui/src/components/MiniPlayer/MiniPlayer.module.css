@@ -95,6 +95,7 @@
   border-radius: var(--r-thumb);
   background: var(--bg);
   overflow: hidden;
+  position: relative;
 }
 .img {
   width: 100%;

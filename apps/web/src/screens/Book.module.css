@@ -11,6 +11,8 @@
 }
 .hero,
 .docked {
+  /* the named view-transition frame: Artwork's contain layers sit inside it, not in the outer wrap */
+  position: relative;
   width: 100%;
   height: 100%;
   border-radius: inherit;
@@ -25,12 +27,6 @@
   border-radius: var(--r-art-card);
   background: var(--bg-1);
   box-shadow: var(--hero-shadow);
-}
-.docked > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 .line {
   margin: 0;

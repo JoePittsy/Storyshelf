@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import styles from './HeroBand.module.css';
 
 interface Props {
-  /** The artwork cell: an img, a mosaic, a placeholder. Fills a 16em rounded square. */
+  /** The artwork cell: an img, a mosaic, a placeholder. Fills a 16em rounded square. For a book cover pass `<Artwork fit="contain" />`: the whole cover shows over a blurred copy, and the square frame (positioned, clipped) is unchanged. */
   art: ReactNode;
   /** Small muted line above the title: "Collection", "Playlist". */
   kind?: string;
