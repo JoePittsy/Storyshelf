@@ -16,6 +16,7 @@ import {
   TransportButtons,
 } from '@joepittsy/ui';
 import { useBook } from '../api/items';
+import { chapterMarkers } from '../player/chapters';
 import { usePlayer } from '../player/engine';
 import { SKIP_OPTIONS } from '../player/settings';
 import { fmtClock } from './bookHelpers';
@@ -68,7 +69,7 @@ export function NowPlaying() {
           duration={p.duration * 1000}
           onSeek={(ms) => p.seek(ms / 1000)}
           label={`Progress through ${p.item.title}`}
-          markers={p.chapters.map((c, i) => ({ at: c.start * 1000, label: `Chapter ${i + 1}: ${c.title}` }))}
+          markers={chapterMarkers(p.chapters)}
         />
         <div className={styles.times}>
           <PlaybackTime ms={p.position * 1000} />

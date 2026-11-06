@@ -12,7 +12,7 @@
  * chapters is possible: t in a gap is in no chapter (index -1).
  */
 import { describe, expect, it } from 'vitest';
-import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
+import { chapterIndexAt, chapterMarkers, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
 
 const ch = (id: number, start: number, end: number): Chapter => ({ id, start, end, title: `Chapter ${id + 1}` });
 
@@ -147,5 +147,14 @@ describe('REQ-18: nextChapterTarget', () => {
 
   it('REQ-18: a single-chapter book returns null', () => {
     expect(nextChapterTarget([ch(0, 0, 900)], 10), 'Expected null in the only chapter').toBeNull();
+  });
+});
+
+describe('chapterMarkers', () => {
+  it('maps chapters to ms starts with numbered labels', () => {
+    expect(chapterMarkers([{ id: 0, start: 0, end: 60, title: 'Intro' }, { id: 1, start: 60, end: 90, title: 'Two' }])).toEqual([
+      { at: 0, label: 'Chapter 1: Intro' },
+      { at: 60000, label: 'Chapter 2: Two' },
+    ]);
   });
 });

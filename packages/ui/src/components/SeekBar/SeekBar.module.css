@@ -78,12 +78,28 @@
   text-align: center;
 }
 
+/* Slim: a 3-4px track in a 1.6em (at least 22px) hit area; it thickens on hover and keyboard focus. */
+.slim {
+  height: 1.6em;
+}
+.slim .track {
+  height: 0.25em;
+}
+.slim:hover:not([aria-disabled='true']) .track,
+.slim:focus-visible .track {
+  transform: scaleY(2);
+}
+.slim .tick {
+  height: 0.5em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .track,
   .fill {
     transition: none;
   }
-  .seek:hover:not([aria-disabled='true']) .track {
+  .seek:hover:not([aria-disabled='true']) .track,
+  .slim:focus-visible .track {
     transform: none;
   }
 }

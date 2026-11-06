@@ -20,6 +20,8 @@ interface Props {
   previewAt?: number;
   /** Accessible name. */
   label?: string;
+  /** A thinner track in a taller hit area, for tight bars such as the mini player. */
+  slim?: boolean;
   className?: string;
 }
 
@@ -32,6 +34,7 @@ export function SeekBar({
   markers,
   previewAt,
   label = 'Progress',
+  slim,
   className,
 }: Props) {
   const enabled = duration > 0;
@@ -77,7 +80,7 @@ export function SeekBar({
 
   return (
     <div
-      className={[styles.seek, className].filter(Boolean).join(' ')}
+      className={[styles.seek, slim && styles.slim, className].filter(Boolean).join(' ')}
       onClick={onClick}
       onKeyDown={onKeyDown}
       onPointerDown={preview}

@@ -42,6 +42,29 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const chapters = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({ at: i * (3600000 / n), label: `Chapter ${i + 1}: Title ${i + 1}` }));
+const frame = (width: number) => [
+  (Story: () => React.JSX.Element) => (
+    <div
+      style={{
+        width,
+        maxWidth: '100%',
+        height: 320,
+        margin: '24px auto',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        background: 'var(--bg)',
+        outline: '1px solid var(--border)',
+        overflow: 'visible',
+      }}
+    >
+      <Story />
+    </div>
+  ),
+];
+
 export const Playing: Story = {};
 export const Paused: Story = { args: { playing: false } };
 /** Loading or buffering: a spinner on the play button, which is marked aria-busy. */
@@ -77,3 +100,16 @@ export const InPhoneFrame: Story = {
     ),
   ],
 };
+/** Seekable with 12 chapters on a phone: the slim bar straddles the top edge; the times are hidden. */
+export const SeekablePhone: Story = { args: { onSeek: fn(), markers: chapters(12) }, decorators: frame(390) };
+/** Seekable on a desktop width: the bar sits between the title and the controls, with elapsed and remaining time. */
+export const SeekableDesktop: Story = { args: { onSeek: fn(), markers: chapters(12) }, decorators: frame(1200) };
+/** 64 chapters: the ticks stay legible at this density. */
+export const SeekableManyChapters: Story = { args: { onSeek: fn(), markers: chapters(64) }, decorators: frame(1200) };
+/** The preview held open at 31:00 on a phone, to show it sits above the bar and inside the viewport. */
+export const SeekablePreviewOpen: Story = {
+  args: { onSeek: fn(), markers: chapters(12), previewAt: 1860000 },
+  decorators: frame(390),
+};
+/** Passive line on desktop width: no onSeek, so no bar and no times. */
+export const PassiveDesktop: Story = { decorators: frame(1200) };

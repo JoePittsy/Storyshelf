@@ -9,6 +9,7 @@
   backdrop-filter: var(--material-filter);
   box-shadow: var(--material-edge);
   color: var(--text);
+  container-type: inline-size;
 }
 
 /* The thin progress line along the top edge: scaled, not resized, so it stays on the compositor. */
@@ -25,6 +26,30 @@
   background: var(--on-art);
   transform-origin: left center;
   transition: transform 1s linear;
+}
+
+/* Seekable: on a phone the slim bar straddles the top edge (the track on the edge, the hit area around it), and
+   the times are hidden. The preview rises above it, outside the bar, so nothing clips it. */
+.bar {
+  position: absolute;
+  inset: -0.8em 0 auto;
+  display: flex;
+  align-items: center;
+}
+.time {
+  display: none;
+}
+/* Wide: the bar joins the row between the title and the controls, with the times either side. */
+@container (min-width: 40em) {
+  .bar {
+    position: static;
+    flex: 1.6;
+    gap: 0.8em;
+    margin-inline: 1em;
+  }
+  .time {
+    display: block;
+  }
 }
 
 .open {

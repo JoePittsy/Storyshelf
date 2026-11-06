@@ -27,3 +27,7 @@ export function nextChapterTarget(chapters: Chapter[], t: number): number | null
   if (i >= 0) return chapters[i + 1]?.start ?? null;
   return chapters.find((c) => c.start > t)?.start ?? null;
 }
+
+/** Seek-bar markers for a book's chapters, shared by the full and mini players so their ticks and previews match. */
+export const chapterMarkers = (chapters: Chapter[]): { at: number; label: string }[] =>
+  chapters.map((c, i) => ({ at: c.start * 1000, label: `Chapter ${i + 1}: ${c.title}` }));

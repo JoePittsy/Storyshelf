@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { MiniPlayer } from '@joepittsy/ui';
+import { chapterMarkers } from './chapters';
 import { usePlayer } from './engine';
 
 /** The mini player, portalled into the frame's bottom slot whenever a book is loaded. Hidden on the full player. */
@@ -24,6 +25,8 @@ export function MiniPlayerPortal() {
       skipBackSeconds={p.skipBack}
       onSkipBack={() => p.skip(-1)}
       onTogglePlay={p.toggle}
+      onSeek={(ms) => p.seek(ms / 1000)}
+      markers={chapterMarkers(p.chapters)}
       onOpen={() => void navigate('/now-playing')}
     />,
     slot,
