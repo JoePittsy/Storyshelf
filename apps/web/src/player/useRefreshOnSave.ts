@@ -10,6 +10,7 @@ export const PROGRESS_KEYS = [
   ['item-sessions'],
   ['listening-stats'],
   ['items-in-progress'],
+  ['personalized'],
 ] as const;
 
 /** Refetches what shows listening progress when playback pauses or a session closes (not on every periodic sync). */

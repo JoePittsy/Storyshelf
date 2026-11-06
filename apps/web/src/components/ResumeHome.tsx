@@ -5,7 +5,9 @@ import { useChapters, useInProgress } from '../api/history';
 import { coverUrl, useProgress } from '../api/libraries';
 import type { Tile } from '../api/libraries';
 import { usePlayer } from '../player/engine';
+import { useContinueSeries } from '../api/continueSeries';
 import { ContinueShelf } from './ContinueShelf';
+import { continueSeriesTiles } from './continueSeries';
 import { continueBooks, resumeStatus, splitResume } from './resume';
 import styles from './ResumeHome.module.css';
 
@@ -57,22 +59,37 @@ function Hero({ tile, onPlay }: { tile: Tile; onPlay: (itemId: string) => void }
 }
 
 /**
- * The top of the Books home: a resume hero for the book you were last in, then Continue listening for the rest.
- * Renders nothing when nothing is in progress.
+ * The top of the Books home: a resume hero for the book you were last in, then Continue listening for the rest, then
+ * Continue series (the next book of series you have finished one of). Renders nothing when there is none of these.
  */
 export function ResumeHome({ libraryId, onPlay }: Props) {
   const inProgress = useInProgress();
   const progress = useProgress();
+  const continueSeries = useContinueSeries(libraryId);
+  const playerItem = usePlayer().item?.id;
   const tiles = useMemo(
     () => continueBooks(inProgress.data, progress.data ?? new Map(), libraryId),
     [inProgress.data, progress.data, libraryId]
   );
+  // Settled first, so the series shelf doesn't show alone and then drop below a hero that arrives late.
+  const seriesTiles = useMemo(
+    () =>
+      inProgress.isPending
+        ? []
+        : continueSeriesTiles(
+            continueSeries.data,
+            [...tiles.map((t) => t.item.id), ...(playerItem ? [playerItem] : [])],
+            progress.data ?? new Map(),
+          ),
+    [inProgress.isPending, continueSeries.data, tiles, playerItem, progress.data]
+  );
   const { hero, rest } = splitResume(tiles);
-  if (!hero) return null;
+  if (!hero && seriesTiles.length === 0) return null;
   return (
     <div className={styles.home}>
-      <Hero tile={hero} onPlay={onPlay} />
+      {hero && <Hero tile={hero} onPlay={onPlay} />}
       <ContinueShelf tiles={rest} onPlay={onPlay} />
+      <ContinueShelf tiles={seriesTiles} onPlay={onPlay} title="Continue series" playVerb="Start" />
     </div>
   );
 }
