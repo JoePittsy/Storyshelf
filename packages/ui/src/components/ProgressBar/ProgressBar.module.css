@@ -1,0 +1,42 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.track {
+  flex: 1;
+  height: 0.3em;
+  background: var(--track);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  background: var(--text-2);
+  border-radius: var(--r-pill);
+}
+.done .fill {
+  background: var(--text);
+}
+.check {
+  flex: none;
+  color: var(--text);
+}
+
+/* Bottom edge of an artwork tile; the parent must be position: relative. */
+.overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 0 0.5em 0.5em;
+  pointer-events: none;
+}
+.overlay .fill {
+  background: var(--on-art-2);
+}
+.overlay.done .fill {
+  background: var(--on-art);
+}
+.overlay .check {
+  color: var(--on-art);
+  filter: drop-shadow(var(--text-shadow));
+}
