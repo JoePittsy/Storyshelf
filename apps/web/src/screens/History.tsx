@@ -106,6 +106,7 @@ function SessionList({ sessions }: { sessions: ListeningSession[] }) {
                   key={s.id}
                   title={s.displayTitle}
                   imageUrl={s.libraryItemId ? coverUrl({ id: s.libraryItemId, updatedAt: 0 }) : undefined}
+                  artFit="contain"
                   when={fmtTimeOfDay(s.startedAt)}
                   // Hold the line back until the chapters arrive, so it doesn't flip from a time range to chapters.
                   detail={info?.state === 'pending' ? undefined : chapterRange(info?.chapters ?? [], s.startTime, s.currentTime)}

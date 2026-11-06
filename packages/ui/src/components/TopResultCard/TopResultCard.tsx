@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react';
+import { Artwork } from '../Artwork';
 import { useImageFallback } from '../../hooks/useImageFallback';
 import styles from './TopResultCard.module.css';
 
@@ -8,6 +9,8 @@ interface Props {
   meta?: string;
   /** Cover or photo: it fills the card. Use a large image. */
   imageUrl?: string | null;
+  /** `contain` shows the whole cover over a blurred copy of itself. Default `cover`. */
+  artFit?: 'cover' | 'contain';
   /** The small heading above the title, and the card's accessible name. Default "Top result". */
   heading?: string;
   /** The art and title open it. */
@@ -29,7 +32,8 @@ export function TopResultCard({
   title,
   meta,
   imageUrl,
-  heading = 'Top result',
+  artFit = 'cover',
+  heading ='Top result',
   onOpen,
   openLabel,
   onMouseEnter,
@@ -46,7 +50,12 @@ export function TopResultCard({
       onMouseEnter={onMouseEnter}
       onContextMenu={onContextMenu}
     >
-      {art && <img className={styles.fill} src={art} alt="" loading="lazy" onError={onError} />}
+      {art &&
+        (artFit === 'contain' ? (
+          <Artwork src={art} fit="contain" className={styles.fill} placeholder={null} />
+        ) : (
+          <img className={styles.fill} src={art} alt="" loading="lazy" onError={onError} />
+        ))}
       <button type="button" className={styles.cover} onClick={onOpen} aria-label={openLabel} />
       <div className={styles.content}>
         <h2 id={headingId} className={styles.heading}>

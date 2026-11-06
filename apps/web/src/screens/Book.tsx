@@ -161,7 +161,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
             className={styles.hero}
             style={docked ? { visibility: 'hidden' } : { viewTransitionName: 'book-cover' }}
           >
-            <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
+            <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
           </div>
         }
         title={m.title}
@@ -191,7 +191,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           <SectionCard className={styles.side} title="Details">
             {docked && (
               <div className={styles.docked} aria-hidden="true" style={{ viewTransitionName: 'book-cover' }}>
-                <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
+                <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
               </div>
             )}
             <DetailList items={details} />

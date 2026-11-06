@@ -48,7 +48,7 @@ export function NowPlaying() {
         <PillButton onClick={() => setSheet('settings')}>Settings</PillButton>
       </div>
       <div className={styles.art}>
-        <Artwork src={p.item.coverUrl} lazy={false} placeholderClassName={styles.ph} />
+        <Artwork src={p.item.coverUrl} fit="contain" lazy={false} placeholderClassName={styles.ph} />
       </div>
       <h1 className={styles.title}>{p.item.title}</h1>
       <p className={styles.line}>

@@ -1,18 +1,32 @@
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { AddButton } from '../AddButton';
+import { Artwork } from '../Artwork';
 import { TitleButton } from '../ItemLinks';
 import { UserAvatar } from '../UserAvatar';
 import { useImageFallback } from '../../hooks/useImageFallback';
 import styles from './rows.module.css';
 
 /** Square thumbnail that opens the item on click. Hidden from assistive tech: the title button is the real control. */
-export function RowThumb({ imageUrl, onOpen }: { imageUrl?: string | null; onOpen?: () => void }) {
+export function RowThumb({
+  imageUrl,
+  onOpen,
+  artFit = 'cover',
+}: {
+  imageUrl?: string | null;
+  onOpen?: () => void;
+  /** `contain` shows the whole cover over a blurred copy of itself instead of cropping it. */
+  artFit?: 'cover' | 'contain';
+}) {
   const [art, onError] = useImageFallback(imageUrl);
-  const inner = art ? (
-    <img className={styles.art} src={art} alt="" loading="lazy" onError={onError} />
-  ) : (
+  const inner = !art ? (
     <span className={styles.artPh} />
+  ) : artFit === 'contain' ? (
+    <span className={styles.artBox}>
+      <Artwork src={art} fit="contain" placeholderClassName={styles.artPh} />
+    </span>
+  ) : (
+    <img className={styles.art} src={art} alt="" loading="lazy" onError={onError} />
   );
   if (!onOpen)
     return (
@@ -32,6 +46,8 @@ interface Props {
   /** Credit links (see PeopleLinks), shown after the title on the same line. Omit to show the title alone. */
   credit?: ReactNode;
   imageUrl?: string | null;
+  /** `contain` shows the whole cover over a blurred copy of itself instead of cropping it. Default `cover`. */
+  artFit?: 'cover' | 'contain';
   /** Muted second line, e.g. why it was picked. */
   reason?: string;
   /** Opens the item: title, thumbnail. Without it the title and thumbnail are plain. */
@@ -73,6 +89,7 @@ export function ItemRow({
   title,
   credit,
   imageUrl,
+  artFit,
   reason,
   onOpen,
   onAdd,
@@ -122,7 +139,7 @@ export function ItemRow({
         </span>
       )}
       {lead != null && <span className={styles.lead}>{lead}</span>}
-      {showArt && <RowThumb imageUrl={imageUrl} onOpen={onOpen} />}
+      {showArt && <RowThumb imageUrl={imageUrl} artFit={artFit} onOpen={onOpen} />}
       <div className={styles.text}>
         <div className={styles.line}>
           <span className={styles.title} title={title}>

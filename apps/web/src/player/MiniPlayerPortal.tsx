@@ -24,6 +24,7 @@ export function MiniPlayerPortal() {
       {createPortal(
         <MiniPlayer
           art={p.item.coverUrl}
+          artFit="contain"
           title={p.item.title}
           subtitle={p.chapters[p.chapterIndex]?.title}
           author={p.item.author}

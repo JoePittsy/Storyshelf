@@ -54,6 +54,7 @@ export function SeriesList() {
                     sub={bookCount(s.books.length)}
                     meta={seriesAuthors(s.books)}
                     imageUrl={first ? coverUrl(first) : null}
+                    artFit="contain"
                     href={href}
                     onOpen={() => void navigate(href)}
                   />

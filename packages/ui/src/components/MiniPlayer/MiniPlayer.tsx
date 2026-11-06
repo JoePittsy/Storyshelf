@@ -13,6 +13,8 @@ import styles from './MiniPlayer.module.css';
 
 interface Props {
   art?: string;
+  /** How the art sits in its square: `cover` crops (default); `contain` shows the whole cover over a blurred copy. */
+  artFit?: 'cover' | 'contain';
   title: string;
   /** Under the title: usually the current chapter. */
   subtitle?: string;
@@ -69,6 +71,7 @@ interface Props {
  */
 export function MiniPlayer({
   art,
+  artFit = 'cover',
   title,
   subtitle,
   author,
@@ -131,7 +134,7 @@ export function MiniPlayer({
         <button type="button" className={styles.open} onClick={onOpen} aria-describedby={titleId}>
           <span className={styles.srOnly}>Open player</span>
           <span className={styles.art}>
-            <Artwork src={art} lazy={false} className={styles.img} placeholderClassName={styles.noArt} />
+            <Artwork src={art} fit={artFit} lazy={false} className={styles.img} placeholderClassName={styles.noArt} />
           </span>
           <span className={styles.text} aria-hidden="true">
             <span id={titleId} className={styles.title}>
