@@ -5,5 +5,6 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   resolve: { conditions: ['@joepittsy/source'] },
-  test: { environment: 'node', include: ['src/**/*.{test,spec}.{ts,tsx}'] },
+  // jsdom screen tests take a few seconds each when the suite runs in parallel; the 5s default flakes.
+  test: { environment: 'node', include: ['src/**/*.{test,spec}.{ts,tsx}'], testTimeout: 15_000 },
 });

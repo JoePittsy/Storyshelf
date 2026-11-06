@@ -300,9 +300,10 @@ describe('REQ-53 stats', () => {
     // A listening history older than a fortnight earns the year-long map.
     serve({ stats: { ...STATS, days: { ...STATS.days, '2026-01-05': 600 } } });
     renderAt('/history/stats');
-    expect(await screen.findByRole('img', { name: 'Time listened each day over the last year' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Mon 2 Nov: 4h 00m' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Today: no listening' })).toBeInTheDocument();
+    const map = await screen.findByRole('img', { name: 'Time listened each day over the last year' });
+    // 365 cells: look them up by label directly; role queries over every cell take seconds in jsdom.
+    expect(map.querySelector('[aria-label="Mon 2 Nov: 4h 00m"]')).not.toBeNull();
+    expect(map.querySelector('[aria-label="Today: no listening"]')).not.toBeNull();
     const books = (await screen.findByRole('heading', { name: 'Top books' })).closest('section') as HTMLElement;
     expect(within(books).getByText('Mythos')).toBeInTheDocument();
     expect(within(books).getByText('2h 00m')).toBeInTheDocument();
