@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Tabs } from './Tabs';
 
@@ -24,5 +24,26 @@ describe('Tabs', () => {
     const { container } = render(<Tabs label="Sections" items={items} current="books" onNavigate={() => {}} />);
     expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  describe('edge fade', () => {
+    afterEach(() => vi.restoreAllMocks());
+    const size = (scrollWidth: number, clientWidth: number) => {
+      vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(scrollWidth);
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(clientWidth);
+    };
+
+    // The fade is a mask, which iOS Safari draws blurry inside a frosted bar, so it must be off whenever the tabs fit.
+    it('leaves the list unmasked when the tabs fit', () => {
+      size(300, 300);
+      const { container } = render(<Tabs label="Sections" items={items} current="books" onNavigate={() => {}} />);
+      expect(container.querySelector('ul')).not.toHaveAttribute('data-overflow');
+    });
+
+    it('marks the list when the tabs overflow', () => {
+      size(500, 300);
+      const { container } = render(<Tabs label="Sections" items={items} current="books" onNavigate={() => {}} />);
+      expect(container.querySelector('ul')).toHaveAttribute('data-overflow', 'true');
+    });
   });
 });

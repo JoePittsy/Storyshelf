@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { Settings } from 'lucide-react';
 import styles from './Tabs.module.css';
 
@@ -30,6 +30,8 @@ interface Props {
 
 /** Navigation tabs: real links, the current one marked `aria-current="page"`. Scrolls sideways when it can't fit. */
 export function Tabs({ label, items, current, onNavigate, className }: Props) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const overflowing = useOverflow(listRef);
   const click = (e: MouseEvent, href: string) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
@@ -37,7 +39,7 @@ export function Tabs({ label, items, current, onNavigate, className }: Props) {
   };
   return (
     <nav aria-label={label} className={[styles.nav, className].filter(Boolean).join(' ')}>
-      <ul className={styles.list}>
+      <ul ref={listRef} className={styles.list} data-overflow={overflowing || undefined}>
         {items.map((t) => {
           const Icon = t.icon && ICONS[t.icon];
           return (
@@ -57,4 +59,24 @@ export function Tabs({ label, items, current, onNavigate, className }: Props) {
       </ul>
     </nav>
   );
+}
+
+/**
+ * Whether the list is wider than its box. The edge fade is a CSS mask, and iOS Safari draws a masked element inside a
+ * frosted bar at low resolution (blurry text), so the mask is only applied when there is something to scroll to.
+ */
+function useOverflow(ref: React.RefObject<HTMLElement | null>) {
+  const [overflowing, setOverflowing] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflowing(el.scrollWidth > el.clientWidth + 1);
+    check();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => ro.disconnect();
+  }, [ref]);
+  return overflowing;
 }

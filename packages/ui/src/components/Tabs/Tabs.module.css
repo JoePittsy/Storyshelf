@@ -111,7 +111,8 @@
 }
 
 /* If they still overflow (a large text size, a long label), the edges fade where there is more to scroll to. The
-   fade is driven by the list's own scroll position, so it only shows when there is something to scroll. */
+   fade is driven by the list's own scroll position. The mask is only set while the list overflows (data-overflow,
+   measured in Tabs.tsx): iOS Safari rasterises a masked element under a backdrop-filter at low resolution. */
 @property --fade-start {
   syntax: '<length>';
   inherits: false;
@@ -138,7 +139,7 @@
   }
 }
 @supports (animation-timeline: scroll()) {
-  .list {
+  .list[data-overflow] {
     mask-image: linear-gradient(
       to right,
       transparent,
