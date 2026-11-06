@@ -21,7 +21,14 @@ const meta = {
   // Rows render inside a list; the list's width decides how much the title gets.
   decorators: [
     (Story, { parameters }) => (
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxWidth: (parameters.width as string | undefined) ?? '36em' }}>
+      <ul
+        style={{
+          listStyle: 'none',
+          margin: 0,
+          padding: 0,
+          maxWidth: (parameters.width as string | undefined) ?? '36em',
+        }}
+      >
         <Story />
       </ul>
     ),

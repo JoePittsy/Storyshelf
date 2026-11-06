@@ -55,7 +55,10 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
     focusUndo.current = key(b);
     setDeleted((d) => [...d, b]);
     // A failed delete is put back in the list by the data layer; its placeholder goes.
-    deleting.current.set(key(b), remove(b).catch(() => forget(b)));
+    deleting.current.set(
+      key(b),
+      remove(b).catch(() => forget(b))
+    );
   };
   const undo = (b: Bookmark) => {
     forget(b);
@@ -74,7 +77,7 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
     );
 
   const rows = [...list.map((b) => ({ b, gone: false })), ...deleted.map((b) => ({ b, gone: true }))].sort(
-    (x, y) => x.b.time - y.b.time,
+    (x, y) => x.b.time - y.b.time
   );
 
   if (rows.length === 0)
@@ -129,7 +132,7 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
               },
             ]}
           />
-        ),
+        )
       )}
     </ul>
   );

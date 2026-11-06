@@ -15,7 +15,7 @@ interface Props {
   title: string;
   /** Muted line under the title, e.g. the chapter. */
   detail?: ReactNode;
-  /** Right-aligned figure, e.g. a time. Tabular. */
+  /** A figure, e.g. a time. Tabular. Right-aligned; on a narrow row it leads the detail line instead. */
   trailing?: ReactNode;
   /** Opens (or goes to) the row's item. */
   onOpen: () => void;
@@ -30,33 +30,33 @@ interface Props {
 export function ActionRow({ title, detail, trailing, onOpen, actions }: Props) {
   return (
     <li className={styles.item}>
-      <button type="button" className={styles.open} onClick={onOpen}>
-        {/* The spaces keep the parts apart in the button's name; the flex layout doesn't render them. */}
-        <span className={styles.text}>
+      <div className={styles.row}>
+        <button type="button" className={styles.open} onClick={onOpen}>
+          {/* The spaces keep the parts apart in the button's name; the grid doesn't render them. */}
           <span className={styles.title}>{title}</span>{' '}
+          {trailing != null && <span className={styles.trailing}>{trailing}</span>}{' '}
           {detail != null && <span className={styles.detail}>{detail}</span>}
-        </span>{' '}
-        {trailing != null && <span className={styles.trailing}>{trailing}</span>}
-      </button>
-      {actions.length > 0 && (
-        <span className={styles.actions}>
-          {actions.map((a) => {
-            const Icon = ICONS[a.icon];
-            return (
-              <button
-                key={a.icon}
-                type="button"
-                className={`${styles.action} ${styles[a.icon]}`}
-                onClick={a.onClick}
-                aria-label={a.label}
-                title={a.label}
-              >
-                <Icon size="1.15em" aria-hidden="true" />
-              </button>
-            );
-          })}
-        </span>
-      )}
+        </button>
+        {actions.length > 0 && (
+          <span className={styles.actions}>
+            {actions.map((a) => {
+              const Icon = ICONS[a.icon];
+              return (
+                <button
+                  key={a.icon}
+                  type="button"
+                  className={`${styles.action} ${styles[a.icon]}`}
+                  onClick={a.onClick}
+                  aria-label={a.label}
+                  title={a.label}
+                >
+                  <Icon size="1.15em" aria-hidden="true" />
+                </button>
+              );
+            })}
+          </span>
+        )}
+      </div>
     </li>
   );
 }

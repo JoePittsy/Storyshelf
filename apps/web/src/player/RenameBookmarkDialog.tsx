@@ -41,6 +41,8 @@ export function RenameBookmarkDialog({
         value={value}
         maxLength={MAX_LENGTH}
         autoComplete="off"
+        // Most renames replace the chapter's name outright, so it starts selected.
+        onFocus={(e) => e.currentTarget.select()}
         error={error || undefined}
         onChange={(e) => {
           setValue(e.target.value);

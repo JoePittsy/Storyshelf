@@ -1,8 +1,7 @@
-/* The row lights up as one, whichever of its buttons is hovered. */
+/* The row lights up as one, whichever of its buttons is hovered. The li is the container, so the row answers to its
+   own width, not the window's. */
 .item {
-  display: flex;
-  align-items: center;
-  gap: 0.2em;
+  container-type: inline-size;
   border-radius: var(--r-row);
   transition: background var(--dur-fast) var(--ease-fast);
 }
@@ -10,12 +9,23 @@
 .item:focus-within {
   background: var(--row-hover);
 }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+}
+/* Wide: title over detail, the figure on the right. */
 .open {
   flex: 1;
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title trailing'
+    'detail trailing';
   align-items: center;
-  gap: 0.9em;
+  column-gap: 0.9em;
+  row-gap: 0.1em;
   min-height: 44px;
   padding: 0.55em 0.6em;
   border: none;
@@ -30,18 +40,15 @@
 .item:hover .open {
   color: var(--on-art);
 }
-.text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1em;
-}
 .title {
+  grid-area: title;
+  min-width: 0;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
 .detail {
+  grid-area: detail;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -49,10 +56,20 @@
   color: var(--text-3);
 }
 .trailing {
-  flex: none;
+  grid-area: trailing;
   font-size: var(--fs-label);
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
+}
+/* Narrow (a phone's sheet): the title takes the whole width, and the figure leads the detail line under it. */
+@container (width < 30em) {
+  .open {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'title title'
+      'trailing detail';
+    column-gap: 0.6em;
+  }
 }
 .actions {
   flex: none;

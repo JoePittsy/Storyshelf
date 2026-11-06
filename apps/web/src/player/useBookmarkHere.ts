@@ -41,7 +41,9 @@ export function useBookmarkHere() {
       const b: Bookmark = { libraryItemId: item.id, time: plan.time, title: plan.title, createdAt: Date.now() };
       const added = add(b);
       added.catch(() =>
-        showToast("Couldn't add the bookmark. Check your connection and try again.", 'error', { replaceKey: 'bookmark' }),
+        showToast("Couldn't add the bookmark. Check your connection and try again.", 'error', {
+          replaceKey: 'bookmark',
+        })
       );
       if (!quiet)
         showToast(`Bookmark added at ${fmtClock(plan.time, false)}`, 'success', {
@@ -49,13 +51,17 @@ export function useBookmarkHere() {
             label: 'Undo',
             shortcutKey: 'u',
             // After the add has landed, so the delete can't overtake it and leave the bookmark behind.
-            onClick: () => void added.then(() => remove(b), () => undefined),
+            onClick: () =>
+              void added.then(
+                () => remove(b),
+                () => undefined
+              ),
           },
           durationMs: UNDO_MS,
           replaceKey: 'bookmark',
         });
       return plan;
     },
-    [add, remove, qc, showToast],
+    [add, remove, qc, showToast]
   );
 }

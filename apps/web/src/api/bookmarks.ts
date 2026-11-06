@@ -35,7 +35,9 @@ const same = (b: Bookmark, libraryItemId: string, time: number) => b.libraryItem
 
 /** One book's bookmarks, earliest in the book first. */
 export const itemBookmarks = (list: Bookmark[] | undefined, libraryItemId: string): Bookmark[] =>
-  (list ?? []).filter((b) => b.libraryItemId === libraryItemId).sort((a, b) => a.time - b.time || a.createdAt - b.createdAt);
+  (list ?? [])
+    .filter((b) => b.libraryItemId === libraryItemId)
+    .sort((a, b) => a.time - b.time || a.createdAt - b.createdAt);
 
 export const findBookmark = (list: Bookmark[] | undefined, libraryItemId: string, time: number) =>
   list?.find((b) => same(b, libraryItemId, time));
@@ -66,7 +68,10 @@ type Change = (list: Bookmark[]) => Bookmark[];
  * A bookmark write that shows in the cache at once. On failure only this change is undone (not a snapshot of the whole
  * list), so another write still on its way survives; the list is refetched once the last write settles.
  */
-function useBookmarkWrite<V>(send: (v: V) => Promise<unknown>, change: (v: V, list: Bookmark[]) => { apply: Change; revert: Change }) {
+function useBookmarkWrite<V>(
+  send: (v: V) => Promise<unknown>,
+  change: (v: V, list: Bookmark[]) => { apply: Change; revert: Change }
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationKey: MUTATION_KEY,
@@ -93,27 +98,35 @@ type Ref = Pick<Bookmark, 'libraryItemId' | 'time' | 'title'>;
 export const useAddBookmark = () =>
   useBookmarkWrite(
     ({ libraryItemId, time, title }: Ref) =>
-      absFetch<Bookmark>(bookmarkUrl(libraryItemId), { method: 'POST', headers: json, body: JSON.stringify({ time, title }) }),
+      absFetch<Bookmark>(bookmarkUrl(libraryItemId), {
+        method: 'POST',
+        headers: json,
+        body: JSON.stringify({ time, title }),
+      }),
     (v, list) => {
       const before = findBookmark(list, v.libraryItemId, v.time);
       return {
         apply: (l) => upsertBookmark(l, { ...v, createdAt: Date.now() }),
         revert: (l) => (before ? upsertBookmark(l, before) : withoutBookmark(l, v.libraryItemId, v.time)),
       };
-    },
+    }
   );
 
 export const useRenameBookmark = () =>
   useBookmarkWrite(
     ({ libraryItemId, time, title }: Ref) =>
-      absFetch<Bookmark>(bookmarkUrl(libraryItemId), { method: 'PATCH', headers: json, body: JSON.stringify({ time, title }) }),
+      absFetch<Bookmark>(bookmarkUrl(libraryItemId), {
+        method: 'PATCH',
+        headers: json,
+        body: JSON.stringify({ time, title }),
+      }),
     (v, list) => {
       const old = findBookmark(list, v.libraryItemId, v.time)?.title;
       return {
         apply: (l) => renameIn(l, v.libraryItemId, v.time, v.title),
         revert: (l) => (old === undefined ? l : renameIn(l, v.libraryItemId, v.time, old)),
       };
-    },
+    }
   );
 
 export const useDeleteBookmark = () =>
@@ -122,5 +135,5 @@ export const useDeleteBookmark = () =>
     (b) => ({
       apply: (l) => withoutBookmark(l, b.libraryItemId, b.time),
       revert: (l) => upsertBookmark(l, b),
-    }),
+    })
   );

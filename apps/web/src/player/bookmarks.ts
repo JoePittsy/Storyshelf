@@ -30,8 +30,15 @@ export function bookmarkChapter(chapters: Chapter[], b: Pick<Bookmark, 'time' | 
 export type BookmarkPlan = { kind: 'add'; time: number; title: string } | { kind: 'exists'; bookmark: Bookmark };
 
 /** What "bookmark this" does at `position`: add one, or find the one already at that second. */
-export function planBookmark(list: Bookmark[] | undefined, libraryItemId: string, position: number, chapters: Chapter[]): BookmarkPlan {
+export function planBookmark(
+  list: Bookmark[] | undefined,
+  libraryItemId: string,
+  position: number,
+  chapters: Chapter[]
+): BookmarkPlan {
   const time = bookmarkSecond(position);
   const existing = findBookmark(list, libraryItemId, time);
-  return existing ? { kind: 'exists', bookmark: existing } : { kind: 'add', time, title: defaultBookmarkTitle(chapters, time) };
+  return existing
+    ? { kind: 'exists', bookmark: existing }
+    : { kind: 'add', time, title: defaultBookmarkTitle(chapters, time) };
 }

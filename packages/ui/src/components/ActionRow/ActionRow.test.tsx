@@ -19,9 +19,9 @@ describe('ActionRow', () => {
             { icon: 'delete', label: 'Delete Roast mutton', onClick: onDelete },
           ]}
         />
-      </ul>,
+      </ul>
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Roast mutton Chapter 2 12:34' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Roast mutton 12:34 Chapter 2' }));
     expect(onOpen).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Rename Roast mutton' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete Roast mutton' }));
