@@ -99,7 +99,9 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const started = now.currentTime > 0 && !now.isFinished;
   // The button resumes from where the player is, not from the last fetch.
   const resume = now.live ? { currentTime: now.currentTime, isFinished: now.isFinished } : p;
-  const label = playLabel(resume);
+  // While this book is the one playing, the primary action pauses it rather than offering a no-op "Resume".
+  const playingHere = player.item?.id === item.id && player.status === 'playing';
+  const label = playingHere ? 'Pause' : playLabel(resume);
 
   const status = now.isFinished
     ? 'Finished'
@@ -172,7 +174,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           <ProgressBar value={now.isFinished ? 1 : now.progress} label={`Progress through ${m.title}`} />
           <p className={styles.line}>{status}</p>
         </div>
-        <PillButton variant="primary" className={styles.action} onClick={() => onPlay(playFrom(resume))}>
+        <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playFrom(resume)))}>
           {label}
         </PillButton>
       </HeroBand>
