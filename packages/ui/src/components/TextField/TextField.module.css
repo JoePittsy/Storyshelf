@@ -1,0 +1,57 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.label {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* The field look, shared with SearchField: --glass-faint fill, --border stroke, --border-2 on hover and focus, --r-row radius. */
+.input {
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--text);
+  background: var(--glass-faint);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  padding: 0.7em 0.9em;
+  transition: border-color var(--dur-fast) var(--ease-fast);
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+.input:hover:not(:disabled) {
+  border-color: var(--border-2);
+}
+.input:focus-visible {
+  border-color: var(--text-2);
+}
+.input[aria-invalid='true'] {
+  border-color: rgb(var(--danger));
+}
+.input:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hint,
+.error {
+  font-size: var(--fs-small);
+}
+.hint {
+  color: var(--text-3);
+}
+.error {
+  color: rgb(var(--danger));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}

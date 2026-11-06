@@ -18,6 +18,7 @@ export { PillButton } from './components/PillButton';
 export { SectionCard, SeeAll } from './components/SectionCard';
 export { SeekBar, PlaybackTime, PlaybackRemaining } from './components/SeekBar';
 export { ToastProvider, useToast } from './components/Toast';
+export { TextField } from './components/TextField';
 export { TopResultCard } from './components/TopResultCard';
 export { TransportButtons } from './components/TransportButtons';
 export { UserAvatar, avatarGradient } from './components/UserAvatar';

@@ -1,0 +1,29 @@
+.page {
+  max-width: 24em;
+  margin: 0 auto;
+  padding: 3em 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+}
+.title {
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  align-items: flex-start;
+}
+.form > :not(button) {
+  align-self: stretch;
+}
+/* Always in the DOM so screen readers announce changes; hidden when empty. */
+.alert {
+  color: rgb(var(--danger));
+  font-size: var(--fs-label);
+}
+.alert:empty {
+  display: none;
+}

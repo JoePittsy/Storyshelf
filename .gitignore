@@ -7,3 +7,6 @@ coverage
 .env.*
 !.env.example
 *.log
+
+# agent worktrees
+.claude/worktrees/

@@ -1,45 +1,51 @@
-// TEMP: replaced by sign-in screen
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Route, Routes } from 'react-router';
-import { login, logout, onSignedOut, restoreSession } from './api/auth';
 import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { PillButton } from '@joepittsy/ui';
+import { logout, onSignedOut, restoreSession } from './api/auth';
+import { SignIn } from './screens/SignIn';
 
-function Harness() {
+const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
+
+/** Holds the session; sends signed-out visitors to /sign-in, remembering where they were going. */
+function RequireSession() {
   const qc = useQueryClient();
-  const { data: user, isPending } = useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
-  useEffect(() => onSignedOut(() => qc.setQueryData(['session'], null)), [qc]);
-  if (isPending) return <p>Loading…</p>;
-  if (!user)
-    return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const f = new FormData(e.currentTarget);
-          login(String(f.get('u')), String(f.get('p'))).then(
-            (u) => qc.setQueryData(['session'], u),
-            (err: unknown) => alert(String(err))
-          );
-        }}
-      >
-        <input name="u" placeholder="Username" autoComplete="username" />
-        <input name="p" type="password" placeholder="Password" autoComplete="current-password" />
-        <button type="submit">Sign in</button>
-      </form>
-    );
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { data: user, isPending } = useSession();
+  useEffect(
+    () =>
+      onSignedOut(() => {
+        qc.setQueryData(['session'], null);
+        void navigate('/sign-in', { replace: true });
+      }),
+    [qc, navigate],
+  );
+  if (isPending) return <div className="skeleton appLoading" role="status" aria-label="Loading" />;
+  if (!user) return <Navigate to="/sign-in" replace state={{ from: location.pathname + location.search }} />;
+  return <Outlet />;
+}
+
+// PLACEHOLDER: library slice
+function Home() {
+  const qc = useQueryClient();
+  const { data: user } = useSession();
   return (
-    <>
-      <p>Signed in as {user.username}</p>
-      <button type="button" onClick={() => void logout().then(() => qc.setQueryData(['session'], null))}>
-        Sign out
-      </button>
-    </>
+    <main>
+      <p>Signed in as {user?.username}</p>
+      <PillButton onClick={() => void logout().then(() => qc.setQueryData(['session'], null))}>Sign out</PillButton>
+    </main>
   );
 }
 
 export function App() {
   return (
     <Routes>
-      <Route path="*" element={<Harness />} />
+      <Route path="/sign-in" element={<SignIn />} />
+      <Route element={<RequireSession />}>
+        <Route path="/" element={<Home />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
