@@ -19,6 +19,7 @@ import { NarratorRedirect } from './screens/NarratorRedirect';
 import { SeriesList } from './screens/SeriesList';
 import { NowPlaying } from './screens/NowPlaying';
 import { Series } from './screens/Series';
+import { Settings } from './screens/Settings';
 import { SignIn } from './screens/SignIn';
 
 const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
@@ -84,6 +85,7 @@ function AppRoutes() {
           <Route path="/narrator/:name" element={<NarratorRedirect />} />
           <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<PlayableSeries />} />

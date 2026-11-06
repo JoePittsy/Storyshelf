@@ -13,8 +13,6 @@ import {
   PlaybackTime,
   SectionCard,
   SeekBar,
-  Select,
-  Sheet,
   SkipButton,
   SleepTimerControl,
   SpeedControl,
@@ -32,15 +30,13 @@ import { ProgressModeTabs } from '../player/ProgressModeTabs';
 import { chapterRowText } from '../player/chapterRow';
 import { ModeAnnouncer } from '../player/ModeAnnouncer';
 import { useModeTap, useProgress } from '../player/progressMode';
-import { SKIP_OPTIONS } from '../player/settings';
 import { ChaptersSheet } from '../player/ChaptersSheet';
+import { HistorySheet } from '../player/HistorySheet';
 import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
 import { ShortcutList } from '../frame/ShortcutList';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
-
-const skipOptions = SKIP_OPTIONS.map((n) => ({ value: String(n), label: `${n} seconds` }));
 
 /** Wide enough for two columns and a permanent chapter list; below this it is one column with a Sheet. */
 const WIDE = '(width >= 60em)';
@@ -99,7 +95,7 @@ export function NowPlaying() {
   const restoreSettled = useRestoreSettled();
   const bar = useRef<HTMLDivElement>(null);
   const controls = useRef<HTMLDivElement>(null);
-  const [sheet, setSheet] = useState<'chapters' | 'settings' | null>(null);
+  const [sheet, setSheet] = useState<'chapters' | 'history' | null>(null);
   // The player only knows the author's name; the book (cached from the book page) has their ids.
   const meta = useBook(p.item?.id ?? '').data?.media.metadata;
   const authors = meta?.authors;
@@ -199,24 +195,7 @@ export function NowPlaying() {
     </div>
   );
   const sleepValue = p.sleep?.kind === 'minutes' ? p.sleep : p.sleep ? ({ kind: 'chapter' } as const) : null;
-  const settingsSheet = (
-    <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings" doneLabel="Done">
-      <div className={styles.settings}>
-        <Select
-          label="Skip back"
-          value={String(p.skipBack)}
-          options={skipOptions}
-          onChange={(v) => p.setSkip(Number(v), p.skipForward)}
-        />
-        <Select
-          label="Skip forward"
-          value={String(p.skipForward)}
-          options={skipOptions}
-          onChange={(v) => p.setSkip(p.skipBack, Number(v))}
-        />
-      </div>
-    </Sheet>
-  );
+  const historySheet = <HistorySheet open={sheet === 'history'} onClose={() => setSheet(null)} />;
 
   if (phone)
     return (
@@ -288,12 +267,12 @@ export function NowPlaying() {
               <SpeedControl value={p.rate} onChange={p.setRate} fixedDecimal />
               <SleepTimerControl value={sleepValue} onChange={p.setSleep} chapterOptionDisabled={!hasChapters} compact />
               {hasChapters && <TrayButton icon="chapters" label="Chapters" onClick={() => setSheet('chapters')} />}
-              <TrayButton icon="settings" label="Settings" onClick={() => setSheet('settings')} />
+              <TrayButton icon="history" label="History" onClick={() => setSheet('history')} />
             </IconTray>
           </div>
         </GrabSheet>
         <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />
-        {settingsSheet}
+        {historySheet}
       </main>
     );
 
@@ -377,7 +356,7 @@ export function NowPlaying() {
                 onChange={p.setSleep}
                 chapterOptionDisabled={!hasChapters}
               />
-              <PillButton onClick={() => setSheet('settings')}>Settings</PillButton>
+              <PillButton onClick={() => setSheet('history')}>History</PillButton>
               {hasChapters && !wide && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
             </div>
           </div>
@@ -395,7 +374,7 @@ export function NowPlaying() {
       )}
       {!wide && <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />}
 
-      {settingsSheet}
+      {historySheet}
     </main>
   );
 }

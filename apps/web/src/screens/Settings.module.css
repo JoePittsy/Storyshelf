@@ -1,0 +1,43 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+  max-width: 40em;
+  padding-bottom: 3em;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8em 1em;
+}
+.avatar {
+  flex: none;
+  width: 2.6em;
+  height: 2.6em;
+  border-radius: 50%;
+}
+.who {
+  flex: 1 1 10em;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+.who strong {
+  color: var(--text);
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1em;
+}

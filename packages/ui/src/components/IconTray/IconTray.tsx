@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ListMusic, Settings } from 'lucide-react';
+import { History, ListMusic, Settings } from 'lucide-react';
 import styles from './IconTray.module.css';
 
 interface Props {
@@ -22,7 +22,7 @@ export function IconTray({ label, children, className }: Props) {
   );
 }
 
-const ICONS = { chapters: ListMusic, settings: Settings } as const;
+const ICONS = { chapters: ListMusic, history: History, settings: Settings } as const;
 
 interface ButtonProps {
   icon: keyof typeof ICONS;

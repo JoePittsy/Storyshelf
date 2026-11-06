@@ -92,12 +92,19 @@ export function Frame() {
           <Tabs
             label="Sections"
             current={tab.key}
-            items={NAV_TABS.map((t) => ({ key: t.key, label: t.label, href: withLibrary(t.path, current) }))}
+            items={NAV_TABS.map((t) => ({
+              key: t.key,
+              label: t.label,
+              // Settings is the app's, not the library's: no library in its address.
+              href: t.key === 'settings' ? t.path : withLibrary(t.path, current),
+              icon: t.icon,
+              separated: t.separated,
+            }))}
             onNavigate={(href) => void navigate(href)}
           />
         </div>
       )}
-      <div className={styles.content}>
+      <div className={`${styles.content}${!tab && !immersive ? ' ' + styles.topless : ''}`}>
         <Outlet />
       </div>
       {pathname === '/now-playing' ? <NowPlayingTitle /> : STATIC_TITLES[pathname] && <StaticTitle title={STATIC_TITLES[pathname]} />}
@@ -195,6 +202,7 @@ const STATIC_TITLES: Record<string, string> = {
   '/authors': 'Authors',
   '/narrators': 'Narrators',
   '/series': 'Series',
+  '/settings': 'Settings',
   '/debug': 'Player log',
 };
 

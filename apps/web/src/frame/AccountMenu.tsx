@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Dialog, PillButton, UserAvatar } from '@joepittsy/ui';
-import { logout, restoreSession } from '../api/auth';
-import { stop } from '../player/engine';
+import { useQuery } from '@tanstack/react-query';
+import { UserAvatar } from '@joepittsy/ui';
+import { restoreSession } from '../api/auth';
+import { useSignOut } from './useSignOut';
 import styles from './AccountMenu.module.css';
 
 /**
@@ -10,11 +10,9 @@ import styles from './AccountMenu.module.css';
  * A disclosure rather than an ARIA menu: it holds a line of text and a couple of buttons, so it is a small panel in the tab order.
  */
 export function AccountMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
-  const qc = useQueryClient();
   const { data: user } = useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
   const [open, setOpen] = useState(false);
-  const [confirm, setConfirm] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { ask, confirming: confirm, busy, dialog } = useSignOut();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -47,13 +45,6 @@ export function AccountMenu({ onShowShortcuts }: { onShowShortcuts?: () => void 
 
   if (!user) return null;
   const name = user.username;
-
-  const signOut = () => {
-    setBusy(true);
-    void stop()
-      .then(logout)
-      .then(() => qc.setQueryData(['session'], null));
-  };
 
   return (
     <div className={styles.root} ref={root}>
@@ -91,32 +82,14 @@ export function AccountMenu({ onShowShortcuts }: { onShowShortcuts?: () => void 
             className={styles.item}
             onClick={() => {
               setOpen(false);
-              setConfirm(true);
+              ask();
             }}
           >
             Sign out
           </button>
         </div>
       )}
-      {confirm && (
-        <Dialog
-          title="Sign out of Storyshelf?"
-          size="sm"
-          onClose={() => !busy && setConfirm(false)}
-          actions={
-            <>
-              <PillButton data-autofocus disabled={busy} onClick={() => setConfirm(false)}>
-                Stay signed in
-              </PillButton>
-              <PillButton variant="danger" disabled={busy} onClick={signOut}>
-                Sign out
-              </PillButton>
-            </>
-          }
-        >
-          Playback will stop. Your place in the book is saved, so you can pick it up again after signing in.
-        </Dialog>
-      )}
+      {dialog}
     </div>
   );
 }
