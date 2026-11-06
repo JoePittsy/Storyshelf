@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import { SleepTimerControl } from '../SleepTimerControl';
 import type { SleepValue } from '../SleepTimerControl';
 import { SpeedControl } from '../SpeedControl';
@@ -50,4 +50,20 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-export const Bookmarks: Story = { render: () => <WithBookmarks /> };
+export const Bookmarks: Story = {
+  render: () => <WithBookmarks />,
+  // Six controls at an SE's width: no icon may be squeezed below its size, and no value may spill out of its button.
+  play: async ({ canvasElement }) => {
+    const buttons = Array.from(canvasElement.querySelectorAll<HTMLButtonElement>('[role="toolbar"] button, nav button, ul button, div button'))
+      .filter((b) => !b.closest('[popover]'));
+    await expect(buttons.length).toBeGreaterThanOrEqual(6);
+    for (const b of buttons) {
+      await expect(b.scrollWidth).toBeLessThanOrEqual(b.clientWidth + 1);
+      for (const svg of Array.from(b.querySelectorAll('svg'))) {
+        if (getComputedStyle(svg).display === 'none') continue;
+        const { width, height } = svg.getBoundingClientRect();
+        await expect(Math.round(width)).toBe(Math.round(height));
+      }
+    }
+  },
+};
