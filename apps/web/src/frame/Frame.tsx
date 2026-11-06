@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { PillButton, Select, Tabs, TopBar } from '@joepittsy/ui';
 import { logout } from '../api/auth';
@@ -18,7 +18,8 @@ export function Frame() {
 
   const tab = LIBRARY_TABS.find((t) => t.path === pathname);
 
-  const picker = libs.length > 0 && current && (
+  // Only worth showing when there's a choice to make.
+  const picker = libs.length > 1 && current && (
     <Select
       label="Library"
       hideLabel
@@ -37,7 +38,11 @@ export function Frame() {
     <div className={styles.frame}>
       <TopBar
         className={styles.bar}
-        start={<span className={styles.name}>Storyshelf</span>}
+        start={
+          <Link to={withLibrary('/', current)} className={styles.name}>
+            Storyshelf
+          </Link>
+        }
         centre={picker}
         end={
           <>
