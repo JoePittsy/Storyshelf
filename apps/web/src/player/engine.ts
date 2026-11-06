@@ -58,6 +58,8 @@ export interface PlayerState {
    * The first Play opens the session (`play()` runs, inside the click) and clears this.
    */
   restored: boolean;
+  /** The book played to the end of its last file and stopped there. Cleared when it plays again, is moved, or another book starts. */
+  ended: boolean;
 }
 
 const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
@@ -76,6 +78,7 @@ const initial = (): PlayerState => ({
   sleepFrom: 0,
   error: null,
   restored: false,
+  ended: false,
 });
 
 let state = initial();
@@ -216,6 +219,16 @@ export function onProgressSaved(cb: () => void): () => void {
 }
 const emitSaved = () => savedListeners.forEach((cb) => cb());
 
+const endedListeners = new Set<(itemId: string) => void>();
+/**
+ * Calls back with the book's id when it has played to the end of its last file, once that final place has been sent
+ * (ABS marks a book finished when its place reaches the end). Returns the unsubscribe.
+ */
+export function onBookEnded(cb: (itemId: string) => void): () => void {
+  endedListeners.add(cb);
+  return () => void endedListeners.delete(cb);
+}
+
 let lastFailAt: number | null = null;
 
 function fail(e: unknown): void {
@@ -314,7 +327,7 @@ function seekBook(t: number): void {
   const { track: tr, offset } = locate(session.audioTracks, target);
   if (tr.index === track?.index) audio.currentTime = offset;
   else load(tr, offset, state.status === 'playing');
-  set({ position: target, chapterIndex: chapterIndexAt(state.chapters, target) });
+  set({ position: target, chapterIndex: chapterIndexAt(state.chapters, target), ended: false });
   if (state.status !== 'playing') void syncIfDue();
   mediaPosition();
 }
@@ -382,7 +395,7 @@ function getAudio(): HTMLAudioElement {
     awaitingPlaying = null;
     retry.reset();
     lastMs = performance.now();
-    set({ status: 'playing' });
+    set({ status: 'playing', ended: false });
     updatePlaybackState('playing');
     mediaPosition();
   });
@@ -415,9 +428,13 @@ function getAudio(): HTMLAudioElement {
     const next = tracks[tracks.findIndex((t) => t.index === track?.index) + 1];
     // iOS needs src and play() inside this handler, on the same element, to carry on through a lock or background.
     if (next) return load(next, 0, true);
-    set({ status: 'paused', position: totalDuration(tracks) });
+    set({ status: 'paused', position: totalDuration(tracks), ended: true });
     updatePlaybackState('paused');
-    void doSync();
+    const id = session.libraryItemId;
+    void doSync().then(() => {
+      emitSaved();
+      endedListeners.forEach((cb) => cb(id));
+    });
   });
   a.addEventListener('error', () => {
     note('audio error', { code: a.error?.code ?? null, message: a.error?.message ?? null });
@@ -504,7 +521,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
   const old = detach();
   unlock(a);
   const mine = ++token;
-  set({ status: 'loading', error: null, restored: false });
+  set({ status: 'loading', error: null, restored: false, ended: false });
   if (old) {
     await closeSession(old.s, old.p);
     emitSaved();
