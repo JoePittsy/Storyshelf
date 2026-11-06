@@ -84,3 +84,25 @@
 main:focus {
   outline: none;
 }
+
+/* Skip to content: the first Tab stop, off screen until it has focus. */
+.skip {
+  position: absolute;
+  top: 0.6em;
+  left: 0.6em;
+  z-index: 600;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.1em;
+  border-radius: var(--r-pill);
+  background: var(--bg-1);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--float-shadow);
+  transform: translateY(-300%);
+}
+.skip:focus-visible {
+  transform: none;
+}

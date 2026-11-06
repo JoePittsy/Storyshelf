@@ -21,6 +21,7 @@ export function useUndoableJump(go: (seconds: number) => void) {
       showToast(`Jumped to ${label}`, 'info', {
         action: {
           label: 'Undo',
+          shortcutKey: 'u',
           onClick: () => {
             chain.current = null;
             go(from);

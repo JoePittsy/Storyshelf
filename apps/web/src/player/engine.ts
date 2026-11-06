@@ -6,6 +6,7 @@ import { AbsError } from '../api/auth';
 import { diag } from './diag';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
 import { supportedMimeTypes } from './mime';
+import { isRepeatFailure, srcNotSupportedError } from './failure';
 import { createRetryOnce, decide, stalledFor, STALL_MS, type Intent } from './resume';
 import {
   UnsupportedFormatError,
@@ -200,8 +201,14 @@ export function onProgressSaved(cb: () => void): () => void {
 }
 const emitSaved = () => savedListeners.forEach((cb) => cb());
 
+let lastFailAt: number | null = null;
+
 function fail(e: unknown): void {
   awaitingPlaying = null;
+  const now = performance.now();
+  // The error event and the play() rejection report one failure twice; say it once.
+  if (isRepeatFailure(lastFailAt, now)) return void diag.log('fail (repeat)', errInfo(e));
+  lastFailAt = now;
   diag.log('fail', errInfo(e));
   const message =
     e instanceof UnsupportedFormatError ? MSG_FORMAT : e instanceof TypeError ? MSG_NETWORK : MSG_OTHER;
@@ -377,7 +384,11 @@ function getAudio(): HTMLAudioElement {
     note('audio error', { code: a.error?.code ?? null, message: a.error?.message ?? null });
     if (!session || !track) return;
     if (recovering || a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-      return fail(a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ? new UnsupportedFormatError() : new TypeError());
+      return fail(
+        a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+          ? srcNotSupportedError(track.mimeType, (t) => a.canPlayType(t))
+          : new TypeError(),
+      );
     }
     // First failure after a resume: reload the same track right here. A second one falls through to the session re-open below.
     if (awaitingPlaying !== null && reloadAndPlay('error')) return;

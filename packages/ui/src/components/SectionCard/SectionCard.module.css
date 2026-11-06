@@ -23,6 +23,7 @@
   margin-bottom: 0.3em;
 }
 .sub {
+  max-width: 100ch;
   margin-bottom: 1.1em;
   font-size: var(--fs-label);
   color: var(--text-3);

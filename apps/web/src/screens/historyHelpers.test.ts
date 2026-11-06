@@ -13,6 +13,7 @@ import {
   deviceLabel,
   fmtDate,
   fmtListened,
+  statCards,
   fmtTimeOfDay,
   groupByDay,
   heatGrid,
@@ -332,5 +333,19 @@ describe('recentDays and daysOfHistory', () => {
     expect(daysOfHistory({}, '2026-11-06')).toBe(0);
     expect(daysOfHistory({ '2026-11-06': 60 }, '2026-11-06')).toBe(1);
     expect(daysOfHistory({ '2026-10-24': 60, '2026-11-06': 0 }, '2026-11-06')).toBe(14);
+  });
+});
+
+describe('statCards', () => {
+  it('shows the four periods when they differ', () => {
+    const cards = statCards({ week: 1800, month: 3600, year: 7200, }, 36000);
+    expect(cards.map((c) => c.label)).toEqual(['This week', 'This month', 'This year', 'All time']);
+    expect(cards.map((c) => c.value)).toEqual(['30 min', '1h 00m', '2h 00m', '10h 00m']);
+  });
+  it('collapses to one card while every period is the same', () => {
+    expect(statCards({ week: 1800, month: 1800, year: 1800 }, 1800)).toEqual([{ label: 'Listened so far', value: '30 min' }]);
+  });
+  it('keeps all four when only some are equal', () => {
+    expect(statCards({ week: 1800, month: 1800, year: 3600 }, 3600)).toHaveLength(4);
   });
 });

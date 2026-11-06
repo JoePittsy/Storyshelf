@@ -12,6 +12,16 @@
   pointer-events: none;
 }
 
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+.group:empty {
+  display: none;
+}
+
 /* A floating surface (frosted navy), with a small status dot instead of a coloured slab. */
 .toast {
   display: flex;

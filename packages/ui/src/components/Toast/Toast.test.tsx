@@ -84,3 +84,58 @@ describe('Toast', () => {
     expect(document.activeElement).toBe(other);
   });
 });
+
+describe('Toast live regions and shortcut', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  function Raise({ type, onUndo = () => {} }: { type: 'error' | 'info'; onUndo?: () => void }) {
+    const { showToast } = useToast();
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => showToast('Message', type, { action: { label: 'Undo', onClick: onUndo, shortcutKey: 'u' } })}
+        >
+          raise
+        </button>
+        <input aria-label="field" />
+      </>
+    );
+  }
+
+  it('announces errors assertively and everything else politely', () => {
+    render(<ToastProvider><Raise type="error" /></ToastProvider>);
+    fireEvent.click(screen.getByText('raise'));
+    expect(screen.getByRole('alert')).toContainElement(screen.getByText('Message'));
+    cleanup();
+    render(<ToastProvider><Raise type="info" /></ToastProvider>);
+    fireEvent.click(screen.getByText('raise'));
+    expect(screen.getByRole('status')).toContainElement(screen.getByText('Message'));
+    expect(screen.getByRole('alert')).not.toContainElement(screen.getByText('Message'));
+  });
+
+  it('runs the action from its shortcut key and closes', () => {
+    const undo = vi.fn();
+    render(<ToastProvider><Raise type="info" onUndo={undo} /></ToastProvider>);
+    fireEvent.click(screen.getByText('raise'));
+    fireEvent.keyDown(document.body, { key: 'U' });
+    expect(undo).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Message')).toBeNull();
+  });
+
+  it('leaves the key alone in a field, with a modifier, or once the toast is gone', () => {
+    const undo = vi.fn();
+    render(<ToastProvider><Raise type="info" onUndo={undo} /></ToastProvider>);
+    fireEvent.click(screen.getByText('raise'));
+    fireEvent.keyDown(screen.getByLabelText('field'), { key: 'u' });
+    fireEvent.keyDown(document.body, { key: 'u', ctrlKey: true });
+    expect(undo).not.toHaveBeenCalled();
+    act(() => void vi.advanceTimersByTime(4100));
+    fireEvent.keyDown(document.body, { key: 'u' });
+    expect(undo).not.toHaveBeenCalled();
+  });
+});

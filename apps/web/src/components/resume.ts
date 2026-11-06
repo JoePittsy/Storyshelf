@@ -1,7 +1,7 @@
 import type { InProgressItem } from '../api/history';
 import { mergeProgress } from '../api/libraries';
 import type { Progress, Tile } from '../api/libraries';
-import { fmtLong } from '../screens/bookHelpers';
+import { fmtLeft } from '@joepittsy/ui';
 
 /**
  * This library's unfinished books, most recently played first (ABS has already sorted them). ABS lists hidden ones
@@ -39,8 +39,7 @@ export function resumeStatus({ duration, currentTime, chapters, chapterIndex }: 
   const at = chapterIndex ?? chapters.findIndex((c) => currentTime >= c.start && currentTime < c.end);
   if (chapters.length > 0 && at >= 0) parts.push(`Chapter ${at + 1} of ${chapters.length}`);
   if (duration > 0) {
-    const left = Math.max(0, duration - currentTime);
-    parts.push(left < 60 ? 'Under a minute left' : `${fmtLong(left)} left`);
+    parts.push(fmtLeft((duration - currentTime) * 1000));
   }
   return parts.join(' · ');
 }

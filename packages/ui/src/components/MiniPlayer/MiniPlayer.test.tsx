@@ -44,7 +44,7 @@ describe('MiniPlayer names and readout', () => {
   it('reads time left once, without a minus sign beside the word left', () => {
     cleanup();
     const { container } = render(<MiniPlayer {...base} onOpen={() => {}} />);
-    expect(container.textContent).toContain('50:00 left');
+    expect(container.textContent).toContain('50m left');
     expect(container.textContent).not.toContain('−');
   });
 });

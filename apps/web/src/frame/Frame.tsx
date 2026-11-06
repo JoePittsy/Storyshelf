@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { Select, Tabs, TopBar } from '@joepittsy/ui';
 import { NAV_TABS, withLibrary } from '../api/people';
@@ -6,6 +6,9 @@ import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/l
 import { AccountMenu } from './AccountMenu';
 import { pageTitle, useDocumentTitle } from './useDocumentTitle';
 import { usePlayer } from '../player/engine';
+import { appKeyAction } from '../player/shortcuts';
+import { usePlayerJump } from '../player/useUndoableJump';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { useRouteTrail } from './routeTrail';
 import styles from './Frame.module.css';
 
@@ -38,6 +41,9 @@ export function Frame() {
   const [params] = useSearchParams();
   const { data: libs = [] } = useLibraries();
   const current = pickLibrary(libs, params.get('library'), storedLibrary());
+  // Opened from the account menu, whose panel has closed by then: focus goes back to the account button.
+  const [help, setHelp] = useState<'menu' | 'key' | null>(null);
+  const focusSearch = useSearchFocus(() => void navigate(withLibrary('/', current)), pathname === '/');
 
   // The tab for this page: a library list, or History and its own sections. Detail pages (a book) have none.
   const tab = NAV_TABS.find((t) => (t.key === 'history' ? pathname.startsWith('/history') : t.path === pathname));
@@ -64,6 +70,10 @@ export function Frame() {
 
   return (
     <div className={styles.frame} ref={frameRef}>
+      <a href="#main" className={styles.skip} onClick={skipToContent}>
+        Skip to content
+      </a>
+      <GlobalKeys onSearch={focusSearch} onHelp={() => setHelp('key')} />
       <TopBar
         className={`${styles.bar}${immersive ? ' ' + styles.hidden : ''}`}
         start={
@@ -72,7 +82,7 @@ export function Frame() {
           </Link>
         }
         centre={picker}
-        end={<AccountMenu />}
+        end={<AccountMenu onShowShortcuts={() => setHelp('menu')} />}
       />
       {tab && !immersive && (
         <div className={styles.tabs}>
@@ -93,8 +103,81 @@ export function Frame() {
       </p>
       {/* Layout slot for the mini player: collapses while empty. */}
       <div id="mini-player-slot" className={styles.player} />
+      {help && (
+        <ShortcutsDialog
+          onClose={() => {
+            setHelp(null);
+            if (help === 'menu') setTimeout(() => document.querySelector<HTMLElement>('button[aria-label^="Account:"]')?.focus());
+          }}
+        />
+      )}
     </div>
   );
+}
+
+/** The skip link: focus goes to the page's main (a hash link can't, as the router owns the address). */
+function skipToContent(e: MouseEvent) {
+  const main = document.querySelector<HTMLElement>('main');
+  if (!main) return;
+  e.preventDefault();
+  main.tabIndex = -1;
+  main.focus();
+}
+
+/**
+ * "/" focuses the library search, going to the library first when the listener is elsewhere. The search box appears
+ * once that page has rendered, so it is looked for for a moment.
+ */
+function useSearchFocus(goToLibrary: () => void, onLibrary: boolean) {
+  const timer = useRef<ReturnType<typeof setInterval>>(undefined);
+  useEffect(() => () => clearInterval(timer.current), []);
+  return () => {
+    const find = () => document.querySelector<HTMLInputElement>('main input[type="search"]');
+    const el = find();
+    if (el) return void (el.focus(), el.select());
+    if (!onLibrary) goToLibrary();
+    clearInterval(timer.current);
+    const until = Date.now() + 1500;
+    timer.current = setInterval(() => {
+      const found = find();
+      if (found) found.focus();
+      if (found || Date.now() > until) clearInterval(timer.current);
+    }, 50);
+  };
+}
+
+/**
+ * The keyboard shortcuts that work on every route (the player's, "/" and "?"). Player keys need a book to act on; none
+ * of them fire while a sheet or dialog is open, which has its own keys. Its own component, so the frame doesn't
+ * re-render with the player.
+ */
+function GlobalKeys({ onSearch, onHelp }: { onSearch: () => void; onHelp: () => void }) {
+  const p = usePlayer();
+  const { previousChapter, nextChapter } = usePlayerJump();
+  const latest = useRef({ p, onSearch, onHelp, previousChapter, nextChapter });
+  useEffect(() => {
+    latest.current = { p, onSearch, onHelp, previousChapter, nextChapter };
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
+      const action = appKeyAction(e);
+      if (!action) return;
+      const { p, onSearch, onHelp, previousChapter, nextChapter } = latest.current;
+      if (action === 'search') onSearch();
+      else if (action === 'help') onHelp();
+      else if (!p.item) return;
+      else if (action === 'toggle') p.toggle();
+      else if (action === 'back') p.skip(-1);
+      else if (action === 'forward') p.skip(1);
+      else if (action === 'previousChapter') previousChapter();
+      else nextChapter();
+      e.preventDefault();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+  return null;
 }
 
 /** Titles for the routes that load nothing; a screen with a name to show (a book, an author) sets its own. */

@@ -28,7 +28,7 @@ import { useProgress } from '../player/progressMode';
 import { SKIP_OPTIONS } from '../player/settings';
 import { ChaptersSheet } from '../player/ChaptersSheet';
 import { usePlayerJump } from '../player/useUndoableJump';
-import { playerKeyAction } from '../player/shortcuts';
+import { ShortcutList } from '../frame/ShortcutList';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
 
@@ -122,24 +122,7 @@ export function NowPlaying() {
     };
   }, []);
 
-  const { toggle, skip } = p;
   const { previousChapter, nextChapter } = usePlayerJump();
-  const sheetOpen = sheet !== null;
-  useEffect(() => {
-    if (sheetOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      const action = playerKeyAction(e);
-      if (!action) return;
-      e.preventDefault();
-      if (action === 'toggle') toggle();
-      else if (action === 'back') skip(-1);
-      else if (action === 'forward') skip(1);
-      else if (action === 'previousChapter') previousChapter();
-      else nextChapter();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [sheetOpen, toggle, skip, previousChapter, nextChapter]);
 
   const { window: w } = useProgress();
   if (!p.item) return <Navigate to="/" replace />;
@@ -156,14 +139,7 @@ export function NowPlaying() {
         <PillButton onClick={close}>Close</PillButton>
         {!touch && (
         <InfoTip label="Keyboard shortcuts">
-          <dl className={styles.keys}>
-            <dt>Space</dt>
-            <dd>Play or pause</dd>
-            <dt>Left / Right</dt>
-            <dd>Skip back / forward</dd>
-            <dt>[ / ]</dt>
-            <dd>Previous / next chapter</dd>
-          </dl>
+          <ShortcutList />
         </InfoTip>
         )}
       </div>
@@ -195,7 +171,14 @@ export function NowPlaying() {
                 <PeopleLinks people={narrators.join(', ')} onOpenPerson={(name) => void navigate(narratorPath(name))} />
               </p>
             )}
-            {chapter && <p className={styles.chapter}>{chapter.title}</p>}
+            {chapter && (
+              <p className={styles.chapter}>
+                <span className={styles.chapterCount}>
+                  Chapter {p.chapterIndex + 1} of {p.chapters.length}
+                </span>
+                {chapter.title}
+              </p>
+            )}
           </header>
 
           <div className={styles.controls}>

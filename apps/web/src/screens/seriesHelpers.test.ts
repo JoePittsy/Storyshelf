@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LibraryItem } from '../api/libraries';
-import { compareBooks, groupAuthorBooks, nextBook, nextBookLabel, sortSeriesBooks } from './seriesHelpers';
+import { compareBooks, groupAuthorBooks, nextBook, nextBookLabel, nextBookStart, sortSeriesBooks } from './seriesHelpers';
 
 const book = (id: string, title: string, publishedYear?: string): LibraryItem => ({
   id,
@@ -76,20 +76,43 @@ describe('nextBook', () => {
   it('starts the first book when nothing is begun', () => {
     expect(nextBook(books, new Map())).toMatchObject({ label: 'Start', book: { item: { id: 'a' } } });
   });
-  it('continues at the first unfinished book', () => {
+  it('prefers the book in progress over an earlier one that was never started', () => {
+    expect(nextBook(books, prog([['a', 0, false], ['b', 0.4, false]]))).toMatchObject({
+      label: 'Continue',
+      book: { item: { id: 'b' } },
+    });
+  });
+  it('continues the book in progress when earlier ones are finished', () => {
     expect(nextBook(books, prog([['a', 1, true], ['b', 0.4, false]]))).toMatchObject({
       label: 'Continue',
       book: { item: { id: 'b' } },
     });
   });
-  it('starts again from the top when all are finished', () => {
+  it('starts the first unstarted book when the rest are finished', () => {
+    expect(nextBook(books, prog([['a', 1, true], ['b', 1, true]]))).toMatchObject({
+      label: 'Start',
+      book: { item: { id: 'c' } },
+    });
+    // A finished book with progress left over is finished, not in progress.
+    expect(nextBook(books, prog([['a', 0.99, true]]))).toMatchObject({ label: 'Start', book: { item: { id: 'b' } } });
+  });
+  it('listens again from the top when all are finished', () => {
     expect(nextBook(books, prog([['a', 1, true], ['b', 1, true], ['c', 1, true]]))).toMatchObject({
-      label: 'Start again',
+      label: 'Listen again',
       book: { item: { id: 'a' } },
     });
   });
   it('is undefined with no books', () => {
     expect(nextBook([], new Map())).toBeUndefined();
+  });
+});
+
+describe('nextBookStart', () => {
+  it('plays from the saved place when continuing, and from the top otherwise', () => {
+    const progress = new Map([['b', { currentTime: 4100 }]]);
+    expect(nextBookStart({ label: 'Continue' }, progress, 'b')).toBe(4100);
+    expect(nextBookStart({ label: 'Start' }, progress, 'b')).toBe(0);
+    expect(nextBookStart({ label: 'Listen again' }, progress, 'b')).toBe(0);
   });
 });
 
@@ -115,9 +138,10 @@ describe('nextBookLabel', () => {
       'Continue #1 \u00b7 under a minute left',
     );
   });
-  it('keeps Start and Start again as they are', () => {
+  it('numbers Start, and leaves Listen again as it is', () => {
     const b = withDuration('a', '1', 100);
-    expect(nextBookLabel({ book: b, label: 'Start' }, new Map())).toBe('Start');
-    expect(nextBookLabel({ book: b, label: 'Start again' }, new Map())).toBe('Start again');
+    expect(nextBookLabel({ book: b, label: 'Start' }, new Map())).toBe('Start #1');
+    expect(nextBookLabel({ book: { ...b, sequence: null }, label: 'Start' }, new Map())).toBe('Start');
+    expect(nextBookLabel({ book: b, label: 'Listen again' }, new Map())).toBe('Listen again');
   });
 });

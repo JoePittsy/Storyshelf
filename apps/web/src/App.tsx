@@ -65,6 +65,11 @@ function PlayableLibrary() {
   return <Library onPlay={(id) => void play(id)} />;
 }
 
+/** A series with its main button wired to the player. */
+function PlayableSeries() {
+  return <Series onPlay={(id, from) => void play(id, from)} />;
+}
+
 function AppRoutes() {
   useScrollRestoration();
   return (
@@ -81,7 +86,7 @@ function AppRoutes() {
           <Route path="/now-playing" element={<NowPlaying />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/author/:id" element={<Author />} />
-          <Route path="/series/:id" element={<Series />} />
+          <Route path="/series/:id" element={<PlayableSeries />} />
           <Route path="/history" element={<History />}>
             <Route index element={<HistoryLog />} />
             <Route path="finished" element={<HistoryFinished />} />

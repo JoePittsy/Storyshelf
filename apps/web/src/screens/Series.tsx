@@ -9,12 +9,19 @@ import { BackLink } from '../components/BackLink';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import { LoadFailed } from '../components/LoadFailed';
 import { sanitiseDescription } from './bookHelpers';
-import { nextBook, nextBookLabel, sequenceBadge, sortSeriesBooks } from './seriesHelpers';
+import { usePlayer } from '../player/engine';
+import { nextBook, nextBookLabel, nextBookStart, sequenceBadge, sortSeriesBooks } from './seriesHelpers';
 import styles from './Collection.module.css';
 
+interface Props {
+  /** Starts or resumes a book; `from` is seconds into it, left out to carry on where the server has it. */
+  onPlay?: (itemId: string, from?: number) => void;
+}
+
 /** A series: name, authors, then its books in reading order with sequence badges and progress (REQ-30). */
-export function Series() {
+export function Series({ onPlay }: Props) {
   const { id = '' } = useParams();
+  const player = usePlayer();
   const navigate = useNavigate();
   const series = useSeries(id);
   const libraryId = series.data?.libraryId;
@@ -64,6 +71,7 @@ export function Series() {
   const linkable = !!ids && names.length > 0 && names.every((n) => ids.has(n));
   const next = nextBook(books, progress.data ?? new Map());
   const count = books.length;
+  const playingNext = !!next && player.item?.id === next.book.item.id && player.status === 'playing';
 
   return (
     <main className={styles.page}>
@@ -96,9 +104,13 @@ export function Series() {
           <PillButton
             variant="primary"
             className={styles.action}
-            onClick={() => void navigate(`/book/${next.book.item.id}`)}
+            onClick={() =>
+              playingNext
+                ? player.toggle()
+                : onPlay?.(next.book.item.id, nextBookStart(next, progress.data ?? new Map(), next.book.item.id))
+            }
           >
-            {nextBookLabel(next, progress.data ?? new Map())}
+            {playingNext ? 'Pause' : nextBookLabel(next, progress.data ?? new Map())}
           </PillButton>
         )}
       </HeroBand>

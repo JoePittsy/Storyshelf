@@ -71,6 +71,21 @@ export function fmtListened(seconds: number): string {
 }
 
 /**
+ * The Stats page's headline cards. While the four periods are all the same (a new listener: everything so far is this
+ * week), four identical cards say nothing, so they become the one: "Listened so far".
+ */
+export function statCards(totals: { week: number; month: number; year: number }, allTime: number): { label: string; value: string }[] {
+  const { week, month, year } = totals;
+  if (week === month && month === year && year === allTime) return [{ label: 'Listened so far', value: fmtListened(allTime) }];
+  return [
+    { label: 'This week', value: fmtListened(week) },
+    { label: 'This month', value: fmtListened(month) },
+    { label: 'This year', value: fmtListened(year) },
+    { label: 'All time', value: fmtListened(allTime) },
+  ];
+}
+
+/**
  * "Ch 7 → Ch 9" for what a session covered, or "Ch 7" within one chapter. The start counts in the chapter it begins
  * in; an end exactly on a boundary belongs to the chapter that just finished. With fewer than two chapters there is
  * nothing to name, so it is the time range, "0:12:00 → 0:45:10".

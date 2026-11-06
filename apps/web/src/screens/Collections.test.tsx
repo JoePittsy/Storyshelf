@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
@@ -56,7 +56,7 @@ function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
 }
 
-function renderAt(path: string) {
+function renderAt(path: string, onPlay: (id: string, from?: number) => void = () => undefined) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={qc}>
@@ -64,7 +64,7 @@ function renderAt(path: string) {
         <Where />
         <Routes>
           <Route path="/author/:id" element={<Author />} />
-          <Route path="/series/:id" element={<Series />} />
+          <Route path="/series/:id" element={<Series onPlay={onPlay} />} />
           <Route path="/now-playing" element={<NowPlaying />} />
         </Routes>
       </MemoryRouter>
@@ -134,6 +134,9 @@ describe('Author page', () => {
 });
 
 describe('Series page', () => {
+  beforeEach(() => {
+    vi.mocked(usePlayer).mockReturnValue({ item: null, status: 'idle', toggle: vi.fn() } as unknown as ReturnType<typeof usePlayer>);
+  });
   const seriesRoutes = {
     '/api/series/s1': { id: 's1', name: 'The Sandman', description: null, libraryId: 'lib1' },
     '/api/libraries/lib1/items': { results: [inSeries('b2', 'Act II', '2'), inSeries('b1', 'Act I', '1')] },
@@ -153,11 +156,25 @@ describe('Series page', () => {
     expect(screen.getByTestId('where')).toHaveTextContent('/author/a9');
   });
 
-  it('REQ-30 Continue opens the first unfinished book', async () => {
+  it('REQ-30 Continue plays the book in progress from its saved place', async () => {
     serve(seriesRoutes);
-    renderAt('/series/s1');
+    const onPlay = vi.fn();
+    renderAt('/series/s1', onPlay);
     await userEvent.click(await screen.findByRole('button', { name: /^Continue #1/ }));
-    expect(screen.getByTestId('where')).toHaveTextContent('/book/b1');
+    expect(onPlay).toHaveBeenCalledWith('b1', 1);
+    // It plays; it does not open the book page.
+    expect(screen.getByTestId('where')).toHaveTextContent('/series/s1');
+  });
+
+  it('says Pause on the button while that book is playing, and pauses it', async () => {
+    serve(seriesRoutes);
+    const toggle = vi.fn();
+    vi.mocked(usePlayer).mockReturnValue({ item: { id: 'b1' }, status: 'playing', toggle } as unknown as ReturnType<typeof usePlayer>);
+    const onPlay = vi.fn();
+    renderAt('/series/s1', onPlay);
+    await userEvent.click(await screen.findByRole('button', { name: 'Pause' }));
+    expect(toggle).toHaveBeenCalledOnce();
+    expect(onPlay).not.toHaveBeenCalled();
   });
 
   it('REQ-36 says not found on a 404', async () => {

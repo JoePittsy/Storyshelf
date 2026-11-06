@@ -57,8 +57,8 @@
   }
 }
 
-/* Touch: a tab is a 44px target. */
-@media (pointer: coarse) {
+/* Touch and phone widths: a tab is a 44px target. */
+@media (pointer: coarse), (width < 40em) {
   .tab {
     display: flex;
     align-items: center;

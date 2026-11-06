@@ -21,7 +21,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function renderMenu() {
+function renderMenu(onShowShortcuts?: () => void) {
   vi.mocked(auth.restoreSession).mockResolvedValue({ id: 'u1', username: 'joe', accessToken: 't' });
   // jsdom has no <dialog> modal support.
   HTMLDialogElement.prototype.showModal ||= function (this: HTMLDialogElement) {
@@ -32,7 +32,7 @@ function renderMenu() {
   };
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <AccountMenu />
+      <AccountMenu onShowShortcuts={onShowShortcuts} />
     </QueryClientProvider>,
   );
 }
@@ -62,5 +62,21 @@ describe('account menu', () => {
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByText(/Signed in as/)).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+});
+
+describe('account menu shortcuts', () => {
+  it('lists Keyboard shortcuts, which closes the menu and asks for the list', async () => {
+    const show = vi.fn();
+    renderMenu(show);
+    await userEvent.click(await screen.findByRole('button', { name: 'Account: joe' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }));
+    expect(show).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
+  });
+  it('has no such item when nothing can show the list', async () => {
+    renderMenu();
+    await userEvent.click(await screen.findByRole('button', { name: 'Account: joe' }));
+    expect(screen.queryByRole('button', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
   });
 });

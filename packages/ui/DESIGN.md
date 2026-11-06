@@ -238,7 +238,7 @@ Sizes are in `em` from the page base `clamp(14px, calc(0.45vw + 8.2px), 16px)` (
 - **Title** (`--fs-title`, 600, 1.6em, 1.2, -0.015em): section and shelf titles. Dialog titles sit at 1.3em (`--fs-title-dialog`), balanced.
 - **Title, caption** (`--fs-title-caption`, 600, 1.5em; 1.15em on medium cards, `--fs-title-card`; -0.01em): the title line under an image-card scrim.
 - **Body** (`--fs-body`, 500 title / 400 credit, 1.07em): item and chart rows, hero sub-lines.
-- **Body, prose** (`--fs-prose`, 400, 0.95em, 1.55, max 100ch): running text and notes. Dialog notes cap at 62ch.
+- **Body, prose** (`--fs-prose`, 400, 0.95em, 1.55, max 100ch): running text and notes. A SectionCard's subtitle holds to the same measure (`max-width: 100ch`). Dialog notes cap at 62ch.
 - **Label** (`--fs-label`, 500, 0.93em): chips, small buttons and secondary lines. The smaller step is `--fs-small`, `max(13px, 0.86em)`.
 - **Fixed-px surfaces** (compact panels that don't scale with the page): `--fs-px` 13px for meta, `--fs-px-lg` 14px for row text, `--fs-px-title` 16px for titles.
 

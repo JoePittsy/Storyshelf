@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { playerKeyAction } from './shortcuts';
+import { appKeyAction, playerKeyAction } from './shortcuts';
 
 const on = (tagName: string, role?: string, isContentEditable = false) =>
   ({
@@ -49,5 +49,31 @@ describe('playerKeyAction', () => {
     expect(playerKeyAction({ key: ' ', ctrlKey: true, target: body })).toBeNull();
     expect(playerKeyAction({ key: 'ArrowLeft', metaKey: true, target: body })).toBeNull();
     expect(playerKeyAction({ key: ']', altKey: true, target: body })).toBeNull();
+  });
+});
+
+describe('appKeyAction', () => {
+  const body = on('BODY');
+  it('keeps the player keys and adds / for search and ? for the shortcuts list', () => {
+    expect(appKeyAction({ key: ' ', target: body })).toBe('toggle');
+    expect(appKeyAction({ key: ']', target: body })).toBe('nextChapter');
+    expect(appKeyAction({ key: '/', target: body })).toBe('search');
+    expect(appKeyAction({ key: '?', target: body })).toBe('help');
+    expect(appKeyAction({ key: 'u', target: body })).toBeNull();
+  });
+  it('leaves / and ? to a field, so they can be typed', () => {
+    for (const tag of ['INPUT', 'TEXTAREA', 'SELECT']) {
+      expect(appKeyAction({ key: '/', target: on(tag) })).toBeNull();
+      expect(appKeyAction({ key: '?', target: on(tag) })).toBeNull();
+    }
+    expect(appKeyAction({ key: '/', target: on('DIV', undefined, true) })).toBeNull();
+  });
+  it('ignores a modifier chord', () => {
+    expect(appKeyAction({ key: '/', ctrlKey: true, target: body })).toBeNull();
+    expect(appKeyAction({ key: '?', metaKey: true, target: body })).toBeNull();
+  });
+  it('still takes / and ? from a focused button or link', () => {
+    expect(appKeyAction({ key: '/', target: on('BUTTON') })).toBe('search');
+    expect(appKeyAction({ key: ' ', target: on('A') })).toBeNull();
   });
 });

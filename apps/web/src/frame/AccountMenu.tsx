@@ -7,9 +7,9 @@ import styles from './AccountMenu.module.css';
 
 /**
  * The account, behind the user's initial: who is signed in, and Sign out, which asks first because it stops playback.
- * A disclosure rather than an ARIA menu: it holds a line of text and one button, so it is a small panel in the tab order.
+ * A disclosure rather than an ARIA menu: it holds a line of text and a couple of buttons, so it is a small panel in the tab order.
  */
-export function AccountMenu() {
+export function AccountMenu({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
   const qc = useQueryClient();
   const { data: user } = useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
   const [open, setOpen] = useState(false);
@@ -73,6 +73,19 @@ export function AccountMenu() {
           <p className={styles.who}>
             Signed in as <strong>{name}</strong>
           </p>
+          {onShowShortcuts && (
+            <button
+              type="button"
+              className={styles.item}
+              aria-keyshortcuts="?"
+              onClick={() => {
+                setOpen(false);
+                onShowShortcuts();
+              }}
+            >
+              Keyboard shortcuts
+            </button>
+          )}
           <button
             type="button"
             className={styles.item}

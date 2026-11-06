@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ListMusic, Loader2, Maximize2, Play, SkipBack, SkipForward } from 'lucide-react';
+import { fmtLeft } from '../../lib/fmtLeft';
 import { fmtTime } from '../../lib/fmtTime';
 import type { SeekMarker } from '../../lib/seekMarkers';
 import { Artwork } from '../Artwork';
@@ -210,7 +211,7 @@ export function MiniPlayer({
                   <span className={styles.clock}>
                     {fmtTime(position)} / {fmtTime(duration)}
                   </span>
-                  <span className={styles.left}>{fmtTime(Math.max(0, duration - position))} left</span>
+                  <span className={styles.left}>{fmtLeft(duration - position)}</span>
                 </span>
               )
             )}

@@ -5,6 +5,7 @@ import {
   DetailList,
   EmptyState,
   ExpandableText,
+  fmtLeft,
   SectionCard,
   HeroBand,
   ListRow,
@@ -112,17 +113,15 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   // While this book is the one playing, the primary action pauses it rather than offering a no-op "Resume".
   const playingHere = player.item?.id === item.id && player.status === 'playing';
   // The action says what it will do and how much book is left, so one tap is enough to decide.
-  const left = duration > 0 && !now.isFinished && started ? `${fmtLong(duration - now.currentTime)} left` : '';
+  const left = duration > 0 && !now.isFinished && started ? fmtLeft((duration - now.currentTime) * 1000) : '';
   const label = playingHere ? 'Pause' : [playLabel(resume), left].filter(Boolean).join(' · ');
-  // The player already holds a place in this book: jumping from it needs a way back.
-  const loaded = player.item?.id === item.id && player.status !== 'idle';
 
   const status = now.isFinished
     ? 'Finished'
     : started
       ? [
           // The button carries the time left, except while it reads Pause.
-          (playingHere || chapterIdx < 0) && `${fmtLong(duration - now.currentTime)} left`,
+          (playingHere || chapterIdx < 0) && fmtLeft((duration - now.currentTime) * 1000),
           chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`,
         ]
           .filter(Boolean)
@@ -152,7 +151,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       ))}
     </>
   );
-  const meta = [m.publishedYear, fmtLong(duration)].filter(Boolean).join(' · ');
+  const meta = [m.publishedYear, duration > 0 && `${fmtLong(duration)} long`].filter(Boolean).join(' · ');
   const details: DetailItem[] = bookDetails(item).map((d) =>
     d.label === 'Narrators'
       ? { label: d.label, value: <PeopleLinks people={m.narrators.join(', ')} onOpenPerson={openNarrator} /> }
@@ -209,7 +208,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
                     aside={fmtClock(c.start)}
                     trailing={fmtClock(c.end - c.start, false)}
                     current={i === chapterIdx}
-                    onClick={() => jump(c.start, `Chapter ${i + 1}`, loaded ? now.currentTime : null)}
+                    onClick={() => jump(c.start, `Chapter ${i + 1}`, started ? now.currentTime : null)}
                   />
                 ))}
               </ul>

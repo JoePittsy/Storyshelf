@@ -1,5 +1,5 @@
 import type { LibraryItem } from '../api/libraries';
-import { fmtLong } from './bookHelpers';
+import { fmtLeft } from '@joepittsy/ui';
 
 interface Sortable {
   sequence?: string | null;
@@ -80,33 +80,55 @@ export function groupAuthorBooks(
 /** The "#N" badge for a sequence; none when there isn't one. */
 export const sequenceBadge = (s: string | null): string | undefined => (s ? `#${s}` : undefined);
 
-/** The first book not yet finished, and the label for starting it. */
+/** What the series button does: which book, and whether it carries on, starts or goes round again. */
+export type NextLabel = 'Start' | 'Continue' | 'Listen again';
+
+/**
+ * The book the series button is for: the one in progress (begun, not finished); else the first not yet begun; with
+ * every book finished, the first again.
+ */
 export function nextBook(
   books: SeriesBook[],
   progress: Map<string, { progress: number; isFinished: boolean }>,
-): { book: SeriesBook; label: 'Start' | 'Continue' | 'Start again' } | undefined {
+): { book: SeriesBook; label: NextLabel } | undefined {
   const first = books[0];
   if (!first) return undefined;
-  const open = books.find((b) => !progress.get(b.item.id)?.isFinished);
-  const touched = books.some((b) => (progress.get(b.item.id)?.progress ?? 0) > 0);
-  if (!open) return { book: first, label: 'Start again' };
-  return { book: open, label: touched ? 'Continue' : 'Start' };
+  const inProgress = books.find((b) => {
+    const p = progress.get(b.item.id);
+    return !!p && p.progress > 0 && !p.isFinished;
+  });
+  if (inProgress) return { book: inProgress, label: 'Continue' };
+  const unstarted = books.find((b) => {
+    const p = progress.get(b.item.id);
+    return !p?.isFinished && !(p && p.progress > 0);
+  });
+  if (unstarted) return { book: unstarted, label: 'Start' };
+  return { book: first, label: 'Listen again' };
 }
 
 /**
- * The series page's main button: "Start", "Start again", or for a book in progress which one and how much is left,
- * "Continue #2 · 51m left". The pieces that aren't known are left out.
+ * The series page's main button: "Continue #2 · 51m left", "Start #3" or "Listen again". The pieces that aren't
+ * known are left out.
  */
 export function nextBookLabel(
-  next: { book: SeriesBook; label: 'Start' | 'Continue' | 'Start again' },
+  next: { book: SeriesBook; label: NextLabel },
   progress: Map<string, { currentTime?: number }>,
 ): string {
-  if (next.label !== 'Continue') return next.label;
+  if (next.label === 'Listen again') return next.label;
   const { item, sequence } = next.book;
-  const head = sequence ? `Continue #${sequence}` : 'Continue';
+  const head = sequence ? `${next.label} #${sequence}` : next.label;
+  if (next.label === 'Start') return head;
   const duration = item.media.duration ?? 0;
   const at = progress.get(item.id)?.currentTime ?? 0;
   if (duration <= 0 || at <= 0) return head;
-  const left = Math.max(0, duration - at);
-  return `${head} \u00b7 ${left < 60 ? 'under a minute' : fmtLong(left)} left`;
+  return `${head} · ${fmtLeft((duration - at) * 1000)}`;
+}
+
+/** Where the series button plays from: the saved place for "Continue", the top otherwise (undefined: the player decides). */
+export function nextBookStart(
+  next: { label: NextLabel },
+  progress: Map<string, { currentTime?: number }>,
+  id: string,
+): number | undefined {
+  return next.label === 'Continue' ? progress.get(id)?.currentTime : 0;
 }

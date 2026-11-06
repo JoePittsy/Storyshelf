@@ -70,7 +70,7 @@ describe('resumeStatus', () => {
     expect(resumeStatus({ duration: 0, currentTime: 0, chapters })).toBe('Chapter 1 of 3');
     expect(resumeStatus({ duration: 0, currentTime: 0, chapters: [] })).toBe('');
   });
-  it('reads Under a minute left at the very end', () => {
-    expect(resumeStatus({ duration: 300, currentTime: 280, chapters: [] })).toBe('Under a minute left');
+  it('reads under a minute left at the very end', () => {
+    expect(resumeStatus({ duration: 300, currentTime: 280, chapters: [] })).toBe('under a minute left');
   });
 });

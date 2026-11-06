@@ -139,4 +139,8 @@
 }
 .source a {
   color: var(--text);
+  /* A 44px target for a link in a line of text, drawn outward so the line keeps its height. */
+  display: inline-block;
+  padding: 13px 0;
+  margin: -13px 0;
 }

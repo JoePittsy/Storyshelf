@@ -37,6 +37,7 @@ import {
   mergeSessions,
   periodTotals,
   recentDays,
+  statCards,
   topAuthors,
   topBooks,
 } from './historyHelpers';
@@ -283,14 +284,7 @@ export function HistoryStats() {
 
   return (
     <div className={styles.stats}>
-      <StatGrid
-        items={[
-          { label: 'This week', value: fmtListened(view.totals.week) },
-          { label: 'This month', value: fmtListened(view.totals.month) },
-          { label: 'This year', value: fmtListened(view.totals.year) },
-          { label: 'All time', value: fmtListened(view.allTime) },
-        ]}
-      />
+      <StatGrid items={statCards(view.totals, view.allTime)} />
       {view.young ? (
         <SectionCard title="Your listening year starts here" sub="The map of the whole year fills in as you listen. Until then, these are your last seven days.">
           <BarList rows={view.recent} />

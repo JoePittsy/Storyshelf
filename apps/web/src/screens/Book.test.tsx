@@ -6,6 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import { ToastProvider } from '@joepittsy/ui';
 
 vi.mock('../api/auth', async (orig) => ({ ...(await orig<typeof import('../api/auth')>()), absFetch: vi.fn() }));
 
@@ -49,11 +50,13 @@ function renderBook(onPlay = vi.fn(), onChapter = vi.fn()) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/book/li_1']}>
-        <Routes>
-          <Route path="/book/:id" element={<Book onPlay={onPlay} onChapter={onChapter} />} />
-        </Routes>
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/book/li_1']}>
+          <Routes>
+            <Route path="/book/:id" element={<Book onPlay={onPlay} onChapter={onChapter} />} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>
     </QueryClientProvider>,
   );
   return { onPlay, onChapter };
@@ -172,5 +175,30 @@ describe('Book screen', () => {
     const link = await screen.findByRole('link', { name: 'archive.org' });
     expect(link).toHaveAttribute('href', 'https://www.archive.org/details/hobbit');
     expect(screen.queryByRole('heading', { name: 'About this book' })).not.toBeInTheDocument();
+  });
+
+  it('offers Undo on a chapter tap in a book that is not loaded, returning to the saved place', async () => {
+    // Nothing is loaded in the player (a fresh load): the place to keep is the one the server holds.
+    serve(item);
+    const { onChapter } = renderBook();
+    await userEvent.click(await screen.findByRole('button', { name: /An Unexpected Party/ }));
+    expect(onChapter).toHaveBeenLastCalledWith(0);
+    expect(screen.getByText('Jumped to Chapter 1')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(onChapter).toHaveBeenLastCalledWith(3730);
+  });
+
+  it('offers no Undo on a book that has not been started', async () => {
+    serve({ ...item, userMediaProgress: undefined });
+    const { onChapter } = renderBook();
+    await userEvent.click(await screen.findByRole('button', { name: /Roast Mutton/ }));
+    expect(onChapter).toHaveBeenCalledWith(3600);
+    expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument();
+  });
+
+  it('gives the length with the meta line, not as a bare total over the progress bar', async () => {
+    serve(item);
+    renderBook();
+    expect(await screen.findByText('1937 · 10h 0m long')).toBeInTheDocument();
   });
 });

@@ -1,0 +1,20 @@
+.keys {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.3em 1em;
+  margin: 0;
+  text-align: left;
+}
+/* Each pair is one row of the grid, so the keys line up in a column. */
+.row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+.row dt {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.row dd {
+  margin: 0;
+}

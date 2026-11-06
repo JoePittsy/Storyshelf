@@ -90,6 +90,11 @@
   color: var(--text-3);
   overflow-wrap: anywhere;
 }
+/* "Chapter 7 of 18" over the chapter's own title. */
+.chapterCount {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
 /* Seek, transport and options as one group, pushed to the bottom of the phone column. */
 .controls {
   display: flex;
@@ -133,19 +138,6 @@
   display: flex;
   flex-direction: column;
   gap: 1em;
-}
-.keys {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 0.3em 1em;
-  margin: 0;
-  text-align: left;
-}
-.keys dt {
-  font-weight: 600;
-}
-.keys dd {
-  margin: 0;
 }
 .side,
 .chapterList {

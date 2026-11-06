@@ -60,7 +60,7 @@ describe('SeekBar', () => {
 });
 
 describe('PlaybackTime and PlaybackRemaining', () => {
-  it('format milliseconds as m:ss, and the remainder as time left', () => {
+  it('format milliseconds as m:ss, and the remainder as time left in words', () => {
     cleanup();
     render(
       <>
@@ -69,7 +69,7 @@ describe('PlaybackTime and PlaybackRemaining', () => {
       </>
     );
     expect(screen.getByText('1:29')).toBeInTheDocument();
-    expect(screen.getByText('2:13 left')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('2m left')).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('PlaybackRemaining renders nothing without a duration', () => {
