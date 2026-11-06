@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { cleanChapters } from '../player/chapters';
 import { AbsError, absFetch } from './auth';
+import { absUrl } from './server';
 
 // Only the fields the book page uses, from GET /api/items/:id?expanded=1&include=progress (ABS 2.37).
 export interface Chapter {
@@ -45,7 +46,7 @@ export interface BookItem {
 
 /** Unauthenticated, so an <img> can load it. Never width 0, which ABS treats as full size. */
 export const coverUrl = (id: string, updatedAt: number, width = 800) =>
-  `/api/items/${id}/cover?width=${width}&format=webp&ts=${updatedAt}`;
+  absUrl(`/api/items/${id}/cover?width=${width}&format=webp&ts=${updatedAt}`);
 
 export const bookQuery = (id: string) =>
   queryOptions({

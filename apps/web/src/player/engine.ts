@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
 import { AbsError } from '../api/auth';
+import { absUrl } from '../api/server';
 import { diag } from './diag';
 import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
@@ -108,7 +109,7 @@ let syncChain: Promise<void> = Promise.resolve();
 let mimes: string[] | null = null;
 
 const getMimes = (a: HTMLAudioElement) => (mimes ??= supportedMimeTypes(a));
-const coverFor = (id: string) => `/api/items/${id}/cover?width=512&format=jpeg`;
+const coverFor = (id: string) => absUrl(`/api/items/${id}/cover?width=512&format=jpeg`);
 
 /** The element's real state, for the diagnostics log. */
 function snap(extra?: Record<string, unknown>): Record<string, unknown> {

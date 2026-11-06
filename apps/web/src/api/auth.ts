@@ -1,3 +1,5 @@
+import { absUrl, setServerUrl } from './server';
+import { transport } from './transport';
 import type { AbsUser, LoginResponse, RefreshResponse, ServerStatus } from './types';
 
 export type { AbsUser, ServerStatus };
@@ -23,7 +25,8 @@ export class UnsupportedServerError extends Error {
 
 const MIN_VERSION = [2, 26, 0];
 
-// Access token lives in memory only; the refresh token stays in ABS's httpOnly cookie.
+// Access token lives in memory only. The refresh token stays in ABS's httpOnly cookie (same-origin mode)
+// or in localStorage (hosted mode); see transport.ts.
 let accessToken: string | null = null;
 let refreshing: Promise<AbsUser> | null = null;
 const listeners = new Set<() => void>();
@@ -35,11 +38,12 @@ async function check(res: Response): Promise<Response> {
 
 function signedOut(): void {
   accessToken = null;
+  transport().clear();
   listeners.forEach((cb) => cb());
 }
 
 export async function getStatus(): Promise<ServerStatus> {
-  return (await check(await fetch('/status'))).json() as Promise<ServerStatus>;
+  return (await check(await fetch(absUrl('/status')))).json() as Promise<ServerStatus>;
 }
 
 export function assertSupported(s: ServerStatus): void {
@@ -56,24 +60,25 @@ export function assertSupported(s: ServerStatus): void {
   if (!s.isInit) throw new UnsupportedServerError('not-initialised');
 }
 
+/** Hosted mode: point at a (different) server. The old server's session means nothing to the new one. */
+export function changeServer(url: string): void {
+  transport().clear();
+  setServerUrl(url);
+}
+
 export async function login(username: string, password: string): Promise<AbsUser> {
-  const res = await check(
-    await fetch('/login', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    }),
-  );
+  const res = await check(await transport().login(username, password));
   const { user } = (await res.json()) as LoginResponse;
   accessToken = user.accessToken;
+  transport().adopt(user);
   return user;
 }
 
 async function refresh(): Promise<AbsUser> {
-  const res = await check(await fetch('/auth/refresh', { method: 'POST', credentials: 'include' }));
+  const res = await check(await transport().refresh());
   const { user } = (await res.json()) as RefreshResponse;
   accessToken = user.accessToken;
+  transport().adopt(user);
   return user;
 }
 
@@ -81,14 +86,17 @@ export async function restoreSession(): Promise<AbsUser | null> {
   try {
     return await refresh();
   } catch (e) {
-    if (e instanceof AbsError && e.status === 401) return null;
+    if (e instanceof AbsError && e.status === 401) {
+      transport().clear();
+      return null;
+    }
     throw e;
   }
 }
 
 export async function logout(): Promise<void> {
   try {
-    await fetch('/logout', { method: 'POST', credentials: 'include' });
+    await transport().logout();
   } catch {
     // Offline or server down: still sign out locally.
   } finally {
@@ -116,7 +124,7 @@ export async function absFetch<T>(path: string, init: RequestInit = {}): Promise
   const send = () => {
     const headers = new Headers(init.headers);
     if (accessToken) headers.set('authorization', `Bearer ${accessToken}`);
-    return fetch(path, { ...init, headers });
+    return fetch(absUrl(path), { ...init, headers });
   };
   let res = await send();
   if (res.status === 401) {
