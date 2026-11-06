@@ -175,12 +175,33 @@ export const useProgress = () =>
     queryFn: async () => progressByItem((await absFetch<{ mediaProgress?: MediaProgress[] }>('/api/me')).mediaProgress),
   });
 
+// ABS 2.37 caches every GET under /api/libraries per user and URL (ApiCacheManager), and a change to the user's progress
+// doesn't clear it: a list sorted or filtered by progress would come back as it was before a book was finished or reset.
+// A parameter ABS ignores, renewed whenever progress may have changed here, makes such a request new to that cache.
+let progressStamp = Date.now();
+
+/** Progress has changed (a book finished, reset or saved): progress-dependent library lists must not come from ABS's cache. */
+export function progressChanged(): void {
+  progressStamp = Math.max(progressStamp + 1, Date.now());
+}
+
+/** `url` (an /api/libraries request), made new to ABS's cache since progress last changed here. */
+export const withProgressStamp = (url: string): string =>
+  `${url}${url.includes('?') ? '&' : '?'}progressStamp=${progressStamp}`;
+
+/** A library list whose contents or order follow the listener's progress. */
+export const dependsOnProgress = (sort: SortKey, filter?: string): boolean =>
+  sort === 'progress' || !!filter?.startsWith('progress.');
+
 export const useLibraryItems = (libraryId: string | undefined, sort: SortKey, filter?: string) =>
   useInfiniteQuery({
     queryKey: ['items', libraryId, sort, filter ?? ''],
     enabled: !!libraryId,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => absFetch<ItemsPage>(itemsUrl(libraryId ?? '', sort, pageParam, filter)),
+    queryFn: ({ pageParam }) => {
+      const url = itemsUrl(libraryId ?? '', sort, pageParam, filter);
+      return absFetch<ItemsPage>(dependsOnProgress(sort, filter) ? withProgressStamp(url) : url);
+    },
     getNextPageParam: (last) => ((last.page + 1) * last.limit < last.total ? last.page + 1 : undefined),
   });
 

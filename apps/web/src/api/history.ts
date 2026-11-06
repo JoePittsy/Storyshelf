@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query';
 import { absFetch } from './auth';
 import { bookQuery } from './items';
 import type { Chapter } from './items';
-import { absFilter } from './libraries';
+import { absFilter, withProgressStamp } from './libraries';
 import type { LibraryItem } from './libraries';
 
 // Only the ABS fields the history screens use (server v2.37.2: MeController, PlaybackSession, ApiRouter).
@@ -135,7 +135,7 @@ export const useFinished = (libraryId: string | undefined) =>
     queryKey: ['finished', libraryId],
     enabled: !!libraryId,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => absFetch<FinishedPage>(finishedUrl(libraryId ?? '', pageParam)),
+    queryFn: ({ pageParam }) => absFetch<FinishedPage>(withProgressStamp(finishedUrl(libraryId ?? '', pageParam))),
     getNextPageParam: (last) => ((last.page + 1) * last.limit < last.total ? last.page + 1 : undefined),
   });
 

@@ -4,6 +4,7 @@ import {
   absFilter,
   bookLibraries,
   coverUrl,
+  dependsOnProgress,
   filteredItemsUrl,
   itemsUrl,
   mergeProgress,
@@ -11,7 +12,9 @@ import {
   parseSort,
   pickLibrary,
   progressByItem,
+  progressChanged,
   searchFilters,
+  withProgressStamp,
 } from './libraries';
 import type { LibraryItem } from './libraries';
 
@@ -121,5 +124,26 @@ describe('REQ-11 search finds books by title or author', () => {
       ]
     );
     expect(merged.map((i) => i.id)).toEqual(['t1', 'both', 'a1', 's1']);
+  });
+});
+
+describe("getting past ABS's library cache after a progress change", () => {
+  const stamp = (url: string) => new URL(url, 'http://x').searchParams.get('progressStamp');
+
+  it('stamps a request, keeps its own parameters, and renews the stamp when progress changes', () => {
+    const url = itemsUrl('abc', 'progress', 0, absFilter('progress', 'finished'));
+    const first = withProgressStamp(url);
+    expect(first.startsWith(`${url}&progressStamp=`)).toBe(true);
+    expect(withProgressStamp(url)).toBe(first); // unchanged progress: ABS's cache may serve it
+    progressChanged();
+    expect(Number(stamp(withProgressStamp(url)))).toBeGreaterThan(Number(stamp(first)));
+    expect(withProgressStamp('/api/libraries/abc/items')).toMatch(/\?progressStamp=\d+$/);
+  });
+
+  it('only lists sorted or filtered by progress depend on it', () => {
+    expect(dependsOnProgress('progress')).toBe(true);
+    expect(dependsOnProgress('addedAt', absFilter('progress', 'in-progress'))).toBe(true);
+    expect(dependsOnProgress('addedAt', absFilter('genres', 'Fantasy'))).toBe(false);
+    expect(dependsOnProgress('media.metadata.title')).toBe(false);
   });
 });
