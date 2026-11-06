@@ -35,3 +35,14 @@ export const FixedMax: Story = {
     ],
   },
 };
+/** A wide card lets long names breathe instead of cutting them at 9em. */
+export const LongNames: Story = {
+  args: {
+    ranked: true,
+    nameMax: '16em',
+    rows: [
+      { key: 'a', name: 'The Sandman: Act II', value: 12, label: '12h 00m' },
+      { key: 'b', name: 'Mythos: The Greek Myths Retold', value: 7, label: '7h 05m' },
+    ],
+  },
+};

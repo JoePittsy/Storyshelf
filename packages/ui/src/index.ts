@@ -52,3 +52,6 @@ export type { TabItem } from './components/Tabs';
 export { Chip } from './components/Chip';
 export { PersonLink } from './components/PersonLink';
 export { FilterChip } from './components/FilterChip';
+export { ActivityRow } from './components/ActivityRow';
+export { StatGrid } from './components/StatGrid';
+export type { Stat } from './components/StatGrid';

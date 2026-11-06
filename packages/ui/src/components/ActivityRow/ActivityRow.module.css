@@ -1,0 +1,130 @@
+/* The li is the container, so the row answers to its own width, not the window's. */
+.item {
+  container-type: inline-size;
+}
+/* Phone: thumb, then title over detail, then the time over the duration. */
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'art text when'
+    'art note trailing';
+  align-items: center;
+  column-gap: 0.9em;
+  row-gap: 0.1em;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--title-rest);
+  text-align: left;
+  text-decoration: none;
+}
+.row > :nth-child(n) {
+  min-width: 0;
+}
+.noArt {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'text when'
+    'note trailing';
+}
+.noWhen {
+  grid-template-areas:
+    'art text trailing'
+    'art note trailing';
+}
+.noArt.noWhen {
+  grid-template-areas:
+    'text trailing'
+    'note trailing';
+}
+.action {
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-fast);
+}
+.action:hover,
+.action:focus-visible {
+  background: var(--row-hover);
+  color: var(--on-art);
+}
+.art {
+  grid-area: art;
+  display: flex;
+}
+.text {
+  grid-area: text;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+}
+.title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detail,
+.note,
+.when,
+.trailing {
+  font-size: var(--fs-label);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.when {
+  grid-area: when;
+  text-align: right;
+}
+.note {
+  grid-area: note;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trailing {
+  grid-area: trailing;
+  text-align: right;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Wide: time, art, title and detail, device, duration, in columns that line up down the day. */
+@container (min-width: 40em) {
+  .row {
+    grid-template-columns: 4.5em auto minmax(0, 1fr) 11em 5.5em;
+    grid-template-areas: 'when art text note trailing';
+    column-gap: 1.1em;
+    padding: 0.55em 0.8em;
+  }
+  .noArt {
+    grid-template-columns: 4.5em minmax(0, 1fr) 11em 5.5em;
+    grid-template-areas: 'when text note trailing';
+  }
+  .noWhen {
+    grid-template-columns: auto minmax(0, 1fr) 11em 5.5em;
+    grid-template-areas: 'art text note trailing';
+  }
+  .noArt.noWhen {
+    grid-template-columns: minmax(0, 1fr) 11em 5.5em;
+    grid-template-areas: 'text note trailing';
+  }
+  .when {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action {
+    transition: none;
+  }
+}

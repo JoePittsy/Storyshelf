@@ -1,0 +1,106 @@
+.page {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+  padding-bottom: 3em;
+}
+.title {
+  margin: 0;
+  font-size: var(--fs-title-feature);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.loading {
+  height: 16em;
+  border-radius: var(--r-card);
+}
+.sentinel {
+  height: 1px;
+}
+.more {
+  margin: 0;
+  text-align: center;
+  color: var(--text-3);
+  font-size: var(--fs-label);
+}
+
+/* Log: the days, and on a wide screen the totals beside them. */
+.logLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.6em;
+}
+.logMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  min-width: 0;
+}
+.days {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8em;
+}
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+.dayHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1em;
+  margin: 0;
+  padding: 0 0.6em;
+  font-size: var(--fs-title-card);
+  font-weight: 600;
+}
+.dayTotal {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* Only beside the log: below the list it would sit at the end of an endless scroll. Stats has the same figures. */
+.aside {
+  display: none;
+  min-width: 0;
+}
+@container (min-width: 64em) {
+  .logLayout {
+    grid-template-columns: minmax(0, 1fr) 17em;
+    gap: 3em;
+    align-items: start;
+  }
+  /* The totals stay in view while the log scrolls; the top bar is about 3.5em tall. */
+  .aside {
+    display: block;
+    position: sticky;
+    top: 5em;
+  }
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4em;
+}
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.4em;
+}
+@container (min-width: 56em) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.6em;
+  }
+}

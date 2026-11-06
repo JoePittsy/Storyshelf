@@ -40,7 +40,12 @@ export function Frame() {
         start={<span className={styles.name}>Storyshelf</span>}
         centre={picker}
         end={
-          <PillButton onClick={() => void stop().then(logout).then(() => qc.setQueryData(['session'], null))}>Sign out</PillButton>
+          <>
+            <PillButton aria-current={pathname.startsWith('/history') ? 'page' : undefined} onClick={() => void navigate('/history')}>
+              History
+            </PillButton>
+            <PillButton onClick={() => void stop().then(logout).then(() => qc.setQueryData(['session'], null))}>Sign out</PillButton>
+          </>
         }
       />
       {tab && (

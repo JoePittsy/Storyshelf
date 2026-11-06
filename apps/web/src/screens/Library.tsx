@@ -30,12 +30,20 @@ import {
 } from '../api/filters';
 import type { Filters } from '../api/filters';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
+import { ContinueShelf } from '../components/ContinueShelf';
 import { LibraryFilters } from '../components/LibraryFilters';
 import styles from './Library.module.css';
 
 const SORT_OPTIONS = SORTS.map((s) => ({ value: s.key, label: s.label }));
 
-export function Library() {
+interface Props {
+  /** Resumes a book from the Continue listening shelf. */
+  onPlay?: (itemId: string) => void;
+}
+
+const noop = () => undefined;
+
+export function Library({ onPlay = noop }: Props) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const sort = parseSort(params.get('sort'));
@@ -150,6 +158,8 @@ export function Library() {
         )}
       </div>
       <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
+      {/* Not while searching or filtering: it would sit among narrowed results. */}
+      {!searching && !filtered && libraryId && <ContinueShelf libraryId={libraryId} onPlay={onPlay} />}
       {filters.narrator && <h2 className={styles.heading}>Narrated by {filters.narrator}</h2>}
       {!searching && !loading && !failed && !localActive && total !== undefined && (
         <p className={styles.count}>{total} {total === 1 ? 'book' : 'books'}</p>

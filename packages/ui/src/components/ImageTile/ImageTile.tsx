@@ -1,3 +1,4 @@
+import { Play } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { AddButton } from '../AddButton';
 import { Artwork } from '../Artwork';
@@ -23,6 +24,9 @@ interface Props {
   /** Adds a + on the art's top-right corner, revealed on hover or focus. It never opens the tile. */
   onAdd?: () => void;
   addLabel?: string;
+  /** Adds a round play button over the art's bottom-right corner, always visible. It never opens the tile. */
+  onPlay?: () => void;
+  playLabel?: string;
 }
 
 /** Artwork over a caption. The tile rises 2px on hover or focus and its art picks up the lifted shadow. */
@@ -39,6 +43,8 @@ export function ImageTile({
   onHover,
   onAdd,
   addLabel,
+  onPlay,
+  playLabel,
 }: Props) {
   const Main = href ? 'a' : 'button';
   const mainProps = href
@@ -64,6 +70,21 @@ export function ImageTile({
       </Main>
       {onAdd && (
         <AddButton variant="corner" className={styles.add} label={addLabel ?? `Add ${title}`} onClick={onAdd} />
+      )}
+      {onPlay && (
+        <span className={styles.playSlot}>
+          <button
+            type="button"
+            className={styles.play}
+            aria-label={playLabel ?? `Play ${title}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+          >
+            <Play size={18} fill="currentColor" aria-hidden="true" />
+          </button>
+        </span>
       )}
     </div>
   );

@@ -118,7 +118,42 @@
   opacity: 1;
 }
 
+/* A square the size of the art, so the button can sit on its corner while the caption below stays out of the way. */
+.playSlot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0.6em;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.play {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 2.8em;
+  height: 2.8em;
+  border: none;
+  border-radius: var(--r-round);
+  background: var(--overlay);
+  color: var(--on-art);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-fast);
+}
+.play:hover {
+  background: var(--overlay-strong);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .play {
+    transition: none;
+  }
   .main,
   .title,
   .art {

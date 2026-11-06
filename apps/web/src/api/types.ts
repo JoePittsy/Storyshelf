@@ -8,6 +8,10 @@ export interface MediaProgress {
   currentTime: number;
   isFinished: boolean;
   lastUpdate: number;
+  /** ms since the epoch; ABS 2.37 sends both. */
+  startedAt?: number;
+  finishedAt?: number | null;
+  hideFromContinueListening?: boolean;
 }
 
 export interface AbsUser {
