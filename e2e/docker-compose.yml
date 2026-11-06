@@ -1,0 +1,17 @@
+# Local Audiobookshelf server for Storyshelf end-to-end tests.
+# Pinned to the version the real server runs. See README.md.
+name: storyshelf-e2e
+
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:2.37.2
+    container_name: storyshelf-e2e-abs
+    ports:
+      - '13378:80'
+    volumes:
+      - ./data/audiobooks:/audiobooks
+      - ./data/metadata:/metadata
+      - ./data/config:/config
+    environment:
+      - TZ=Europe/London
+    restart: unless-stopped

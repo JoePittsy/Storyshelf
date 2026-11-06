@@ -10,3 +10,7 @@ coverage
 
 # agent worktrees
 .claude/worktrees/
+
+# local Audiobookshelf for e2e tests (see e2e/README.md)
+e2e/data/
+e2e/.env
