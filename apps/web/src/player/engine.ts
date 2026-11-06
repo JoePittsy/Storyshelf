@@ -194,6 +194,8 @@ function doSync(): Promise<void> {
       const before = session.id;
       const active = await syncSession(session, p, mimes ?? []);
       if (session && session.libraryItemId === active.libraryItemId) session = active;
+      // Stopped while the server was re-opening a lost session: that new session is nobody's, so close it.
+      else if (active.id !== before) void closeSession(active);
       diag.log('sync ok', { status: 200, reopened: active.id !== before, at: Math.round(p.currentTime) });
     } catch (e) {
       diag.log('sync failed', { status: e instanceof AbsError ? e.status : null, ...errInfo(e) });
@@ -636,9 +638,45 @@ export async function stop(): Promise<void> {
   updateMetadata(null, '');
   updatePlaybackState('none');
   if (old) {
+    // A sync already on its way finishes first, so the close (with the final place) is the last word the server hears.
+    await syncChain;
     await closeSession(old.s, old.p);
     emitSaved();
   }
+}
+
+/** What the player held for a book `release` took out of it: enough to put it back, paused, with `restore`. */
+export interface Released {
+  restorable: Restorable;
+  chapters: Chapter[];
+}
+
+/**
+ * Takes a book out of the player before its progress is changed behind the player's back (marked finished or not, or
+ * reset), so nothing the player sends afterwards (a sync, the close, a restored book's move) can undo the change. The
+ * place it had reaches the server first: a playing book's last sync and close, or a restored book's unsaved move. Then
+ * the player is empty. Resolves with what it held, or null when the book isn't in it (nothing is touched).
+ */
+export async function release(itemId: string): Promise<Released | null> {
+  const opening = state.status === 'loading' && lastRequest?.itemId === itemId;
+  if (state.item?.id !== itemId && !opening) return null;
+  const held = state.item?.id === itemId ? state.item : null;
+  const out: Released | null = held && {
+    restorable: {
+      id: itemId,
+      title: held.title,
+      author: held.author,
+      duration: state.duration,
+      position: position(),
+      updatedAt: 0,
+    },
+    chapters: state.chapters,
+  };
+  const moved = state.restored ? movedHere : null;
+  const duration = state.duration;
+  await stop();
+  if (moved !== null) await saveProgress(itemId, moved, duration).catch((e: unknown) => diag.log('move not saved', errInfo(e)));
+  return out;
 }
 
 const mediaActions = {
