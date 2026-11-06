@@ -1,4 +1,4 @@
-export type PlayerKeyAction = 'toggle' | 'back' | 'forward' | 'previousChapter' | 'nextChapter';
+export type PlayerKeyAction = 'toggle' | 'back' | 'forward' | 'previousChapter' | 'nextChapter' | 'bookmark';
 
 /** The slice of a keyboard event the mapping needs; a real `KeyboardEvent` satisfies it. */
 export interface KeyInput {
@@ -67,6 +67,9 @@ export function playerKeyAction(e: KeyInput): PlayerKeyAction | null {
       return 'previousChapter';
     case ']':
       return 'nextChapter';
+    case 'b':
+    case 'B':
+      return 'bookmark';
     default:
       return null;
   }

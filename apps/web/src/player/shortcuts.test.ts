@@ -86,3 +86,13 @@ describe('appKeyAction', () => {
     expect(appKeyAction({ key: ' ', target: on('A') })).toBeNull();
   });
 });
+
+describe('the bookmark key', () => {
+  it('b (or B) bookmarks the place, but not while typing or with a modifier', () => {
+    expect(playerKeyAction({ key: 'b', target: on('BODY') })).toBe('bookmark');
+    expect(playerKeyAction({ key: 'B', target: on('BUTTON') })).toBe('bookmark');
+    expect(appKeyAction({ key: 'b', target: on('BODY') })).toBe('bookmark');
+    expect(playerKeyAction({ key: 'b', target: on('INPUT') })).toBeNull();
+    expect(playerKeyAction({ key: 'b', ctrlKey: true, target: on('BODY') })).toBeNull();
+  });
+});

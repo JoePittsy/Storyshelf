@@ -34,6 +34,7 @@ import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { BackLink } from '../components/BackLink';
 import { useCoverDock } from './useCoverDock';
 import { BookListening } from '../components/BookListening';
+import { BookBookmarks } from '../components/BookBookmarks';
 import styles from './Book.module.css';
 
 interface Props {
@@ -232,6 +233,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
             </p>
           )}
 
+          <BookBookmarks item={item} onOpen={(b) => jump(b.time, b.title, started ? now.currentTime : null)} />
           <BookListening item={item} />
         </div>
         {details.length > 0 && (

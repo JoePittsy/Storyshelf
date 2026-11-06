@@ -137,7 +137,7 @@ describe('useAddBookmark', () => {
     const first = pending<Bookmark>();
     const second = pending<Bookmark>();
     const posts = [first, second];
-    absFetch.mockImplementation((_path, init) => (init?.method === 'POST' ? posts.shift()!.promise : new Promise(() => undefined)));
+    absFetch.mockImplementation((_path, init) => (init?.method === 'POST' ? (posts.shift() ?? second).promise : new Promise(() => undefined)));
     const { qc, wrapper } = setup([]);
     const { result } = renderHook(() => ({ a: useAddBookmark(), b: useAddBookmark() }), { wrapper });
     act(() => result.current.a.mutate({ libraryItemId: 'li_1', time: 10, title: 'A' }));

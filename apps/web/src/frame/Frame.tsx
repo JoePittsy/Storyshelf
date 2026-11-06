@@ -9,6 +9,7 @@ import { usePlayer } from '../player/engine';
 import { RestoreLastBook } from '../player/RestoreLastBook';
 import { appKeyAction } from '../player/shortcuts';
 import { usePlayerJump } from '../player/useUndoableJump';
+import { useBookmarkHere } from '../player/useBookmarkHere';
 import { useToast } from '@joepittsy/ui';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { useRouteTrail } from './routeTrail';
@@ -166,16 +167,17 @@ function GlobalKeys({ onSearch, onHelp }: { onSearch: () => void; onHelp: () => 
   const p = usePlayer();
   const { showToast } = useToast();
   const { previousChapter, nextChapter } = usePlayerJump();
-  const latest = useRef({ p, onSearch, onHelp, previousChapter, nextChapter, showToast });
+  const bookmarkHere = useBookmarkHere();
+  const latest = useRef({ p, onSearch, onHelp, previousChapter, nextChapter, showToast, bookmarkHere });
   useEffect(() => {
-    latest.current = { p, onSearch, onHelp, previousChapter, nextChapter, showToast };
+    latest.current = { p, onSearch, onHelp, previousChapter, nextChapter, showToast, bookmarkHere };
   });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
       const action = appKeyAction(e);
       if (!action) return;
-      const { p, onSearch, onHelp, previousChapter, nextChapter, showToast } = latest.current;
+      const { p, onSearch, onHelp, previousChapter, nextChapter, showToast, bookmarkHere } = latest.current;
       if (action === 'search') onSearch();
       else if (action === 'help') onHelp();
       else if (!p.item) return;
@@ -187,6 +189,7 @@ function GlobalKeys({ onSearch, onHelp }: { onSearch: () => void; onHelp: () => 
       else if (action === 'back') p.skip(-1);
       else if (action === 'forward') p.skip(1);
       else if (action === 'previousChapter') previousChapter();
+      else if (action === 'bookmark') bookmarkHere();
       else nextChapter();
       e.preventDefault();
     };

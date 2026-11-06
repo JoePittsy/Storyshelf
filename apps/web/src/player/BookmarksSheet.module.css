@@ -1,0 +1,26 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.loading {
+  height: 8em;
+  border-radius: var(--r-row);
+}
+/* A deleted bookmark holds its place, quietly, with its Undo, at the height of the row it replaced. */
+.deleted {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75em;
+  min-height: 3.6em;
+  padding: 0.3em 0.6em;
+}
+.deletedText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-label);
+  color: var(--text-3);
+}

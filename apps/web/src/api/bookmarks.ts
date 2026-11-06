@@ -80,8 +80,8 @@ function useBookmarkWrite<V>(send: (v: V) => Promise<unknown>, change: (v: V, li
     onError: (_e, _v, c) => {
       if (c) qc.setQueryData<Bookmark[]>(BOOKMARKS_KEY, (l) => c.revert(l ?? []));
     },
-    onSettled: () => {
-      if (qc.isMutating({ mutationKey: MUTATION_KEY }) <= 1) return qc.invalidateQueries({ queryKey: BOOKMARKS_KEY });
+    onSettled: async () => {
+      if (qc.isMutating({ mutationKey: MUTATION_KEY }) <= 1) await qc.invalidateQueries({ queryKey: BOOKMARKS_KEY });
     },
   });
 }
