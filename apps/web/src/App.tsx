@@ -4,6 +4,7 @@ import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } 
 import { onSignedOut, restoreSession } from './api/auth';
 import { Frame } from './frame/Frame';
 import { Author } from './screens/Author';
+import { Debug } from './screens/Debug';
 import { Book } from './screens/Book';
 import { play } from './player/engine';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
@@ -74,6 +75,7 @@ function AppRoutes() {
           <Route path="/narrator/:name" element={<NarratorRedirect />} />
           <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />
+          <Route path="/debug" element={<Debug />} />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<Series />} />
           <Route path="/history" element={<History />}>

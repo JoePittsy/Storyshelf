@@ -2,8 +2,11 @@
 // Everything is driven by media events and real elapsed time, never timers, which background tabs and iOS throttle.
 import { useSyncExternalStore } from 'react';
 import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
+import { AbsError } from '../api/auth';
+import { diag } from './diag';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
 import { supportedMimeTypes } from './mime';
+import { createRetryOnce, decide, stalledFor, STALL_MS, type Intent } from './resume';
 import {
   UnsupportedFormatError,
   closeSession,
@@ -80,7 +83,9 @@ let track: AudioTrack | null = null;
 let clock = startClock(0);
 let lastMs: number | null = null; // performance.now() at the last accounted playing moment
 let pendingOffset = 0;
-let switching = false; // between setting a new src and it being ready: ignore the pause that implies
+let ownChange = false; // from our own src change until its `loadstart`: the pause that implies isn't the listener's
+let awaitingPlaying: number | null = null; // performance.now() of a play() that hasn't produced `playing` yet
+const retry = createRetryOnce();
 let recovering = false;
 let token = 0; // bumped by every play()/stop() so a slow session open can tell it was superseded
 let lastRequest: { itemId: string; from?: number } | null = null;
@@ -89,6 +94,33 @@ let mimes: string[] | null = null;
 
 const getMimes = (a: HTMLAudioElement) => (mimes ??= supportedMimeTypes(a));
 const coverFor = (id: string) => `/api/items/${id}/cover?width=512&format=jpeg`;
+
+/** The element's real state, for the diagnostics log. */
+function snap(extra?: Record<string, unknown>): Record<string, unknown> {
+  return {
+    paused: audio?.paused ?? null,
+    rs: audio?.readyState ?? null,
+    ns: audio?.networkState ?? null,
+    ct: audio ? Math.round(audio.currentTime * 10) / 10 : null,
+    st: state.status,
+    vis: typeof document === 'undefined' ? null : document.visibilityState,
+    ...extra,
+  };
+}
+const note = (ev: string, extra?: Record<string, unknown>) => diag.log(ev, snap(extra));
+const errInfo = (e: unknown) =>
+  e instanceof Error ? { name: e.name, message: e.message } : { name: 'unknown', message: String(e) };
+
+/** Lock-screen button follows the element, not our status. */
+function syncPlaybackState(): void {
+  if (audio && session) updatePlaybackState(audio.paused ? 'paused' : 'playing');
+}
+
+/** Metadata changes can make iOS forget the handlers, so install them again with every update. */
+function setMetadata(item: PlayerItem | null, chapterTitle: string): void {
+  updateMetadata(item, chapterTitle);
+  installHandlers(mediaActions);
+}
 
 /** Book seconds, from the element. */
 const position = (): number => (session && track && audio ? toBookTime(track, audio.currentTime) : state.position);
@@ -124,7 +156,7 @@ function refresh(): void {
   const idx = chapterIndexAt(state.chapters, pos);
   const chapterChanged = idx !== state.chapterIndex;
   set({ position: pos, chapterIndex: idx });
-  if (chapterChanged) updateMetadata(state.item, state.chapters[idx]?.title ?? '');
+  if (chapterChanged) setMetadata(state.item, state.chapters[idx]?.title ?? '');
 }
 
 function mediaPosition(): void {
@@ -140,9 +172,12 @@ function doSync(): Promise<void> {
   syncChain = syncChain.then(async () => {
     if (!session || session.libraryItemId !== cur.libraryItemId) return;
     try {
+      const before = session.id;
       const active = await syncSession(session, p, mimes ?? []);
       if (session && session.libraryItemId === active.libraryItemId) session = active;
-    } catch {
+      diag.log('sync ok', { status: 200, reopened: active.id !== before, at: Math.round(p.currentTime) });
+    } catch (e) {
+      diag.log('sync failed', { status: e instanceof AbsError ? e.status : null, ...errInfo(e) });
       // Not lost: add it back so the next sync carries it.
       clock = { listened: clock.listened + p.timeListened, lastSynced: clock.lastSynced };
     }
@@ -155,18 +190,67 @@ function syncIfDue(): void {
 }
 
 function fail(e: unknown): void {
+  awaitingPlaying = null;
+  diag.log('fail', errInfo(e));
   const message =
     e instanceof UnsupportedFormatError ? MSG_FORMAT : e instanceof TypeError ? MSG_NETWORK : MSG_OTHER;
   set({ status: 'error', error: message });
   updatePlaybackState('paused');
 }
 
-function startPlay(a: HTMLAudioElement): void {
-  a.play().catch((e: unknown) => {
-    if (e instanceof DOMException && e.name === 'AbortError') return; // superseded by another src or pause
-    if (e instanceof DOMException && e.name === 'NotAllowedError') return void set({ status: 'paused' }); // the browser wants a tap
-    fail(e);
-  });
+/** play() on the element, logged. A rejection that isn't an abort or a missing gesture gets one reload-and-retry. */
+function startPlay(a: HTMLAudioElement, why = 'play'): void {
+  awaitingPlaying = performance.now();
+  note(`play() called (${why})`);
+  a.play().then(
+    () => note('play() resolved'),
+    (e: unknown) => {
+      note('play() rejected', errInfo(e));
+      if (e instanceof DOMException && e.name === 'AbortError') return; // superseded by another src or pause
+      if (e instanceof DOMException && e.name === 'NotAllowedError') {
+        // The browser wants a tap. Keep the lock screen truthful.
+        awaitingPlaying = null;
+        set({ status: 'paused' });
+        updatePlaybackState('paused');
+        return;
+      }
+      if (!reloadAndPlay('rejected')) fail(e);
+    },
+  );
+}
+
+/** Reload the current track at the current position and play, once per resume. False when it can't or already did. */
+function reloadAndPlay(why: string): boolean {
+  if (!session || !track || !audio) return false;
+  if (!retry.attempt()) return false;
+  const here = audio.currentTime > 0 ? toBookTime(track, audio.currentTime) : state.position;
+  const { track: tr, offset } = locate(session.audioTracks, here);
+  note(`reload and retry (${why})`, { to: Math.round(here) });
+  load(tr, offset, true);
+  return true;
+}
+
+/** Called from events and wake-ups: if play() was asked for 3 s ago and nothing has played, reload. */
+function checkStall(why: string): void {
+  if (awaitingPlaying !== null && stalledFor(awaitingPlaying, performance.now(), STALL_MS)) {
+    note(`stalled (${why})`);
+    awaitingPlaying = null;
+    reloadAndPlay('stalled');
+  }
+}
+
+/** Resume or pause the element, deciding on what it is doing rather than on what we last heard. */
+function act(intent: Intent, why: string): void {
+  const a = getAudio();
+  note(`action ${intent} (${why})`);
+  const todo = decide(intent, a.paused);
+  if (todo === 'pause') return a.pause();
+  if (todo !== 'play') return;
+  if (session && track) {
+    // iOS may have dropped the stream while paused and locked: start over now, inside this handler.
+    if ((a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) && reloadAndPlay('no source')) return;
+    startPlay(a, why);
+  } else if (lastRequest) void play(lastRequest.itemId, lastRequest.from);
 }
 
 /** Point the element at a track. Called synchronously from a gesture or the `ended` handler when autoplay is true. */
@@ -174,11 +258,11 @@ function load(tr: AudioTrack, offset: number, autoplay: boolean): void {
   if (!session) return;
   const a = getAudio();
   track = tr;
-  switching = true;
+  ownChange = true;
   pendingOffset = offset;
   a.src = trackUrl(session, tr.index);
   a.defaultPlaybackRate = a.playbackRate = state.rate; // loading a new src resets the rate to the default
-  if (autoplay) startPlay(a);
+  if (autoplay) startPlay(a, 'load');
 }
 
 function seekBook(t: number): void {
@@ -219,17 +303,27 @@ function getAudio(): HTMLAudioElement {
   a.setAttribute('playsinline', '');
   a.preload = 'auto';
 
+  for (const ev of ['play', 'waiting', 'stalled', 'suspend', 'emptied', 'loadstart', 'canplay', 'abort'])
+    a.addEventListener(ev, () => note(`audio ${ev}`));
+  installHandlers(mediaActions);
+
+  a.addEventListener('loadstart', () => {
+    ownChange = false; // any pause caused by our src change has fired by now
+  });
   a.addEventListener('loadedmetadata', () => {
     if (pendingOffset > 0) a.currentTime = pendingOffset;
     pendingOffset = 0;
   });
-  a.addEventListener('canplay', () => {
-    switching = false;
+  a.addEventListener('play', () => {
+    if (session) updatePlaybackState('playing');
   });
   a.addEventListener('playing', () => {
+    note('audio playing');
     if (!session) return;
-    switching = false;
+    ownChange = false;
     recovering = false;
+    awaitingPlaying = null;
+    retry.reset();
     lastMs = performance.now();
     set({ status: 'playing' });
     updatePlaybackState('playing');
@@ -238,9 +332,15 @@ function getAudio(): HTMLAudioElement {
   a.addEventListener('waiting', () => {
     if (session) accountPlayingTime();
     lastMs = null;
+    checkStall('waiting');
   });
+  a.addEventListener('stalled', () => checkStall('stalled'));
+  a.addEventListener('suspend', () => checkStall('suspend'));
   a.addEventListener('pause', () => {
-    if (!session || switching || a.ended) return;
+    note(ownChange ? 'audio pause (ours, ignored)' : 'audio pause');
+    if (!session || a.ended) return;
+    if (ownChange) return; // our own src change: not the listener pausing
+    awaitingPlaying = null;
     accountPlayingTime();
     set({ status: 'paused' });
     updatePlaybackState('paused');
@@ -251,6 +351,7 @@ function getAudio(): HTMLAudioElement {
   a.addEventListener('timeupdate', onTimeUpdate);
   a.addEventListener('seeked', mediaPosition);
   a.addEventListener('ended', () => {
+    note('audio ended');
     if (!session || !track) return;
     accountPlayingTime();
     const tracks = session.audioTracks;
@@ -262,10 +363,13 @@ function getAudio(): HTMLAudioElement {
     void doSync();
   });
   a.addEventListener('error', () => {
+    note('audio error', { code: a.error?.code ?? null, message: a.error?.message ?? null });
     if (!session || !track) return;
     if (recovering || a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
       return fail(a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ? new UnsupportedFormatError() : new TypeError());
     }
+    // First failure after a resume: reload the same track right here. A second one falls through to the session re-open below.
+    if (awaitingPlaying !== null && reloadAndPlay('error')) return;
     // Often the server lost the session (restart). Syncing re-opens it, then carry on from where we were.
     recovering = true;
     const wasPlaying = state.status === 'playing';
@@ -280,10 +384,32 @@ function getAudio(): HTMLAudioElement {
 }
 
 if (typeof document !== 'undefined') {
+  // iOS can drop Media Session handlers across a suspend, so put them back whenever the page wakes.
+  const wake = (ev: string) => {
+    note(ev);
+    installHandlers(mediaActions);
+    syncPlaybackState();
+    checkStall(ev);
+  };
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') syncIfDue();
+    if (document.visibilityState === 'hidden') {
+      note('visibilitychange hidden');
+      syncIfDue();
+      diag.flush();
+    } else wake('visibilitychange visible');
   });
-  addEventListener('pagehide', syncIfDue);
+  addEventListener('pagehide', () => {
+    note('pagehide');
+    syncIfDue();
+    diag.flush();
+  });
+  addEventListener('pageshow', (e) => wake(`pageshow${e.persisted ? ' (from cache)' : ''}`));
+  document.addEventListener('freeze', () => {
+    note('freeze');
+    diag.flush();
+  });
+  document.addEventListener('resume', () => wake('resume'));
+  diag.log('boot');
 }
 
 /** Stop using the current session: remember where it was, then silence the element. */
@@ -300,11 +426,10 @@ function detach(): { s: PlaybackSession; p: Progress } | null {
 
 export async function play(itemId: string, from?: number): Promise<void> {
   const a = getAudio();
-  installHandlers(mediaActions);
   lastRequest = { itemId, from };
   if (session?.libraryItemId === itemId && track) {
     if (from !== undefined) seekBook(from);
-    startPlay(a);
+    if (a.paused) startPlay(a, 'play()');
     return;
   }
   // Everything up to the first await runs inside the click.
@@ -334,15 +459,12 @@ export async function play(itemId: string, from?: number): Promise<void> {
     chapterIndex: chapterIndexAt(s.chapters, start),
     sleep: null,
   });
-  updateMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
+  setMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
   load(tr, offset, true);
 }
 
 export function toggle(): void {
-  const a = getAudio();
-  if (state.status === 'playing') a.pause();
-  else if (session && track) startPlay(a);
-  else if (lastRequest) void play(lastRequest.itemId, lastRequest.from);
+  act('toggle', 'ui');
 }
 
 export const seek = (t: number): void => seekBook(t);
@@ -391,15 +513,28 @@ export async function stop(): Promise<void> {
 }
 
 const mediaActions = {
-  play: () => {
-    if (state.status !== 'playing') toggle();
+  play: () => act('play', 'lock screen'),
+  pause: () => act('pause', 'lock screen'),
+  skipBack: () => {
+    note('action seekbackward');
+    skip(-1);
   },
-  pause: () => getAudio().pause(),
-  skipBack: () => skip(-1),
-  skipForward: () => skip(1),
-  previous: previousChapter,
-  next: nextChapter,
-  seekTo: seek,
+  skipForward: () => {
+    note('action seekforward');
+    skip(1);
+  },
+  previous: () => {
+    note('action previoustrack');
+    previousChapter();
+  },
+  next: () => {
+    note('action nexttrack');
+    nextChapter();
+  },
+  seekTo: (t: number) => {
+    note('action seekto', { to: Math.round(t) });
+    seek(t);
+  },
 };
 
 const actions = { play, toggle, seek, skip, previousChapter, nextChapter, setRate, setSkip, setSleep, stop };
