@@ -52,7 +52,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const dockRef = useRef<HTMLDivElement>(null);
   const cover = item ? coverUrl(item.id, item.updatedAt) : null;
   const wash = useDominantColor(cover);
-  const docked = useCoverDock(pageEl, coverEl, dockRef, { src: cover, color: wash });
+  const slotRef = useRef<HTMLDivElement>(null);
+  useCoverDock(pageEl, coverEl, dockRef, slotRef, cover);
   // Hand the colour to the frame, which washes the page ground with it (Frame.module.css).
   useEffect(() => {
     if (!wash) return;
@@ -156,8 +157,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       <BackLink />
       <HeroBand
         art={
-          // Hidden, not removed, while docked so the hero doesn't reflow.
-          <div ref={setCoverEl} className={styles.hero} style={docked ? { visibility: 'hidden' } : undefined}>
+          // useCoverDock hides it (visibility, so the hero keeps its space) while the cover is docked or warping.
+          <div ref={setCoverEl} className={styles.hero}>
             <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
           </div>
         }
@@ -186,11 +187,12 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       <div className={styles.body}>
         {details.length > 0 && (
           <SectionCard className={styles.side} title="Details">
-            {docked && (
-              <div className={styles.docked} aria-hidden="true" ref={dockRef}>
+            {/* Wide only. The slot's height grows with the dock progress; the frame inside is always full size. */}
+            <div className={styles.slot} ref={slotRef}>
+              <div className={styles.docked} aria-hidden="true" ref={dockRef} style={{ visibility: 'hidden' }}>
                 <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
               </div>
-            )}
+            </div>
             <DetailList items={details} />
           </SectionCard>
         )}
