@@ -14,6 +14,8 @@ export { InfoTip } from './components/InfoTip';
 export { ItemRow, RowThumb } from './components/ItemRow';
 export { TitleButton, PeopleLinks } from './components/ItemLinks';
 export { MiniPlayer } from './components/MiniPlayer';
+export { MoreMenu } from './components/MoreMenu';
+export type { MoreMenuItem } from './components/MoreMenu';
 export { PersonCard } from './components/PersonCard';
 export { PersonChip } from './components/PersonChip';
 export { PillButton } from './components/PillButton';

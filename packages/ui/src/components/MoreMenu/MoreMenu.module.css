@@ -1,0 +1,98 @@
+/* A quiet round trigger and the frosted popover it opens, in the top layer so nothing clips it. The popover is placed
+   under the trigger with CSS anchor positioning and flips to stay on screen; without that support it centres. */
+.root {
+  display: inline-flex;
+  anchor-scope: --more;
+}
+.trigger {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: rgba(var(--tint), 0.12);
+  color: var(--text);
+  cursor: pointer;
+  anchor-name: --more;
+  transition: background var(--dur-fast) var(--ease-fast);
+}
+.trigger:hover,
+.trigger:popover-open,
+.trigger[aria-expanded='true'] {
+  background: rgba(var(--tint), 0.22);
+}
+.trigger[aria-busy='true'] {
+  cursor: progress;
+}
+
+.pop {
+  position-anchor: --more;
+  position-area: bottom span-right;
+  position-try-fallbacks:
+    flip-inline,
+    flip-block,
+    flip-block flip-inline;
+  margin: 0.4em 0;
+  inset: auto;
+  min-width: 13em;
+  max-width: calc(100vw - 2em);
+  padding: 0.4em;
+  border: none;
+  border-radius: var(--r-tile);
+  background: var(--material-bg);
+  -webkit-backdrop-filter: var(--material-filter);
+  backdrop-filter: var(--material-filter);
+  box-shadow: var(--float-shadow);
+  color: var(--text);
+}
+.pop:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+}
+@supports not (position-area: bottom) {
+  .pop {
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.9em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.item:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+.danger {
+  color: rgb(var(--danger));
+}
+.danger:hover:not(:disabled) {
+  background: rgba(var(--danger), 0.16);
+}
+.item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+}
