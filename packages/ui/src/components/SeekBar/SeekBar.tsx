@@ -202,7 +202,7 @@ export function SeekBar({
     >
       <div className={styles.track}>
         <div
-          className={`${styles.fill}${scrubbing ? ' ' + styles.still : ''}`}
+          className={`${styles.fill}${scrubbing || thumb ? ' ' + styles.still : ''}`}
           style={{ transform: `scaleX(${shownPct / 100})` }}
         />
         {ticks.map((pc) => (
