@@ -500,8 +500,15 @@ describe('REQ-24: syncSession recovers when the server has lost the session', ()
   // The re-opened sync also fails: stop after one re-open and surface the failure.
   it.each([404, 500])('REQ-24: if the sync on the new session also fails with %i, it re-opens exactly once and rejects', async (status) => {
     const { syncSession } = await load();
-    const abs = fakeAbs({ route: (c) => (c.url.endsWith('/sync') ? new Response('nope', { status }) : undefined) });
+    let oldId = '';
+    // The original sync 404s because the server restarted; only syncs on the re-opened session fail with `status`.
+    const abs = fakeAbs({
+      route: (c) =>
+        c.url.endsWith('/sync') && !c.url.includes(`/session/${oldId}/`) ? new Response('nope', { status }) : undefined,
+    });
     const old = liveSession(abs.open(ITEM));
+    oldId = old.id;
+    abs.restart();
     await expect(syncSession(old, SYNC_BODY, MIME), 'Expected a rejection when the recovery sync fails too').rejects.toThrow();
     expect(abs.to('POST', `/api/items/${ITEM}/play`), 'Expected exactly one re-open, not a loop').toHaveLength(1);
     expect(abs.log().filter((l) => l.endsWith('/sync')), 'Expected two sync attempts: the original and the one on the new session').toHaveLength(2);
