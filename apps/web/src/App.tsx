@@ -4,7 +4,9 @@ import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react
 import { onSignedOut, restoreSession } from './api/auth';
 import { Frame } from './frame/Frame';
 import { Book } from './screens/Book';
+import { PlayerToasts } from './player/PlayerToasts';
 import { Library } from './screens/Library';
+import { NowPlaying } from './screens/NowPlaying';
 import { SignIn } from './screens/SignIn';
 
 const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
@@ -30,12 +32,22 @@ function RequireSession() {
 
 export function App() {
   return (
+    <>
+      <PlayerToasts />
+      <AppRoutes />
+    </>
+  );
+}
+
+function AppRoutes() {
+  return (
     <Routes>
       <Route path="/sign-in" element={<SignIn />} />
       <Route element={<RequireSession />}>
         <Route element={<Frame />}>
           <Route path="/" element={<Library />} />
           <Route path="/book/:id" element={<Book />} />
+          <Route path="/now-playing" element={<NowPlaying />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
