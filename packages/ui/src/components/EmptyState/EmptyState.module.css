@@ -1,0 +1,28 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
+  padding: 3em 1.5em;
+  text-align: center;
+}
+.icon {
+  color: var(--text-3);
+  margin-bottom: 0.4em;
+}
+.title {
+  margin: 0;
+  font-size: var(--fs-title-card);
+  font-weight: 600;
+  color: var(--text);
+}
+.message {
+  margin: 0;
+  max-width: 30em;
+  font-size: var(--fs-prose);
+  line-height: 1.55;
+  color: var(--text-3);
+}
+.action {
+  margin-top: 0.8em;
+}
