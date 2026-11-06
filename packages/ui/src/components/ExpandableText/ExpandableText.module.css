@@ -1,0 +1,27 @@
+.text {
+  font-size: var(--fs-prose);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines);
+  line-clamp: var(--lines);
+  overflow: hidden;
+}
+.toggle {
+  background: none;
+  border: none;
+  padding: 0.3em 0;
+  margin-top: 0.4em;
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.toggle:hover,
+.toggle:focus-visible {
+  text-decoration: underline;
+}

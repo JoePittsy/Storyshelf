@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { PillButton } from '@joepittsy/ui';
 import { logout, onSignedOut, restoreSession } from './api/auth';
+import { Book } from './screens/Book';
 import { SignIn } from './screens/SignIn';
 
 const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
@@ -44,6 +45,7 @@ export function App() {
       <Route path="/sign-in" element={<SignIn />} />
       <Route element={<RequireSession />}>
         <Route path="/" element={<Home />} />
+        <Route path="/book/:id" element={<Book />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

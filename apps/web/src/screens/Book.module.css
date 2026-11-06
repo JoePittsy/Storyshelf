@@ -1,0 +1,66 @@
+.page {
+  container-type: inline-size;
+  max-width: 64em;
+  margin: 0 auto;
+  padding: 1em 0 3em;
+}
+.back {
+  display: inline-block;
+  margin-bottom: 1em;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-2);
+  text-decoration: none;
+}
+.back:hover,
+.back:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+.ph {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: var(--fs-glyph);
+  color: var(--text-3);
+}
+.line {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text-2);
+}
+.sub {
+  margin: 0;
+  font-size: var(--fs-title-card);
+  color: var(--text-2);
+}
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  max-width: 20em;
+}
+.action {
+  align-self: flex-start;
+  margin-top: 0.4em;
+}
+.section {
+  margin-top: 2em;
+}
+.heading {
+  margin: 0 0 0.6em;
+  font-size: var(--fs-title);
+  font-weight: 600;
+}
+.chapters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.loading {
+  height: 16em;
+  border-radius: var(--r-card);
+}
+.state {
+  padding-top: 3em;
+}

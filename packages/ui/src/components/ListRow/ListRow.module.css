@@ -1,0 +1,44 @@
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  width: 100%;
+  padding: 0.6em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--title-rest);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-fast);
+}
+.row:hover,
+.row:focus-visible {
+  background: var(--row-hover);
+  color: var(--on-art);
+}
+.current,
+.current:hover {
+  background: rgba(var(--tint), 0.16);
+  color: var(--on-art);
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.current .title {
+  font-weight: 600;
+}
+.figure {
+  flex: none;
+  font-size: var(--fs-label);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.trailing {
+  min-width: 4em;
+  text-align: right;
+}
