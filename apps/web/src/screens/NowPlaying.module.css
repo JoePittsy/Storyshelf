@@ -399,3 +399,9 @@
   flex: none;
   width: 100%;
 }
+/* Desk: the cover gives up the card's height, so the controls under it still fit on one screen. */
+@media (width >= 60em) {
+  .player:has(.upNext) .art {
+    height: min(26em, 28dvh);
+  }
+}
