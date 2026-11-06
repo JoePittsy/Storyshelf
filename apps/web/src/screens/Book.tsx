@@ -33,7 +33,7 @@ interface Props {
 /** More than this many narrators and the hero says "and N more"; Details has them all. */
 const NARRATORS_IN_HERO = 3;
 
-// PLACEHOLDER: player slice
+// Default handlers for stories/tests; the app wires onPlay/onChapter to the player in App.tsx.
 const noop = () => undefined;
 
 /** Back to the library as the user left it (query string and all) when there is history, else to /. */
