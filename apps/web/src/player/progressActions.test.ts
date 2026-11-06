@@ -61,7 +61,7 @@ describe('changing progress by hand', () => {
     inPlayer = held;
     const change = await changeProgress('li_1', 'finish');
     expect(order).toEqual(['release li_1', 'get', 'finished true']);
-    expect(change).toEqual({ action: 'finish', itemId: 'li_1', prev, held });
+    expect(change).toMatchObject({ action: 'finish', itemId: 'li_1', prev, held });
   });
 
   it('mark not finished goes the same way', async () => {
@@ -88,8 +88,10 @@ describe('changing progress by hand', () => {
 
 describe('Undo', () => {
   it('stops the book if it has been played since, puts the progress back, then puts the book back in the player', async () => {
-    const change = { action: 'finish' as const, itemId: 'li_1', prev, held };
-    await undoProgressChange(change);
+    inPlayer = held;
+    const change = await changeProgress('li_1', 'finish');
+    order.length = 0;
+    expect(await undoProgressChange(change)).toBe(true);
     expect(order).toEqual(['release li_1', 'put back 250', 'restore li_1 at 250']);
     expect(engine.restore).toHaveBeenCalledWith(
       expect.objectContaining({ position: 250, updatedAt: 20, title: 'The Book' }),
@@ -98,13 +100,64 @@ describe('Undo', () => {
   });
 
   it("leaves the player alone when the change didn't take the book out of it", async () => {
-    await undoProgressChange({ action: 'reset', itemId: 'li_1', prev, held: null });
+    const change = await changeProgress('li_1', 'reset');
+    order.length = 0;
+    await undoProgressChange(change);
     expect(order).toEqual(['release li_1', 'put back 250']);
     expect(engine.restore).not.toHaveBeenCalled();
   });
 
   it('with no progress before, the book goes back where the player had it', async () => {
-    await undoProgressChange({ action: 'finish', itemId: 'li_1', prev: null, held });
+    inPlayer = held;
+    progress = null;
+    const change = await changeProgress('li_1', 'finish');
+    order.length = 0;
+    await undoProgressChange(change);
     expect(order).toEqual(['release li_1', 'put back none', 'restore li_1 at 250']);
+  });
+});
+
+describe('one change at a time', () => {
+  it("a second change waits for the first to finish, so their reads and writes don't interleave", async () => {
+    const { setFinished } = await import('./bookProgress');
+    let finishFirst!: () => void;
+    vi.mocked(setFinished).mockImplementationOnce(
+      (_id, f) =>
+        new Promise<void>((resolve) => {
+          finishFirst = () => {
+            order.push(`finished ${f}`);
+            resolve();
+          };
+        })
+    );
+    const first = changeProgress('li_1', 'finish');
+    const second = changeProgress('li_1', 'reset');
+    await vi.waitFor(() => expect(order).toEqual(['release li_1', 'get']));
+    finishFirst();
+    await Promise.all([first, second]);
+    expect(order).toEqual(['release li_1', 'get', 'finished true', 'release li_1', 'get', 'delete mp_1']);
+  });
+
+  it("an older change's Undo does nothing once a newer change has started (it would undo that one too)", async () => {
+    const older = await changeProgress('li_1', 'finish');
+    const newer = changeProgress('li_1', 'reset'); // still running when the old toast's Undo is pressed
+    expect(await undoProgressChange(older)).toBe(false);
+    await newer;
+    expect(order).not.toContain('put back 250');
+  });
+
+  it('an Undo can only be used once', async () => {
+    const change = await changeProgress('li_1', 'finish');
+    expect(await undoProgressChange(change)).toBe(true);
+    expect(await undoProgressChange(change)).toBe(false);
+    expect(order.filter((o) => o.startsWith('put back'))).toHaveLength(1);
+  });
+
+  it('a failed change does not block the next one', async () => {
+    const { setFinished } = await import('./bookProgress');
+    vi.mocked(setFinished).mockRejectedValueOnce(new Error('offline'));
+    await expect(changeProgress('li_1', 'finish')).rejects.toThrow('offline');
+    await changeProgress('li_1', 'unfinish');
+    expect(order).toContain('finished false');
   });
 });
