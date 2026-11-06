@@ -8,10 +8,13 @@ interface ToastOptions {
   /** A single button on the toast (e.g. Undo). The toast closes when it is clicked. */
   action?: { label: string; onClick: () => void };
   durationMs?: number;
+  /** A new toast with the same key replaces the one on screen instead of stacking (e.g. repeated Undo offers). */
+  replaceKey?: string;
 }
 
 interface ToastItem {
   id: number;
+  replaceKey?: string;
   message: string;
   type: ToastType;
   action?: ToastOptions['action'];
@@ -102,8 +105,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       action: options?.action,
       durationMs: options?.durationMs ?? DISMISS_MS,
       trigger,
+      replaceKey: options?.replaceKey,
     };
-    setToasts((prev) => [...prev, toast]);
+    const key = options?.replaceKey;
+    setToasts((prev) => [...(key ? prev.filter((t) => t.replaceKey !== key) : prev), toast]);
   }, []);
 
   return (

@@ -9,15 +9,32 @@ import { nextJump, previousJump, undoPoint } from './jumps';
  */
 export function useUndoableJump(go: (seconds: number) => void) {
   const { showToast } = useToast();
+  // A run of jumps shows one toast whose Undo returns to where the run started, not to the last hop.
+  const chain = useRef<{ from: number; until: number } | null>(null);
   return useCallback(
     (target: number, label: string, previous: number | null) => {
       go(target);
       if (previous === null) return;
-      showToast(`Jumped to ${label}`, 'info', { action: { label: 'Undo', onClick: () => go(previous) }, durationMs: 8000 });
+      const now = Date.now();
+      const from = chain.current && now < chain.current.until ? chain.current.from : previous;
+      chain.current = { from, until: now + UNDO_MS };
+      showToast(`Jumped to ${label}`, 'info', {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            chain.current = null;
+            go(from);
+          },
+        },
+        durationMs: UNDO_MS,
+        replaceKey: 'chapter-jump',
+      });
     },
     [go, showToast],
   );
 }
+
+const UNDO_MS = 8000;
 
 /**
  * Every chapter move on the player (the chapter lists, previous/next buttons, the [ and ] keys) goes through here so

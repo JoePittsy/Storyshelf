@@ -18,6 +18,23 @@ describe('Toast', () => {
     vi.useRealTimers();
   });
 
+  it('replaces a toast with the same replaceKey instead of stacking', () => {
+    function Keyed() {
+      const { showToast } = useToast();
+      return (
+        <>
+          <button type="button" onClick={() => showToast('First', 'info', { replaceKey: 'k' })}>one</button>
+          <button type="button" onClick={() => showToast('Second', 'info', { replaceKey: 'k' })}>two</button>
+        </>
+      );
+    }
+    render(<ToastProvider><Keyed /></ToastProvider>);
+    fireEvent.click(screen.getByText('one'));
+    fireEvent.click(screen.getByText('two'));
+    expect(screen.queryByText('First')).toBeNull();
+    expect(screen.getByText('Second')).toBeInTheDocument();
+  });
+
   it('closes after its duration', () => {
     render(<ToastProvider><Trigger /></ToastProvider>);
     fireEvent.click(screen.getByText('jump'));
