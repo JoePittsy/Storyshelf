@@ -2,6 +2,8 @@
 
 The Storyshelf design system: tokens (CSS custom properties) and React components. Dark, calm, content-led. It has no knowledge of any app. See [DESIGN.md](./DESIGN.md) for the rules and [FORKED_FROM.md](./FORKED_FROM.md) for where it came from.
 
+Licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`); see [LICENSE](./LICENSE). It is derived from TrueNorth IT's TrueTunes, used with permission. The package is not published to npm.
+
 ## Develop
 
 Run from the repo root (Node 24, pnpm via corepack).

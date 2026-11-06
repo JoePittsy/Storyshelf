@@ -1,6 +1,6 @@
 # Forked from TrueTunes
 
-This package began as the design layer of TrueTunes, extracted into a standalone design system.
+This package began as the design layer of TrueTunes, by TrueNorth IT, extracted into a standalone design system.
 
 | | |
 |---|---|
@@ -90,4 +90,6 @@ Moved into `src/components/<Name>/` with only import paths, comments and story c
 | Manrope, via `@fontsource-variable/manrope` | SIL Open Font Licence 1.1 |
 | `lucide-react` | ISC |
 
-Everything else in this package is Copyright (c) 2026 Joe Pitts, all rights reserved (see the root `LICENSE`), on top of the source work used with permission.
+## Licence
+
+This package is derived from TrueTunes by TrueNorth IT, used with the owner's permission. The package as a whole, including the changes listed above, is Copyright (c) 2026 Joe Pitts and licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`); see [`LICENSE`](./LICENSE).

@@ -2,7 +2,7 @@
   "name": "@joepittsy/ui",
   "version": "0.0.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-only",
   "description": "Storyshelf design system: tokens and React components.",
   "type": "module",
   "sideEffects": [
