@@ -11,6 +11,10 @@ export default defineConfig(({ command, mode }) => {
   if (!target) throw new Error('ABS_URL is not set. Put ABS_URL=https://your-abs-host in apps/web/.env.local');
   return {
     ...common,
-    server: { proxy: Object.fromEntries(ABS_PATHS.map((p) => [p, { target, changeOrigin: true }])) },
+    server: {
+      // Phone testing over HTTPS via `tailscale serve --bg 5173` (https://<machine>.<tailnet>.ts.net).
+      allowedHosts: ['.ts.net'],
+      proxy: Object.fromEntries(ABS_PATHS.map((p) => [p, { target, changeOrigin: true }])),
+    },
   };
 });
