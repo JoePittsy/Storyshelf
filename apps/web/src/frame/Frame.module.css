@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  isolation: isolate;
   /* Reach past .app's side padding so the bar spans the screen. */
   margin: 0 calc(-1 * max(1em, env(safe-area-inset-right))) 0 calc(-1 * max(1em, env(safe-area-inset-left)));
 }
@@ -44,4 +45,25 @@
 }
 .player:empty {
   display: none;
+}
+/* Quiet Wall: the page ground takes the cover's colour, peaking at 0.3 and gone by 40%. Opacity only. */
+.frame::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--panel-color, var(--tint)), 0.3) 0%,
+    rgba(var(--panel-color, var(--tint)), 0.12) 20%,
+    transparent 40%
+  );
+  opacity: var(--panel-on, 0);
+  transition: opacity 0.8s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame::before {
+    transition: none;
+  }
 }

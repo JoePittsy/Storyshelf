@@ -1,6 +1,6 @@
 .page {
   container-type: inline-size;
-  padding: 0 0 3em;
+  padding: 0;
 }
 .ph {
   display: grid;
@@ -8,6 +8,29 @@
   height: 100%;
   font-size: var(--fs-glyph);
   color: var(--text-3);
+}
+.hero,
+.docked {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+/* Wide only (Book.tsx never docks narrower): the hero cover shrinks into the top of the Details card. */
+.docked {
+  display: none;
+  width: 9em;
+  height: 9em;
+  margin: 0 0 1em;
+  border-radius: var(--r-art-card);
+  background: var(--bg-1);
+  box-shadow: var(--hero-shadow);
+}
+.docked > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .line {
   margin: 0;
@@ -39,11 +62,8 @@
   flex-direction: column;
   gap: 2em;
   min-width: 0;
-}
-.card {
-  padding: 1.2em 1.4em;
-  border-radius: var(--r-card);
-  background: var(--surface);
+  /* The page's bottom space lives inside the column, so the sticky details card has room to end clear of the top bar. */
+  padding-bottom: 4em;
 }
 /* Wide: description and chapters on the left, the details list beside them. */
 @container (min-width: 800px) {
@@ -59,12 +79,17 @@
   .side {
     grid-column: 2;
     grid-row: 1;
+    /* Stays in view while the longer main column scrolls: clear of the top bar and the player. */
+    box-sizing: border-box;
+    position: sticky;
+    top: calc(var(--bar-h, 3.5em) + 1em);
+    max-height: calc(100dvh - var(--bar-h, 3.5em) - var(--player-h, 0px) - 2em);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
-}
-.heading {
-  margin: 0 0 0.6em;
-  font-size: var(--fs-title);
-  font-weight: 600;
+  .docked {
+    display: block;
+  }
 }
 .chapters {
   list-style: none;

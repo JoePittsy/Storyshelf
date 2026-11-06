@@ -42,3 +42,7 @@
   min-width: 4em;
   text-align: right;
 }
+.lead {
+  min-width: 1.6em;
+  text-align: right;
+}

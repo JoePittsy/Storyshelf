@@ -19,6 +19,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+export const Numbered: Story = { args: { lead: 7 } };
 export const Current: Story = { args: { current: true } };
 export const TitleOnly: Story = { args: { aside: undefined, trailing: undefined } };
 export const LongTitle: Story = {

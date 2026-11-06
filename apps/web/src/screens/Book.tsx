@@ -1,16 +1,18 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   Artwork,
   DetailList,
   EmptyState,
   ExpandableText,
+  SectionCard,
   HeroBand,
   ListRow,
   PeopleLinks,
   PillButton,
   TitleButton,
   ProgressBar,
+  useDominantColor,
 } from '@joepittsy/ui';
 import type { DetailItem } from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
@@ -26,6 +28,7 @@ import {
   sanitiseDescription,
 } from './bookHelpers';
 import { BackLink } from '../components/BackLink';
+import { useCoverDock } from './useCoverDock';
 import { BookListening } from '../components/BookListening';
 import styles from './Book.module.css';
 
@@ -44,6 +47,22 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { data: item, error, isPending, refetch } = useBook(id);
+  const [pageEl, setPageEl] = useState<HTMLElement | null>(null);
+  const [coverEl, setCoverEl] = useState<HTMLElement | null>(null);
+  const docked = useCoverDock(pageEl, coverEl);
+  const cover = item ? coverUrl(item.id, item.updatedAt) : null;
+  const wash = useDominantColor(cover);
+  // Hand the colour to the frame, which washes the page ground with it (Frame.module.css).
+  useEffect(() => {
+    if (!wash) return;
+    const root = document.documentElement.style;
+    root.setProperty('--panel-color', wash);
+    root.setProperty('--panel-on', '1');
+    return () => {
+      root.removeProperty('--panel-color');
+      root.removeProperty('--panel-on');
+    };
+  }, [wash]);
   const description = useMemo(
     () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
     [item]
@@ -132,11 +151,21 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   if (authors) details.unshift({ label: m.authors.length > 1 ? 'Authors' : 'Author', value: authors });
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} ref={setPageEl}>
       <BackLink />
       <HeroBand
-        art={<Artwork src={coverUrl(item.id, item.updatedAt)} placeholderClassName={styles.ph} lazy={false} />}
+        art={
+          // Hidden, not removed, while docked so the hero doesn't reflow. Only one cover carries the transition name.
+          <div
+            ref={setCoverEl}
+            className={styles.hero}
+            style={docked ? { visibility: 'hidden' } : { viewTransitionName: 'book-cover' }}
+          >
+            <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
+          </div>
+        }
         title={m.title}
+        wash={wash}
       >
         {m.subtitle && <p className={styles.sub}>{m.subtitle}</p>}
         {authors && <p className={styles.line}>{authors}</p>}
@@ -159,36 +188,33 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
 
       <div className={styles.body}>
         {details.length > 0 && (
-          <section className={styles.side} aria-labelledby="details">
-            <h2 id="details" className={styles.heading}>
-              Details
-            </h2>
-            <DetailList className={styles.card} items={details} />
-          </section>
+          <SectionCard className={styles.side} title="Details">
+            {docked && (
+              <div className={styles.docked} aria-hidden="true" style={{ viewTransitionName: 'book-cover' }}>
+                <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
+              </div>
+            )}
+            <DetailList items={details} />
+          </SectionCard>
         )}
         <div className={styles.main}>
           {description && (
-            <section className={styles.section} aria-labelledby="about">
-              <h2 id="about" className={styles.heading}>
-                About this book
-              </h2>
+            <SectionCard title="About this book">
               <ExpandableText>
                 <div dangerouslySetInnerHTML={{ __html: description }} />
               </ExpandableText>
-            </section>
+            </SectionCard>
           )}
 
           <BookListening item={item} />
 
           {chapters.length > 0 && (
-            <section className={styles.section} aria-labelledby="chapters">
-              <h2 id="chapters" className={styles.heading}>
-                Chapters
-              </h2>
+            <SectionCard title="Chapters">
               <ul className={styles.chapters}>
                 {chapters.map((c, i) => (
                   <ListRow
                     key={c.id}
+                    lead={i + 1}
                     title={c.title}
                     aside={fmtClock(c.start)}
                     trailing={fmtClock(c.end - c.start, false)}
@@ -197,7 +223,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
                   />
                 ))}
               </ul>
-            </section>
+            </SectionCard>
           )}
         </div>
       </div>
