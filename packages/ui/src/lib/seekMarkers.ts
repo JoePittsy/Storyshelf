@@ -12,6 +12,14 @@ export function markerPercents(markers: SeekMarker[] | undefined, duration: numb
   return ms.map((at) => (at / duration) * 100);
 }
 
+/** Fewest pixels per tick before the ticks merge into a barcode. */
+export const MIN_TICK_PX = 10;
+
+/** Whether `count` ticks fit a bar `widthPx` wide with at least `minPx` each. False until the width is known (0). */
+export function showTicks(count: number, widthPx: number, minPx = MIN_TICK_PX): boolean {
+  return count > 0 && widthPx > 0 && widthPx / count >= minPx;
+}
+
 /** The marker containing `ms`: the last one starting at or before it. Undefined before the first or with none. */
 export function markerAt(markers: SeekMarker[] | undefined, ms: number): SeekMarker | undefined {
   let found: SeekMarker | undefined;

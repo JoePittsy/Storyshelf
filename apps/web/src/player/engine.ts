@@ -41,6 +41,8 @@ export interface PlayerState {
   skipBack: number;
   skipForward: number;
   sleep: SleepTimer | null;
+  /** Book seconds at the moment the sleep timer was set or changed: where the sleep progress window starts. */
+  sleepFrom: number;
   error: string | null;
 }
 
@@ -57,6 +59,7 @@ const initial = (): PlayerState => ({
   chapterIndex: -1,
   ...loadSettings(),
   sleep: null,
+  sleepFrom: 0,
   error: null,
 });
 
@@ -368,6 +371,7 @@ export function setSleep(choice: SleepChoice): void {
   if (choice === 'off') return set({ sleep: null });
   set({
     sleep: choice === 'chapter' ? sleepAtChapterEnd(state.chapters, position()) : sleepInMinutes(choice.minutes),
+    sleepFrom: position(),
   });
 }
 

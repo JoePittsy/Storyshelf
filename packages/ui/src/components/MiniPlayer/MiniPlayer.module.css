@@ -1,18 +1,14 @@
+/* Opaque raised navy (the same solid the reduced-transparency materials fall back to), so page content never
+   shows through it. A hairline on the top edge separates it from the page. */
 .mini {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.4em;
-  padding: 0.7em 0.8em calc(0.7em + env(safe-area-inset-bottom));
-  background: var(--material-bg);
-  -webkit-backdrop-filter: var(--material-filter);
-  backdrop-filter: var(--material-filter);
-  box-shadow: var(--material-edge);
+  background: var(--bg-1);
+  box-shadow: 0 -1px 0 var(--separator);
   color: var(--text);
   container-type: inline-size;
 }
 
-/* The thin progress line along the top edge: scaled, not resized, so it stays on the compositor. */
+/* The progress line along the top edge, flush left and right. Passive form: scaled, not resized, so it stays on the compositor. */
 .line {
   position: absolute;
   inset: 0 0 auto;
@@ -27,28 +23,34 @@
   transform-origin: left center;
   transition: transform 1s linear;
 }
-
-/* Seekable: on a phone the slim bar straddles the top edge (the track on the edge, the hit area around it), and
-   the times are hidden. The preview rises above it, outside the bar, so nothing clips it. */
-.bar {
+/* Seekable form: a 1.8em hit area (25px or more) with its slim track on the top edge, reaching above and below it.
+   The preview rises above the bar, outside it, so nothing clips it. */
+.mini .seek {
   position: absolute;
   inset: -0.8em 0 auto;
-  display: flex;
+  height: 1.8em;
+  z-index: 1;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  gap: 0.6em;
+  padding: 0.75em 0.8em calc(0.65em + env(safe-area-inset-bottom));
 }
-.time {
-  display: none;
-}
-/* Wide: the bar joins the row between the title and the controls, with the times either side. */
-@container (min-width: 40em) {
-  .bar {
-    position: static;
-    flex: 1.6;
-    gap: 0.8em;
-    margin-inline: 1em;
+/* Wide: three zones. The outer two take equal shares, so the controls sit in the middle of the bar, and the
+   left and right content hug the bar's ends. */
+@container (min-width: 72em) {
+  .row {
+    grid-template-columns: minmax(13em, 1fr) auto minmax(13em, 1fr);
+    gap: 1.5em;
+    padding-inline: 1.2em;
   }
-  .time {
-    display: block;
+}
+@container (max-width: 71.99em) {
+  .row .wide {
+    display: none;
   }
 }
 
@@ -56,7 +58,6 @@
   display: flex;
   align-items: center;
   gap: 0.8em;
-  flex: 1;
   min-width: 0;
   padding: 0.2em;
   border: none;
@@ -65,6 +66,17 @@
   color: inherit;
   text-align: start;
   cursor: pointer;
+}
+@container (min-width: 72em) {
+  /* Content-sized, capped: a short title leaves no dead gap, a long one truncates. */
+  .open {
+    justify-self: start;
+    max-width: min(100%, 24em);
+  }
+  .art {
+    width: 3.6em;
+    height: 3.6em;
+  }
 }
 .srOnly {
   position: absolute;
@@ -81,7 +93,7 @@
   width: 3.2em;
   height: 3.2em;
   border-radius: var(--r-thumb);
-  background: var(--bg-1);
+  background: var(--bg);
   overflow: hidden;
 }
 .img {
@@ -96,7 +108,7 @@
 .text {
   display: flex;
   flex-direction: column;
-  gap: 0.15em;
+  gap: 0.1em;
   min-width: 0;
 }
 .title,
@@ -112,7 +124,51 @@
 }
 .subtitle {
   font-size: var(--fs-small);
+  color: var(--text-2);
+}
+.author {
   color: var(--text-3);
+}
+@container (max-width: 71.99em) {
+  .author {
+    display: none;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2em;
+}
+@container (min-width: 72em) {
+  .controls {
+    gap: 0.5em;
+  }
+}
+.step {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.4em;
+  height: 2.4em;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast);
+}
+.step:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.step:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 /* Play-pause: the room inverted, as a circle (the same as TransportButtons). */
@@ -129,6 +185,12 @@
   color: var(--bg);
   cursor: pointer;
 }
+@container (min-width: 72em) {
+  .play {
+    width: 2.9em;
+    height: 2.9em;
+  }
+}
 .spinner {
   animation: spin 0.9s linear infinite;
 }
@@ -136,6 +198,40 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Right-hand zone, wide only: times, then speed, sleep, chapters and expand, packed against the bar's end. */
+.side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2em;
+  min-width: 0;
+}
+/* Mode toggle over the times, right-aligned. */
+.readout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35em;
+  min-width: 0;
+  margin-inline-end: 0.6em;
+}
+.times {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.8em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.clock {
+  font-size: var(--fs-small);
+  color: var(--text);
+}
+.left {
+  font-size: var(--fs-small);
+  color: var(--text-3);
 }
 
 @media (prefers-reduced-motion: reduce) {

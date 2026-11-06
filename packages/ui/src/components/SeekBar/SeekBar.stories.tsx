@@ -64,5 +64,5 @@ const chapters = (n: number): SeekMarker[] =>
 export const WithChapterTicks: Story = { args: { markers: chapters(12) } };
 /** The hover preview held open at 1:30, as it looks under a pointer or a dragging finger. */
 export const PreviewOpen: Story = { args: { markers: chapters(12), previewAt: 90000 } };
-/** A long book: 64 chapters. The 1px ticks stay legible at this density. */
+/** A long book: 64 chapters do not fit this bar at 10px each, so no ticks are drawn. */
 export const ManyChapterTicks: Story = { args: { markers: chapters(64) } };
