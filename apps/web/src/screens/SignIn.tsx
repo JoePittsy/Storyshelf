@@ -19,6 +19,7 @@ function CopyOrigin() {
   return (
     <>
       <code className={styles.origin}>{origin}</code>
+      {' '}
       <PillButton
         className={styles.copy}
         onClick={() => {
