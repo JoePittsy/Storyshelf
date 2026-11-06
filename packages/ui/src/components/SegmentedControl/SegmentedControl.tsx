@@ -17,6 +17,8 @@ interface Props<T extends string> {
   value: T;
   onChange: (value: T) => void;
   options: SegmentOption<T>[];
+  /** `pill` (default) joins the options in a rounded track with the chosen one filled; `underline` is plain text with a line under the chosen one. */
+  variant?: 'pill' | 'underline';
   className?: string;
 }
 
@@ -24,7 +26,7 @@ interface Props<T extends string> {
  * A small radio group drawn as joined segments. One tab stop (the selected segment); the arrow keys move to
  * the next enabled one and select it. A disabled option stays visible and says why.
  */
-export function SegmentedControl<T extends string>({ label, value, onChange, options, className }: Props<T>) {
+export function SegmentedControl<T extends string>({ label, value, onChange, options, variant = 'pill', className }: Props<T>) {
   const id = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -49,7 +51,7 @@ export function SegmentedControl<T extends string>({ label, value, onChange, opt
     <div
       role="radiogroup"
       aria-label={label}
-      className={[styles.group, className].filter(Boolean).join(' ')}
+      className={[styles.group, variant === 'underline' && styles.underline, className].filter(Boolean).join(' ')}
       onKeyDown={onKeyDown}
     >
       {options.map((o, i) => (

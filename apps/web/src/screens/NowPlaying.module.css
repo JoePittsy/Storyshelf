@@ -253,3 +253,148 @@
     white-space: nowrap;
   }
 }
+
+/* ---- Phone: the player is a full-height sheet (GrabSheet) over the page ----------------------------------------
+   Top to bottom: the grab row, the cover (takes whatever height is left, always whole), the title block, then the
+   controls pinned to the bottom: mode switch, chapter row, seek, transport and the option tray. The safe areas are
+   custom properties so they can be forced in a test where env() has no value. */
+.sheetRoot {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+}
+.sheet {
+  box-sizing: border-box;
+  height: 100%;
+  gap: 0.9em;
+  padding: var(--safe-top) max(1.25em, env(safe-area-inset-right)) calc(var(--safe-bottom) + 0.9em)
+    max(1.25em, env(safe-area-inset-left));
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  overflow: hidden;
+  text-align: center;
+  /* The cover's colour as one even wash from the top edge, behind the status bar and the cover alike: a quarter
+     strong at the top, fading out by 65% of the sheet height (Quiet Wall: at most 0.3, gone by about 65%). */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--wash, var(--tint)), 0.26) 0%,
+      rgba(var(--wash, var(--tint)), 0.1) 32%,
+      transparent 65%
+    ),
+    var(--bg);
+}
+/* The cover's box takes the height the rest leaves; the cover is the biggest square that fits it, so it is never cropped. */
+.phoneArt {
+  flex: 1 1 0;
+  min-height: 7em;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+.cover {
+  position: relative;
+  width: min(100cqw, 100cqh, 26em);
+  aspect-ratio: 1;
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--bg-1);
+  box-shadow: var(--art-shadow);
+}
+.badge {
+  position: absolute;
+  right: 0.6em;
+  bottom: 0.6em;
+  z-index: 1;
+  padding: 0.2em 0.65em;
+  border-radius: var(--r-pill);
+  background: var(--material-bg);
+  -webkit-backdrop-filter: var(--material-filter);
+  backdrop-filter: var(--material-filter);
+  color: var(--text);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.phoneHead {
+  flex: none;
+  display: grid;
+  gap: 0.3em;
+  min-width: 0;
+}
+.phoneTitle {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: var(--fs-title-caption);
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+/* One line. The narrator sits beside the author when both fit; otherwise it wraps to a second line that is clipped. */
+.byline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.6em;
+  max-height: 1.45em;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.author {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.narrator {
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.narrator::before {
+  content: '·';
+  margin-right: 0.6em;
+}
+.phoneControls {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5em;
+}
+.tabs {
+  align-self: center;
+}
+.phoneControls .seek {
+  margin-top: 0;
+}
+.phoneControls .transport {
+  align-self: center;
+  margin: 0.4em 0 0.6em;
+}
+
+/* A short phone (an SE): tighter, so the cover keeps a worthwhile size. */
+@media (height < 700px) {
+  .sheet {
+    gap: 0.5em;
+  }
+  .phoneTitle {
+    font-size: var(--fs-title-dialog);
+  }
+  .phoneControls {
+    gap: 0.25em;
+  }
+  .phoneControls .transport {
+    margin: 0.2em 0 0.3em;
+  }
+}

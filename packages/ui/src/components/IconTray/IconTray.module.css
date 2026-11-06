@@ -1,0 +1,56 @@
+/* One tonal container (the wall tone), its children spread evenly. Each child's button takes the same look: the
+   shared speed and sleep triggers sit one element down (inside their popover wrapper), TrayButton is a direct child. */
+.tray {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.2em;
+  padding: 0.25em;
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+.tray > * {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+.tray > button,
+.tray > * > button:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  flex: 1;
+  min-width: 44px;
+  min-height: 48px;
+  padding: 0 0.4em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast);
+}
+.tray > button:hover:not(:disabled),
+.tray > * > button:first-child:hover,
+.tray > * > button:first-child:popover-open {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.tray > button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tray > button,
+  .tray > * > button:first-child {
+    transition: none;
+  }
+}

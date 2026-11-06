@@ -1,0 +1,69 @@
+/* A sheet that can be pulled down. The caller sizes it; this is the handle row and the drag. Sized in em. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* The drag is ours: without this the browser claims a downward touch to scroll or refresh the page. */
+  touch-action: none;
+  animation: rise var(--dur) var(--ease);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4%);
+  }
+}
+
+.head {
+  flex: none;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  min-height: 44px;
+}
+/* The strip you can grab: the full width between the buttons, a 44px target around a thin bar. */
+.grab {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  cursor: grab;
+}
+.bar {
+  width: 2.8em;
+  height: 0.38em;
+  border-radius: var(--r-pill);
+  background: var(--track);
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast);
+}
+.close:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+    touch-action: auto;
+  }
+  .close {
+    transition: none;
+  }
+}

@@ -106,6 +106,7 @@
   --fs-title: 1.6em; /* section and shelf titles */
   --fs-title-caption: 1.5em; /* title under an image-card scrim */
   --fs-title-dialog: 1.3em;
+  --fs-play-xl: 2.2em; /* the one big Play button on a phone player (xl transport), about 4.8em of body text */
   --fs-title-card: 1.15em; /* the same on medium cards */
   --fs-body: 1.07em; /* track and chart rows, hero sub-lines */
   --fs-prose: max(13px, 0.95em); /* Genius "about" text, notes */

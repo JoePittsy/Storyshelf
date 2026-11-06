@@ -48,3 +48,45 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Underline: text only, the chosen option in full label colour with a 2px line that scales in (transform only). */
+.underline {
+  gap: 1.6em;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+.underline .seg {
+  position: relative;
+  min-width: 0;
+  padding: 0 0.15em;
+  border-radius: 0;
+  background: none;
+  font-size: var(--fs-body);
+}
+.underline .seg:hover:not(:disabled) {
+  background: none;
+  color: var(--text);
+}
+.underline .seg[aria-checked='true'] {
+  background: none;
+  color: var(--text);
+}
+.underline .seg::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0.3em;
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  transform: scaleX(0);
+  transition: transform var(--dur-fast) var(--ease-fast);
+}
+.underline .seg[aria-checked='true']::after {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .underline .seg::after {
+    transition: none;
+  }
+}

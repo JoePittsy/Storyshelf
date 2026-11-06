@@ -38,6 +38,35 @@
   transform-origin: left center;
   transition: transform 1s linear;
 }
+/* Dragging: the fill follows the finger directly, not over a second. */
+.still {
+  transition: none;
+}
+
+/* The thumb: a circle on the playhead (opt-in). Its left follows the position; it stays inside the bar by shifting
+   back by its own share of the width (--x). Under a finger it grows with transform only. Never takes the pointer. */
+.thumb {
+  position: absolute;
+  top: 50%;
+  width: 1.15em;
+  height: 1.15em;
+  margin-top: -0.575em;
+  border-radius: var(--r-round);
+  background: var(--on-art);
+  box-shadow: var(--art-shadow);
+  transform: translateX(var(--x, 0)) scale(1);
+  transition: transform var(--dur-fast) var(--ease-fast);
+  pointer-events: none;
+  z-index: 2;
+}
+.thumbPress,
+.thumbDrag {
+  transform: translateX(var(--x, 0)) scale(1.25);
+}
+.thumbDrag {
+  transform: translateX(var(--x, 0)) scale(1.4);
+}
+
 /* A hairline inside the track, drawn only when the bar has room (SeekBar decides). Dark on the filled
    part, light on the rest, so it shows on both without blending. It never takes the pointer. */
 .tick,
@@ -130,7 +159,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .track,
-  .fill {
+  .fill,
+  .thumb {
     transition: none;
   }
   .segment {

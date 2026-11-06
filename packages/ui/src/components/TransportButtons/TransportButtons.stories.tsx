@@ -35,3 +35,13 @@ export const Large: Story = {
     afterPlay: <SkipButton direction="forward" seconds={30} onClick={fn()} />,
   },
 };
+/** A phone's Now Playing: no outer chapter buttons (they live beside the chapter title), and Play as the one big focal button. */
+export const PhonePlayer: Story = {
+  args: {
+    size: 'xl',
+    ends: false,
+    playing: false,
+    beforePlay: <SkipButton direction="back" seconds={30} size="lg" onClick={fn()} />,
+    afterPlay: <SkipButton direction="forward" seconds={30} size="lg" onClick={fn()} />,
+  },
+};

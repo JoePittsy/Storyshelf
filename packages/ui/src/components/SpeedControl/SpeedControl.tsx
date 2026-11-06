@@ -12,6 +12,8 @@ interface Props {
   step?: number;
   /** Quick picks under the slider. */
   presets?: number[];
+  /** Always one decimal on the button ("1.0×"), so its width holds as the rate changes. */
+  fixedDecimal?: boolean;
   className?: string;
 }
 
@@ -27,11 +29,12 @@ export function SpeedControl({
   max = 3,
   step = 0.1,
   presets = [0.8, 1, 1.2, 1.5, 2],
+  fixedDecimal,
   className,
 }: Props) {
   const id = useId();
   const current = snapSpeed(value, min, max, step);
-  const text = `${fmtSpeed(current)}×`;
+  const text = `${fixedDecimal ? current.toFixed(1) : fmtSpeed(current)}×`;
   const set = (v: number) => onChange(snapSpeed(v, min, max, step));
   return (
     <span className={[styles.root, className].filter(Boolean).join(' ')}>

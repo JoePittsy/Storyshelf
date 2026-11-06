@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import {
   Artwork,
+  GrabSheet,
+  IconTray,
   InfoTip,
   ExpandableText,
   ListRow,
@@ -16,6 +18,8 @@ import {
   SkipButton,
   SleepTimerControl,
   SpeedControl,
+  StepperRow,
+  TrayButton,
   TransportButtons,
   useDominantColor,
   useMediaQuery,
@@ -24,6 +28,8 @@ import { useBook } from '../api/items';
 import { narratorPath } from '../api/libraries';
 import { usePlayer } from '../player/engine';
 import { ProgressModeControl } from '../player/ProgressModeControl';
+import { ProgressModeTabs } from '../player/ProgressModeTabs';
+import { chapterRowText } from '../player/chapterRow';
 import { ModeAnnouncer } from '../player/ModeAnnouncer';
 import { useModeTap, useProgress } from '../player/progressMode';
 import { SKIP_OPTIONS } from '../player/settings';
@@ -38,6 +44,8 @@ const skipOptions = SKIP_OPTIONS.map((n) => ({ value: String(n), label: `${n} se
 
 /** Wide enough for two columns and a permanent chapter list; below this it is one column with a Sheet. */
 const WIDE = '(width >= 60em)';
+/** A phone: the player is a full-height sheet you can pull down. The same breakpoint the ui components use for touch sizing. */
+const PHONE = '(width < 40em)';
 
 /**
  * The chapter list for wide screens, a column as tall as the chapters, so the page scrolls it (the player beside it
@@ -85,10 +93,12 @@ export function NowPlaying() {
   const navigate = useNavigate();
   const hasHistory = useLocation().key !== 'default';
   const wide = useMediaQuery(WIDE);
+  const phone = useMediaQuery(PHONE);
   // The shortcuts are for a keyboard; a touch screen has nothing to press them with.
   const touch = useMediaQuery('(pointer: coarse), (hover: none)');
   const restoreSettled = useRestoreSettled();
   const bar = useRef<HTMLDivElement>(null);
+  const controls = useRef<HTMLDivElement>(null);
   const [sheet, setSheet] = useState<'chapters' | 'settings' | null>(null);
   // The player only knows the author's name; the book (cached from the book page) has their ids.
   const meta = useBook(p.item?.id ?? '').data?.media.metadata;
@@ -101,7 +111,8 @@ export function NowPlaying() {
   // The cover's colour washes the page ground, as on the book page (frame/Frame.module.css reads these).
   const wash = useDominantColor(p.item?.coverUrl ?? null);
   useEffect(() => {
-    if (!wash) return;
+    // On a phone the sheet paints its own wash (one even fade down from the top edge), so the page ground stays plain.
+    if (!wash || phone) return;
     const root = document.documentElement.style;
     root.setProperty('--panel-color', wash);
     root.setProperty('--panel-on', '1');
@@ -109,22 +120,29 @@ export function NowPlaying() {
       root.removeProperty('--panel-color');
       root.removeProperty('--panel-on');
     };
-  }, [wash]);
+  }, [wash, phone]);
 
-  // Toasts sit above the pinned Close bar as well as the mini player (which this screen replaces).
+  // Toasts sit above whatever is pinned to the bottom edge: the Close bar on a wide page, and on a phone the whole control
+  // stack (so the Undo toast covers the cover art and title, never the chapter row or Play).
   useEffect(() => {
-    const el = bar.current;
+    const el = phone ? controls.current : bar.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const root = document.documentElement.style;
-    const set = () => root.setProperty('--toast-lift', getComputedStyle(el).position === 'fixed' ? `${el.offsetHeight}px` : '0px');
+    const set = () => {
+      // offsetTop, not the bounding box: the sheet is still sliding in (a transform) when this first runs.
+      if (phone) root.setProperty('--toast-lift', `${Math.max(0, window.innerHeight - el.offsetTop)}px`);
+      else root.setProperty('--toast-lift', getComputedStyle(el).position === 'fixed' ? `${el.offsetHeight}px` : '0px');
+    };
     set();
     const ro = new ResizeObserver(set);
     ro.observe(el);
+    window.addEventListener('resize', set);
     return () => {
       ro.disconnect();
+      window.removeEventListener('resize', set);
       root.removeProperty('--toast-lift');
     };
-  }, []);
+  }, [phone]);
 
   const { previousChapter, nextChapter } = usePlayerJump();
 
@@ -150,6 +168,134 @@ export function NowPlaying() {
   const hasChapters = p.chapters.length > 0;
   const playing = p.status === 'playing';
   const close = () => void (hasHistory ? navigate(-1) : navigate('/'));
+  const done = p.duration > 0 ? Math.min(100, Math.floor((p.position / p.duration) * 100)) : null;
+  const row = chapter ? chapterRowText(chapter.title, p.chapterIndex, p.chapters.length) : null;
+
+  const seekBar = (
+    <SeekBar
+      position={rel}
+      duration={span}
+      onSeek={(ms) => p.seek(ms / 1000 + w.start)}
+      readOnly={!w.seekable}
+      valueText={w.label}
+      label={`Progress through ${p.item.title}`}
+      markers={w.markers}
+      onTap={onTap}
+      flash={flash}
+      thumb={phone}
+    />
+  );
+  // Position on the left, what is left on the right: both clocks, in the current mode's window.
+  const times = (
+    <div className={styles.times}>
+      {w.label ? (
+        <span>{w.label}</span>
+      ) : (
+        <>
+          <PlaybackTime ms={rel} />
+          <PlaybackRemaining position={rel} duration={span} format="clock" />
+        </>
+      )}
+    </div>
+  );
+  const sleepValue = p.sleep?.kind === 'minutes' ? p.sleep : p.sleep ? ({ kind: 'chapter' } as const) : null;
+  const settingsSheet = (
+    <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings" doneLabel="Done">
+      <div className={styles.settings}>
+        <Select
+          label="Skip back"
+          value={String(p.skipBack)}
+          options={skipOptions}
+          onChange={(v) => p.setSkip(Number(v), p.skipForward)}
+        />
+        <Select
+          label="Skip forward"
+          value={String(p.skipForward)}
+          options={skipOptions}
+          onChange={(v) => p.setSkip(p.skipBack, Number(v))}
+        />
+      </div>
+    </Sheet>
+  );
+
+  if (phone)
+    return (
+      <main className={styles.sheetRoot} style={wash ? ({ '--wash': wash } as CSSProperties) : undefined}>
+        <GrabSheet onDismiss={close} closeLabel="Close player" className={styles.sheet}>
+          <div className={styles.phoneArt}>
+            <div className={styles.cover}>
+              <Artwork src={p.item.coverUrl} fit="contain" lazy={false} placeholderClassName={styles.ph} />
+              {done !== null && (
+                <span className={styles.badge} role="img" aria-label={`${done}% listened`}>
+                  {done}%
+                </span>
+              )}
+            </div>
+          </div>
+
+          <header className={styles.phoneHead}>
+            <h1 className={styles.phoneTitle}>{p.item.title}</h1>
+            <p className={styles.byline}>
+              <span className={styles.author}>
+                {authors?.length ? (
+                  <PeopleLinks
+                    people={authors.map((a) => a.name).join(', ')}
+                    onOpenPerson={(name) => {
+                      const a = authors.find((x) => x.name === name);
+                      if (a) void navigate(`/author/${encodeURIComponent(a.id)}`);
+                    }}
+                  />
+                ) : (
+                  p.item.author
+                )}
+              </span>
+              {/* Wraps onto a second line, and is clipped, unless it fits beside the author. */}
+              {!!narrators?.length && <span className={styles.narrator}>Narrated by {narrators.join(', ')}</span>}
+            </p>
+          </header>
+
+          <div className={styles.phoneControls} ref={controls}>
+            <ProgressModeTabs className={styles.tabs} />
+            {row && (
+              <StepperRow
+                title={row.title}
+                count={row.count ?? undefined}
+                hint={row.hint}
+                onOpen={() => setSheet('chapters')}
+                onPrevious={previousChapter}
+                onNext={nextChapter}
+                previousLabel="Previous chapter"
+                nextLabel="Next chapter"
+                nextDisabled={p.chapterIndex >= p.chapters.length - 1}
+              />
+            )}
+            <div className={styles.seek}>
+              {seekBar}
+              <ModeAnnouncer text={flash} />
+              {times}
+            </div>
+            <TransportButtons
+              size="xl"
+              ends={false}
+              className={styles.transport}
+              playing={playing}
+              onPlayPause={p.toggle}
+              disabled={p.status === 'loading'}
+              beforePlay={<SkipButton direction="back" size="lg" seconds={p.skipBack} onClick={() => p.skip(-1)} />}
+              afterPlay={<SkipButton direction="forward" size="lg" seconds={p.skipForward} onClick={() => p.skip(1)} />}
+            />
+            <IconTray label="Player options">
+              <SpeedControl value={p.rate} onChange={p.setRate} fixedDecimal />
+              <SleepTimerControl value={sleepValue} onChange={p.setSleep} chapterOptionDisabled={!hasChapters} compact />
+              {hasChapters && <TrayButton icon="chapters" label="Chapters" onClick={() => setSheet('chapters')} />}
+              <TrayButton icon="settings" label="Settings" onClick={() => setSheet('settings')} />
+            </IconTray>
+          </div>
+        </GrabSheet>
+        <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />
+        {settingsSheet}
+      </main>
+    );
 
   return (
     <main className={`${styles.page} ${wide && !hasChapters && !description ? styles.solo : ''}`}>
@@ -203,28 +349,9 @@ export function NowPlaying() {
             <div className={styles.seek}>
               {/* Touch and narrow: a tap on the bar steps through the modes; this stays for a screen reader and keyboard. */}
               <ProgressModeControl className={`${styles.mode} ${styles.modeControl}`} />
-              <SeekBar
-                position={rel}
-                duration={span}
-                onSeek={(ms) => p.seek(ms / 1000 + w.start)}
-                readOnly={!w.seekable}
-                valueText={w.label}
-                label={`Progress through ${p.item.title}`}
-                markers={w.markers}
-                onTap={onTap}
-                flash={flash}
-              />
+              {seekBar}
               <ModeAnnouncer text={flash} />
-              <div className={styles.times}>
-                {w.label ? (
-                  <span>{w.label}</span>
-                ) : (
-                  <>
-                    <PlaybackTime ms={rel} />
-                    <PlaybackRemaining position={rel} duration={span} />
-                  </>
-                )}
-              </div>
+              {times}
             </div>
 
             <TransportButtons
@@ -246,7 +373,7 @@ export function NowPlaying() {
             <div className={styles.options}>
               <SpeedControl value={p.rate} onChange={p.setRate} />
               <SleepTimerControl
-                value={p.sleep?.kind === 'minutes' ? p.sleep : p.sleep ? { kind: 'chapter' } : null}
+                value={sleepValue}
                 onChange={p.setSleep}
                 chapterOptionDisabled={!hasChapters}
               />
@@ -268,22 +395,7 @@ export function NowPlaying() {
       )}
       {!wide && <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />}
 
-      <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings" doneLabel="Done">
-        <div className={styles.settings}>
-          <Select
-            label="Skip back"
-            value={String(p.skipBack)}
-            options={skipOptions}
-            onChange={(v) => p.setSkip(Number(v), p.skipForward)}
-          />
-          <Select
-            label="Skip forward"
-            value={String(p.skipForward)}
-            options={skipOptions}
-            onChange={(v) => p.setSkip(p.skipBack, Number(v))}
-          />
-        </div>
-      </Sheet>
+      {settingsSheet}
     </main>
   );
 }

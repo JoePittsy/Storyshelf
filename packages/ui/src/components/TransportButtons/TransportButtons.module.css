@@ -39,6 +39,17 @@
   font-size: var(--fs-title-dialog);
 }
 
+/* xl: one big Play (about 4.8em of body text) with room around it; the skip buttons beside it stay lg-sized. */
+.xl {
+  gap: 1.1em;
+  font-size: var(--fs-body);
+}
+.xl .play {
+  font-size: var(--fs-play-xl);
+  width: 2.2em;
+  height: 2.2em;
+}
+
 /* Play-pause: the room inverted, as a circle. */
 .play {
   width: 2.6em;

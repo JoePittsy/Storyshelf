@@ -60,3 +60,7 @@ export type { SegmentOption } from './components/SegmentedControl';
 export { ActivityRow } from './components/ActivityRow';
 export { StatGrid } from './components/StatGrid';
 export type { Stat } from './components/StatGrid';
+export { GrabSheet } from './components/GrabSheet';
+export { IconTray, TrayButton } from './components/IconTray';
+export { StepperRow } from './components/StepperRow';
+export { shouldDismiss, dismissThreshold, releaseVelocity } from './lib/dragDismiss';

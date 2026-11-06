@@ -55,3 +55,18 @@ describe('TransportButtons', () => {
     ]);
   });
 });
+
+describe('TransportButtons without the outer buttons', () => {
+  it('leaves out Previous and Next when ends is false, keeping the skips and Play', () => {
+    render(
+      <TransportButtons playing={false} onPlayPause={noop} ends={false} beforePlay={<button>Back 30</button>} afterPlay={<button>Forward 30</button>} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Previous' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button').map((b) => b.textContent || b.getAttribute('aria-label'))).toEqual([
+      'Back 30',
+      'Play',
+      'Forward 30',
+    ]);
+  });
+});

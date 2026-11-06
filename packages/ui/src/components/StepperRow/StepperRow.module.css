@@ -1,0 +1,75 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+  width: 100%;
+  min-width: 0;
+}
+.step,
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: none;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast);
+}
+.step {
+  flex: none;
+  width: 44px;
+  padding: 0;
+  border-radius: var(--r-round);
+}
+.title {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  gap: 0.6em;
+  padding: 0 0.6em;
+  border-radius: var(--r-row);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text);
+}
+.text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.count {
+  flex: none;
+  color: var(--text-3);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.step:hover:not(:disabled),
+.title:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .step,
+  .title {
+    transition: none;
+  }
+}

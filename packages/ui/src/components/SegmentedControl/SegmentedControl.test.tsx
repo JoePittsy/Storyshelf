@@ -47,3 +47,24 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: 'Sleep' })).toHaveAccessibleName('Sleep');
   });
 });
+
+describe('SegmentedControl underline variant', () => {
+  it('is the same radio group, only styled differently', () => {
+    const onChange = vi.fn();
+    render(
+      <SegmentedControl
+        label="Shows"
+        variant="underline"
+        value="a"
+        onChange={onChange}
+        options={[
+          { value: 'a', label: 'Whole book' },
+          { value: 'b', label: 'This chapter' },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: 'Whole book' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'This chapter' }));
+    expect(onChange).toHaveBeenCalledWith('b');
+  });
+});

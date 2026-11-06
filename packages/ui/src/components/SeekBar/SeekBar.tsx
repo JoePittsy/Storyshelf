@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
+import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { fmtTime } from '../../lib/fmtTime';
 import { markerAt, markerPercents, segmentAt, showTicks } from '../../lib/seekMarkers';
 import type { SeekMarker } from '../../lib/seekMarkers';
@@ -35,6 +35,8 @@ interface Props {
   onTap?: () => void;
   /** A short line shown above the middle of the bar for about a second whenever it changes (e.g. the mode a tap chose). */
   flash?: string;
+  /** A round thumb on the playhead, so the bar reads as draggable. It grows a little under a finger or while dragging. */
+  thumb?: boolean;
   className?: string;
 }
 
@@ -58,6 +60,7 @@ export function SeekBar({
   valueText,
   onTap,
   flash,
+  thumb,
   className,
 }: Props) {
   const enabled = duration > 0;
@@ -88,7 +91,10 @@ export function SeekBar({
   // Touch and narrow screens, with a tap action: a drag scrubs, a tap calls onTap.
   const touchLike = useMediaQuery(TAP_QUERY);
   const tapMode = !!onTap && touchLike;
+  const [pressed, setPressed] = useState(false);
   const gesture = useRef<{ x: number; y: number; dragging: boolean } | null>(null);
+  // True while a finger is scrubbing: the thumb and fill follow it, and the thumb grows.
+  const [scrubbing, setScrubbing] = useState(false);
 
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     if (!tapMode) seekTo(fraction(e) * duration);
@@ -99,12 +105,14 @@ export function SeekBar({
   const down = (e: PointerEvent<HTMLDivElement>) => {
     if (!tapMode) return preview(e);
     gesture.current = { x: e.clientX, y: e.clientY, dragging: false };
+    setPressed(true);
   };
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!tapMode || !g) return preview(e);
     if (!g.dragging && Math.abs(e.clientX - g.x) > TAP_SLOP) {
       g.dragging = true;
+      setScrubbing(true);
       e.currentTarget.setPointerCapture?.(e.pointerId);
     }
     if (g.dragging && enabled && !readOnly) setHover(fraction(e));
@@ -113,6 +121,8 @@ export function SeekBar({
     const g = gesture.current;
     gesture.current = null;
     setHover(null);
+    setScrubbing(false);
+    setPressed(false);
     if (!tapMode || !g) return;
     if (!g.dragging) onTap?.();
     else if (!readOnly) seekTo(fraction(e) * duration);
@@ -120,6 +130,8 @@ export function SeekBar({
   const cancel = () => {
     gesture.current = null;
     setHover(null);
+    setScrubbing(false);
+    setPressed(false);
   };
 
   // The flash shows for a moment each time its text changes.
@@ -148,6 +160,8 @@ export function SeekBar({
     seekTo(target);
   };
 
+  // While scrubbing, the bar shows where the finger is (the seek itself lands on release).
+  const shownPct = scrubbing && hover !== null ? hover * 100 : pct;
   const percents = markerPercents(markers, duration);
   const ticks = showTicks(percents.length, width) ? percents : [];
   const here = markerAt(markers, position)?.label;
@@ -187,7 +201,10 @@ export function SeekBar({
       }
     >
       <div className={styles.track}>
-        <div className={styles.fill} style={{ transform: `scaleX(${pct / 100})` }} />
+        <div
+          className={`${styles.fill}${scrubbing ? ' ' + styles.still : ''}`}
+          style={{ transform: `scaleX(${shownPct / 100})` }}
+        />
         {ticks.map((pc) => (
           <span
             key={pc}
@@ -197,6 +214,13 @@ export function SeekBar({
           />
         ))}
       </div>
+      {thumb && !readOnly && (
+        <span
+          className={`${styles.thumb}${scrubbing ? ' ' + styles.thumbDrag : pressed ? ' ' + styles.thumbPress : ''}`}
+          style={{ left: `${shownPct}%`, '--x': `-${shownPct}%` } as CSSProperties}
+          aria-hidden="true"
+        />
+      )}
       {seg && (
         <span
           key={seg.index}

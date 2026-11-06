@@ -11,16 +11,19 @@ export function PlaybackTime({ ms, className }: { ms: number; className?: string
 export function PlaybackRemaining({
   position,
   duration,
+  format = 'words',
   className,
 }: {
   position: number;
   duration: number;
+  /** `clock` writes the minus sign and a clock ("−28:29"), a pair with the position on a scrubber; `words` is "28m left". */
+  format?: 'words' | 'clock';
   className?: string;
 }) {
   if (duration <= 0) return null;
   return (
     <span className={[styles.time, className].filter(Boolean).join(' ')} aria-hidden="true">
-      {fmtLeft(duration - position)}
+      {format === 'clock' ? `−${fmtTime(duration - position)}` : fmtLeft(duration - position)}
     </span>
   );
 }

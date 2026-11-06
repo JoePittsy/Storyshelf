@@ -15,8 +15,10 @@ interface Props {
   nextDisabled?: boolean;
   /** Solid glyphs instead of outlines. */
   filled?: boolean;
-  /** `lg` scales the whole row up for a full-screen player. */
-  size?: 'md' | 'lg';
+  /** `lg` scales the whole row up for a full-screen player; `xl` makes Play the one big focal button. */
+  size?: 'md' | 'lg' | 'xl';
+  /** Leave out the outer Previous and Next buttons (a screen that puts chapter moves elsewhere). Default true. */
+  ends?: boolean;
   /** Accessible names for the outer buttons; "Previous" and "Next" by default. */
   previousLabel?: string;
   nextLabel?: string;
@@ -37,6 +39,7 @@ export function TransportButtons({
   nextDisabled = false,
   filled,
   size = 'md',
+  ends = true,
   previousLabel = 'Previous',
   nextLabel = 'Next',
   beforePlay,
@@ -47,20 +50,22 @@ export function TransportButtons({
   const playLabel = playing ? 'Pause' : 'Play';
   return (
     <div
-      className={[styles.transport, size === 'lg' ? styles.lg : '', className].filter(Boolean).join(' ')}
+      className={[styles.transport, size === 'lg' ? styles.lg : size === 'xl' ? styles.xl : '', className].filter(Boolean).join(' ')}
       role="group"
       aria-label="Playback controls"
     >
-      <button
-        type="button"
-        className={styles.btn}
-        disabled={disabled || previousDisabled || !onPrevious}
-        onClick={onPrevious}
-        title={previousLabel}
-        aria-label={previousLabel}
-      >
-        <SkipBack size="1.15em" fill={fill} aria-hidden="true" />
-      </button>
+      {ends && (
+        <button
+          type="button"
+          className={styles.btn}
+          disabled={disabled || previousDisabled || !onPrevious}
+          onClick={onPrevious}
+          title={previousLabel}
+          aria-label={previousLabel}
+        >
+          <SkipBack size="1.15em" fill={fill} aria-hidden="true" />
+        </button>
+      )}
       {beforePlay}
       <button
         type="button"
@@ -80,16 +85,18 @@ export function TransportButtons({
         )}
       </button>
       {afterPlay}
-      <button
-        type="button"
-        className={styles.btn}
-        disabled={disabled || nextDisabled || !onNext}
-        onClick={onNext}
-        title={nextLabel}
-        aria-label={nextLabel}
-      >
-        <SkipForward size="1.15em" fill={fill} aria-hidden="true" />
-      </button>
+      {ends && (
+        <button
+          type="button"
+          className={styles.btn}
+          disabled={disabled || nextDisabled || !onNext}
+          onClick={onNext}
+          title={nextLabel}
+          aria-label={nextLabel}
+        >
+          <SkipForward size="1.15em" fill={fill} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }
