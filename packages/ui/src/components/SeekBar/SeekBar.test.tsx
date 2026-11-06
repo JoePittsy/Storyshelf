@@ -91,10 +91,33 @@ describe('SeekBar markers', () => {
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', '1:45 of 3:30, Chapter 2: Middle');
   });
 
-  it('draws a hidden tick per marker but none at 0, and a hidden preview on hover', () => {
+  const measured = (width: number) =>
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private cb: (e: { contentRect: { width: number } }[]) => void) {}
+        observe() {
+          this.cb([{ contentRect: { width } }]);
+        }
+        disconnect() {}
+      },
+    );
+
+  it('draws a hidden tick per marker (none at 0) when there is room, and none when crowded', () => {
     cleanup();
-    const { container } = render(<SeekBar position={0} duration={200000} onSeek={vi.fn()} markers={markers} />);
-    expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(1);
+    measured(200);
+    const room = render(<SeekBar position={0} duration={200000} onSeek={vi.fn()} markers={markers} />);
+    expect(room.container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(1);
+    cleanup();
+    measured(5);
+    const crowded = render(<SeekBar position={0} duration={200000} onSeek={vi.fn()} markers={markers} />);
+    expect(crowded.container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(0);
+    vi.unstubAllGlobals();
+  });
+
+  it('shows a hidden preview on hover', () => {
+    cleanup();
+    render(<SeekBar position={0} duration={200000} onSeek={vi.fn()} markers={markers} />);
     const bar = screen.getByRole('slider');
     bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect;
     fireEvent.pointerMove(bar, { clientX: 150, pointerType: 'mouse' });

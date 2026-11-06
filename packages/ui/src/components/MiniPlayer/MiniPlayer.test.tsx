@@ -26,7 +26,7 @@ describe('MiniPlayer seeking', () => {
     const onOpen = vi.fn();
     render(<MiniPlayer {...base} onSeek={onSeek} onOpen={onOpen} markers={[{ at: 0, label: 'Chapter 1: A' }]} />);
     const bar = screen.getByRole('slider');
-    expect(bar).toHaveAttribute('aria-valuetext', '10:00 of 60:00, Chapter 1: A');
+    expect(bar).toHaveAttribute('aria-valuetext', '10:00 of 1:00:00, Chapter 1: A');
     fireEvent.keyDown(bar, { key: 'ArrowRight' });
     fireEvent.click(bar);
     expect(onSeek).toHaveBeenCalled();

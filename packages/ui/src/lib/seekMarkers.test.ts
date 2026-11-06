@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markerAt, markerPercents } from './seekMarkers';
+import { markerAt, markerPercents, showTicks } from './seekMarkers';
 import type { SeekMarker } from './seekMarkers';
 
 const m = (at: number, label = `c${at}`): SeekMarker => ({ at, label });
@@ -14,6 +14,21 @@ describe('markerPercents', () => {
   it('is empty with no markers or no duration', () => {
     expect(markerPercents(undefined, 100)).toEqual([]);
     expect(markerPercents([m(5)], 0)).toEqual([]);
+  });
+});
+
+describe('showTicks', () => {
+  it('draws when each tick gets at least 10px', () => {
+    expect(showTicks(12, 480)).toBe(true);
+    expect(showTicks(48, 480)).toBe(true);
+  });
+  it('hides when they would crowd', () => {
+    expect(showTicks(150, 480)).toBe(false);
+    expect(showTicks(49, 480)).toBe(false);
+  });
+  it('hides with no ticks or an unmeasured bar', () => {
+    expect(showTicks(0, 480)).toBe(false);
+    expect(showTicks(12, 0)).toBe(false);
   });
 });
 

@@ -45,6 +45,14 @@
 .seek {
   width: 100%;
 }
+.mode {
+  display: flex;
+  width: fit-content;
+  margin: 0 auto 0.6em;
+}
+.times > span:only-child {
+  margin-inline: auto;
+}
 .times {
   display: flex;
   justify-content: space-between;

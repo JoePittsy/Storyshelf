@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import {
   Artwork,
-  ListRow,
   PeopleLinks,
   PillButton,
   PlaybackRemaining,
@@ -16,10 +15,11 @@ import {
   TransportButtons,
 } from '@joepittsy/ui';
 import { useBook } from '../api/items';
-import { chapterMarkers } from '../player/chapters';
 import { usePlayer } from '../player/engine';
+import { ProgressModeControl } from '../player/ProgressModeControl';
+import { useProgress } from '../player/progressMode';
 import { SKIP_OPTIONS } from '../player/settings';
-import { fmtClock } from './bookHelpers';
+import { ChaptersSheet } from '../player/ChaptersSheet';
 import styles from './NowPlaying.module.css';
 
 const skipOptions = SKIP_OPTIONS.map((n) => ({ value: String(n), label: `${n} seconds` }));
@@ -33,7 +33,10 @@ export function NowPlaying() {
   // The player only knows the author's name; the book (cached from the book page) has their ids.
   const authors = useBook(p.item?.id ?? '').data?.media.metadata.authors;
 
+  const { window: w } = useProgress();
   if (!p.item) return <Navigate to="/" replace />;
+  const rel = Math.max(0, p.position - w.start) * 1000;
+  const span = (w.end - w.start) * 1000;
   const chapter = p.chapters[p.chapterIndex];
   const playing = p.status === 'playing';
   const close = () => void (hasHistory ? navigate(-1) : navigate('/'));
@@ -64,16 +67,25 @@ export function NowPlaying() {
       {chapter && <p className={styles.line}>{chapter.title}</p>}
 
       <div className={styles.seek}>
+        <ProgressModeControl className={styles.mode} />
         <SeekBar
-          position={p.position * 1000}
-          duration={p.duration * 1000}
-          onSeek={(ms) => p.seek(ms / 1000)}
+          position={rel}
+          duration={span}
+          onSeek={(ms) => p.seek(ms / 1000 + w.start)}
+          readOnly={!w.seekable}
+          valueText={w.label}
           label={`Progress through ${p.item.title}`}
-          markers={chapterMarkers(p.chapters)}
+          markers={w.markers}
         />
         <div className={styles.times}>
-          <PlaybackTime ms={p.position * 1000} />
-          <PlaybackRemaining position={p.position * 1000} duration={p.duration * 1000} />
+          {w.label ? (
+            <span>{w.label}</span>
+          ) : (
+            <>
+              <PlaybackTime ms={rel} />
+              <PlaybackRemaining position={rel} duration={span} />
+            </>
+          )}
         </div>
       </div>
 
@@ -99,22 +111,7 @@ export function NowPlaying() {
         {p.chapters.length > 0 && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
       </div>
 
-      <Sheet open={sheet === 'chapters'} onClose={() => setSheet(null)} title="Chapters">
-        <ul className={styles.chapters}>
-          {p.chapters.map((c, i) => (
-            <ListRow
-              key={c.id}
-              title={c.title}
-              aside={fmtClock(c.start)}
-              current={i === p.chapterIndex}
-              onClick={() => {
-                p.seek(c.start);
-                setSheet(null);
-              }}
-            />
-          ))}
-        </ul>
-      </Sheet>
+      <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />
 
       <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings">
         <div className={styles.settings}>

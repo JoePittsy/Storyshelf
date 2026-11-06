@@ -52,3 +52,5 @@ export type { TabItem } from './components/Tabs';
 export { Chip } from './components/Chip';
 export { PersonLink } from './components/PersonLink';
 export { FilterChip } from './components/FilterChip';
+export { SegmentedControl } from './components/SegmentedControl';
+export type { SegmentOption } from './components/SegmentedControl';
