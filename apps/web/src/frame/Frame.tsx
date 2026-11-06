@@ -210,12 +210,11 @@ function NowPlayingTitle() {
  */
 function useRouteAnnouncement(pathname: string): string {
   const [text, setText] = useState('');
-  const first = useRef(true);
+  // The path the effect last ran for: the same path again (the first load, or StrictMode's second run) is no change.
+  const last = useRef(pathname);
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+    if (last.current === pathname) return;
+    last.current = pathname;
     const main = document.querySelector<HTMLElement>('main');
     if (main) {
       main.tabIndex = -1;
