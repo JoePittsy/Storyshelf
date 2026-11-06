@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
 import { onSignedOut, restoreSession } from './api/auth';
 import { Frame } from './frame/Frame';
 import { Book } from './screens/Book';
+import { play } from './player/engine';
+import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { PlayerToasts } from './player/PlayerToasts';
 import { Library } from './screens/Library';
 import { NowPlaying } from './screens/NowPlaying';
@@ -35,8 +37,16 @@ export function App() {
     <>
       <PlayerToasts />
       <AppRoutes />
+      <MiniPlayerPortal />
     </>
   );
+}
+
+/** The book screen with its play buttons wired to the player (REQ-14, REQ-15). */
+function PlayableBook() {
+  const { id = '' } = useParams();
+  const start = (from: number) => void play(id, from);
+  return <Book onPlay={start} onChapter={start} />;
 }
 
 function AppRoutes() {
@@ -46,7 +56,7 @@ function AppRoutes() {
       <Route element={<RequireSession />}>
         <Route element={<Frame />}>
           <Route path="/" element={<Library />} />
-          <Route path="/book/:id" element={<Book />} />
+          <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />
         </Route>
       </Route>

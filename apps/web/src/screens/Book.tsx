@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { Artwork, EmptyState, ExpandableText, HeroBand, ListRow, PillButton, ProgressBar } from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
 import { coverUrl, useBook } from '../api/items';
-import { play } from '../player/engine';
 import { currentChapterIndex, fmtClock, fmtLong, playFrom, playLabel, sanitiseDescription } from './bookHelpers';
 import styles from './Book.module.css';
 
@@ -12,6 +11,9 @@ interface Props {
   onPlay?: (fromSeconds: number) => void;
   onChapter?: (startSeconds: number) => void;
 }
+
+// PLACEHOLDER: player slice
+const noop = () => undefined;
 
 /** Back to the library as the user left it (query string and all) when there is history, else to /. */
 function BackLink() {
@@ -29,9 +31,8 @@ function BackLink() {
   );
 }
 
-export function Book({ onPlay, onChapter }: Props) {
+export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { id = '' } = useParams();
-  const start = (from: number) => void play(id, from);
   const { data: item, error, isPending, refetch } = useBook(id);
   const description = useMemo(
     () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
@@ -102,7 +103,7 @@ export function Book({ onPlay, onChapter }: Props) {
           <ProgressBar value={p?.isFinished ? 1 : (p?.progress ?? 0)} label={`Progress through ${m.title}`} />
           <p className={styles.line}>{status}</p>
         </div>
-        <PillButton variant="primary" className={styles.action} onClick={() => (onPlay ?? start)(playFrom(p))}>
+        <PillButton variant="primary" className={styles.action} onClick={() => onPlay(playFrom(p))}>
           {label}
         </PillButton>
       </HeroBand>
@@ -131,7 +132,7 @@ export function Book({ onPlay, onChapter }: Props) {
                 aside={fmtClock(c.start)}
                 trailing={fmtClock(c.end - c.start, false)}
                 current={i === chapterIdx}
-                onClick={() => (onChapter ?? start)(c.start)}
+                onClick={() => onChapter(c.start)}
               />
             ))}
           </ul>

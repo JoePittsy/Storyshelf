@@ -2,9 +2,7 @@ import { Outlet, useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { PillButton, Select, TopBar } from '@joepittsy/ui';
 import { logout } from '../api/auth';
-import { stop } from '../player/engine';
-import { MiniPlayerPortal } from '../player/MiniPlayerPortal';
-import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
+import { stop } from '../player/engine';import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
 import styles from './Frame.module.css';
 
 /** The signed-in app frame: header, routed content, and an empty bottom region the mini player will fill. */
@@ -41,8 +39,6 @@ export function Frame() {
         <Outlet />
       </div>
       {/* Layout slot for the mini player: collapses while empty. */}
-      <div id="mini-player-slot" className={styles.player} />
-      <MiniPlayerPortal />
-    </div>
+      <div id="mini-player-slot" className={styles.player} />    </div>
   );
 }

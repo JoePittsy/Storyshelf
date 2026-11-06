@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
-import { Artwork, MiniPlayer } from '@joepittsy/ui';
+import { MiniPlayer } from '@joepittsy/ui';
 import { usePlayer } from './engine';
 
 /** The mini player, portalled into the frame's bottom slot whenever a book is loaded. Hidden on the full player. */
@@ -9,13 +8,13 @@ export function MiniPlayerPortal() {
   const p = usePlayer();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
-  useEffect(() => setSlot(document.getElementById('mini-player-slot')), []);
+  // The slot lives in the Frame. A book only loads from inside the Frame, so it is in the DOM by the time one is loaded.
+  const slot = document.getElementById('mini-player-slot');
 
   if (!slot || !p.item || pathname === '/now-playing') return null;
   return createPortal(
     <MiniPlayer
-      art={<Artwork src={p.item.coverUrl} lazy={false} />}
+      art={p.item.coverUrl}
       title={p.item.title}
       subtitle={p.item.author}
       position={p.position * 1000}
