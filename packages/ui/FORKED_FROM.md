@@ -92,4 +92,4 @@ Moved into `src/components/<Name>/` with only import paths, comments and story c
 
 ## Licence
 
-This package is derived from TrueTunes by TrueNorth IT, used with the owner's permission. The package as a whole, including the changes listed above, is Copyright (c) 2026 Joe Pitts and licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`); see [`LICENSE`](./LICENSE).
+This package is derived from TrueTunes by TrueNorth IT. Joe Pitts wrote the TrueTunes design system and has TrueNorth IT's explicit permission to fork it and publish this derivative under the licence below. The package as a whole, including the changes listed above, is Copyright (c) 2026 Joe Pitts and licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`); see [`LICENSE`](./LICENSE).
