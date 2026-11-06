@@ -1,101 +1,98 @@
-import { flushSync } from 'react-dom';
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { morphBetween } from '@joepittsy/ui';
-import { DOCK_THRESHOLDS, nextDocked } from './coverDock';
+import { useEffect, type RefObject } from 'react';
+import { createGenie, measureBox, tFromScroll, type Genie } from '@joepittsy/ui';
 
 /** The page is a container; Book.module.css goes two-column from this width. */
 const WIDE = 800;
 
 /**
- * True while the hero cover is scrolled out of view on the wide layout. The change pours the cover between the hero
- * and the docked cover in the Details card as a liquid morph (morphBetween); under reduced motion it swaps instantly.
- * `page` and `cover` are elements (state, not refs) because the book renders after it loads; `dock` is the docked
- * cover's frame, which only exists while docked.
+ * Scroll-scrubbed cover dock on the wide layout. As the hero cover scrolls under the top bar, progress t (0..1, a pure
+ * function of its position) drives a WebGL genie warp of the cover image from the hero into the docked cover at the top
+ * of the Details card. Between 0 and 1 both real covers are hidden and the canvas draws; at the ends the real element
+ * shows, so the swap is invisible. The docked slot's reserved height follows t (`--dock-t`), so Details eases down.
+ *
+ * Under reduced motion, without WebGL, or if the image can't be used as a texture, it swaps once at t >= 0.5.
+ * `page` and `cover` are elements (state, not refs) because the book renders after it loads.
  */
 export function useCoverDock(
   page: HTMLElement | null,
   cover: HTMLElement | null,
   dock: RefObject<HTMLElement | null>,
-  morph: { src: string | null; color: string | null }
-): boolean {
-  const [docked, setDocked] = useState(false);
-  const target = useRef(false);
-  const current = useRef(false);
-  const running = useRef<{ to: boolean; abort: AbortController } | null>(null);
-  const latest = useRef(morph);
+  slot: RefObject<HTMLElement | null>,
+  src: string | null
+): void {
   useEffect(() => {
-    latest.current = morph;
-  });
+    if (!page || !cover) return;
+    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let genie: Genie | null = null;
+    let raf = 0;
+    let last = '';
 
-  useEffect(() => {
-    if (!page || !cover || typeof IntersectionObserver === 'undefined') return;
-    let io: IntersectionObserver | undefined;
-    let alive = true;
-
-    const apply = () => {
-      if (running.current || target.current === current.current) return;
-      const next = target.current;
-      const set = () => {
-        current.current = next;
-        flushSync(() => setDocked(next));
-      };
-      const run = (from: Element, to: Element, after?: () => void) => {
-        const abort = new AbortController();
-        running.current = { to: next, abort };
-        const { src, color } = latest.current;
-        void morphBetween(from, to, { src: src ?? undefined, color: color ?? undefined, signal: abort.signal }).finally(
-          () => {
-            running.current = null;
-            if (alive) after?.();
-            if (alive) apply(); // catch up with wherever the scroll ended while we were animating
-          }
-        );
-      };
-      if (next) {
-        set(); // the docked cover has to exist to be measured; the morph hides both until it lands
-        if (dock.current) run(cover, dock.current);
-      } else if (dock.current) {
-        // Morph first, while the docked cover is still there; skip the swap if the user scrolled back mid-flight.
-        run(dock.current, cover, () => {
-          if (target.current === next) set();
-        });
-      } else set();
+    const show = (el: HTMLElement | null, visible: boolean) => {
+      if (el) el.style.visibility = visible ? '' : 'hidden';
     };
-
-    let wasWide: boolean | undefined;
-    const observe = () => {
-      const wide = page.clientWidth >= WIDE;
-      if (wide === wasWide) return; // height changes also wake the ResizeObserver
-      wasWide = wide;
-      io?.disconnect();
-      io = undefined;
-      if (!wide) {
-        target.current = false;
-        return apply();
+    const run = () => {
+      raf = 0;
+      const d = dock.current;
+      const s = slot.current;
+      const rect = cover.getBoundingClientRect();
+      if (page.clientWidth < WIDE || !d || !s || rect.height <= 0) {
+        show(cover, true);
+        show(d, false);
+        genie?.hide();
+        s?.style.setProperty('--dock-t', '0');
+        last = '';
+        return;
       }
-      const bar = document.querySelector('header')?.getBoundingClientRect().height ?? 0;
-      io = new IntersectionObserver(
-        ([e]) => {
-          if (!e) return;
-          target.current = nextDocked(current.current, e.intersectionRatio);
-          if (running.current && running.current.to !== target.current) running.current.abort.abort(); // jump to the end, then reverse
-          apply();
-        },
-        { rootMargin: `-${Math.round(bar)}px 0px 0px 0px`, threshold: DOCK_THRESHOLDS }
-      );
-      io.observe(cover);
+      const bar = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      const t = tFromScroll(rect.top, rect.height, bar);
+      const canWarp = !reduced && genie !== null && genie.ready && !genie.failed;
+      if (canWarp && t > 0 && t < 1) {
+        s.style.setProperty('--dock-t', String(t));
+        const a = measureBox(cover);
+        const b = measureBox(d);
+        const key = `${t}|${a?.x}|${a?.y}|${b?.x}|${b?.y}|${innerWidth}|${innerHeight}`;
+        if (a && b && key !== last) {
+          last = key;
+          genie?.draw(a, b, t);
+        }
+        show(cover, false);
+        show(d, false);
+        return;
+      }
+      last = '';
+      genie?.hide();
+      const swapped = canWarp ? t >= 1 : t >= 0.5;
+      s.style.setProperty('--dock-t', String(canWarp ? t : Number(swapped)));
+      show(cover, !swapped);
+      show(d, swapped);
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(run);
     };
 
-    observe();
-    const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(observe);
+    if (!reduced && src && page.clientWidth >= WIDE) {
+      genie = createGenie({
+        src,
+        onChange: () => {
+          const box = measureBox(cover);
+          if (box) genie?.prepare(box);
+          schedule();
+        },
+      });
+    }
+    run();
+    addEventListener('scroll', schedule, { capture: true, passive: true });
+    addEventListener('resize', schedule);
+    const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
     ro?.observe(page);
     return () => {
-      alive = false;
-      running.current?.abort.abort();
-      io?.disconnect();
+      cancelAnimationFrame(raf);
+      removeEventListener('scroll', schedule, { capture: true });
+      removeEventListener('resize', schedule);
       ro?.disconnect();
+      genie?.destroy();
+      show(cover, true);
+      show(dock.current, false); // eslint-disable-line react-hooks/exhaustive-deps -- the current node is what we hide
     };
-  }, [page, cover, dock]);
-
-  return docked;
+  }, [page, cover, dock, slot, src]);
 }

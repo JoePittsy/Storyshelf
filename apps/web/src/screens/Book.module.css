@@ -18,12 +18,18 @@
   border-radius: inherit;
   overflow: hidden;
 }
-/* Wide only (Book.tsx never docks narrower): the hero cover shrinks into the top of the Details card. */
-.docked {
+/* Wide only (the dock never runs narrower): the hero cover pours into the top of the Details card. */
+.slot {
   display: none;
+  position: relative;
+  /* the docked cover's 9em plus its 1em gap, scaled by the scroll progress useCoverDock publishes */
+  height: calc(10em * var(--dock-t, 0));
+}
+.docked {
+  position: absolute;
+  inset: 0 auto auto 0;
   width: 9em;
   height: 9em;
-  margin: 0 0 1em;
   border-radius: var(--r-art-card);
   background: var(--bg-1);
   box-shadow: var(--hero-shadow);
@@ -83,7 +89,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
   }
-  .docked {
+  .slot {
     display: block;
   }
 }
