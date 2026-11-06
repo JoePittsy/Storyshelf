@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@joepittsy/ui';
 import { usePlayer } from './engine';
-import { nextJump, previousJump, undoPoint } from './jumps';
+import { nextJump, previousJump, undoPoint, MIN_UNDO_DISTANCE } from './jumps';
+import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
 
 /**
  * Jumping to a chapter loses the listener's place, so it comes with a way back. `go` seeks (or plays from) a time;
@@ -48,7 +49,13 @@ export function usePlayerJump() {
   useEffect(() => {
     latest.current = p;
   });
-  const go = useCallback((t: number) => latest.current.seek(t), []);
+  // Every move through here, Undo included, keeps the place it left. The engine logs the big ones itself, so only the shorter ones are added here.
+  const go = useCallback((t: number) => {
+    const { item, position, seek } = latest.current;
+    const dist = Math.abs(t - position);
+    if (item && dist >= MIN_UNDO_DISTANCE && dist <= BIG_SEEK_SECONDS) recordJump(item.id, position);
+    seek(t);
+  }, []);
   const jump = useUndoableJump(go);
   const jumpTo = useCallback(
     (target: number, label: string) => {

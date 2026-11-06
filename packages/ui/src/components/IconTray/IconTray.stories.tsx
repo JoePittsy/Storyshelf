@@ -22,7 +22,7 @@ function Demo() {
           }
         />
         <TrayButton icon="chapters" label="Chapters" onClick={fn()} />
-        <TrayButton icon="settings" label="Settings" onClick={fn()} />
+        <TrayButton icon="history" label="History" onClick={fn()} />
       </IconTray>
     </div>
   );

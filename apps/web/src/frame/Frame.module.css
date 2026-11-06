@@ -23,6 +23,26 @@
   width: 100%;
   max-width: 16em;
 }
+/* A phone has no top bar: the tab row is the top of the page, clear of the status bar, and stays reachable as the page scrolls. */
+@media (width < 40em) {
+  .frame .bar {
+    display: none;
+  }
+  /* A page with no tab row (a book) starts clear of the status bar itself. */
+  .frame .topless {
+    padding-top: calc(1.4em + var(--safe-top, env(safe-area-inset-top, 0px)));
+  }
+  .frame .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: calc(0.4em + var(--safe-top, env(safe-area-inset-top, 0px))) max(calc(var(--gutter) - 0.45em), env(safe-area-inset-right)) 0
+      max(calc(var(--gutter) - 0.45em), env(safe-area-inset-left));
+    background: var(--material-bg);
+    -webkit-backdrop-filter: var(--material-filter);
+    backdrop-filter: var(--material-filter);
+  }
+}
 .tabs {
   box-sizing: border-box;
   width: 100%;

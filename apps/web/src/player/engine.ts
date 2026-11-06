@@ -5,6 +5,7 @@ import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter 
 import { AbsError } from '../api/auth';
 import { absUrl } from '../api/server';
 import { diag } from './diag';
+import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
 import { supportedMimeTypes } from './mime';
 import { isRepeatFailure, srcNotSupportedError } from './failure';
@@ -569,7 +570,11 @@ export function toggle(): void {
   act('toggle', 'ui');
 }
 
-export const seek = (t: number): void => seekBook(t);
+export function seek(t: number): void {
+  // A big move leaves the place it came from in the book's history. Shorter ones go through usePlayerJump, which logs its own.
+  if (state.item && Math.abs(t - position()) > BIG_SEEK_SECONDS) recordJump(state.item.id, position());
+  seekBook(t);
+}
 export const skip = (dir: -1 | 1): void => seekBook(position() + (dir < 0 ? -state.skipBack : state.skipForward));
 export const previousChapter = (): void => seekBook(previousChapterTarget(state.chapters, position()));
 export function nextChapter(): void {

@@ -47,13 +47,56 @@
   }
 }
 
+/* A divider before the trailing destination: a short hairline, not a full-height rule. */
+.list > .separated {
+  position: relative;
+  margin-inline-start: 0.4em;
+  padding-inline-start: 0.4em;
+}
+.separated::before {
+  content: '';
+  position: absolute;
+  inset-block: 25%;
+  inset-inline-start: 0;
+  width: 1px;
+  background: var(--separator);
+}
+/* An icon stands in for the word on a phone only. */
+.icon {
+  display: none;
+  flex: none;
+}
+
 /* Five destinations must fit a 375px phone without a sideways scroll hiding the last one. */
 @media (width <= 30em) {
   .list {
     gap: 0;
   }
   .tab {
-    padding-inline: 0.45em;
+    padding-inline: 0.4em;
+    font-size: var(--fs-label);
+  }
+  .list > .separated {
+    margin-inline-start: 0.1em;
+    padding-inline-start: 0.1em;
+  }
+  .hasIcon {
+    justify-content: center;
+    min-width: 40px;
+    box-sizing: border-box;
+  }
+  .hasIcon .icon {
+    display: block;
+  }
+  /* Visually hidden, still the link's name. */
+  .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
