@@ -1,0 +1,155 @@
+/* Shared with SleepTimerControl: a quiet trigger button and the frosted popover it opens. The popover is in the
+   top layer, so no ancestor (the MiniPlayer's backdrop-filter, a Sheet's overflow) can clip it. It is placed
+   with CSS anchor positioning against the trigger and flips to stay on screen; without that support it centres. */
+.root {
+  display: inline-flex;
+  anchor-scope: --anchor;
+}
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-height: 2.6em;
+  padding: 0 0.8em;
+  border: none;
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  anchor-name: --anchor;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast);
+}
+.trigger:hover,
+.trigger:popover-open,
+.trigger[aria-expanded='true'] {
+  color: var(--text);
+  background: var(--row-hover);
+}
+
+.pop {
+  position-anchor: --anchor;
+  position-area: top span-right;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
+  margin: 0.5em;
+  inset: auto;
+  width: 17em;
+  max-width: calc(100vw - 1em);
+  padding: 1em;
+  border: none;
+  border-radius: var(--r-tile);
+  background: var(--material-bg);
+  -webkit-backdrop-filter: var(--material-filter);
+  backdrop-filter: var(--material-filter);
+  box-shadow: var(--float-shadow);
+  color: var(--text);
+  overflow: visible;
+}
+.pop:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+@supports not (position-area: top) {
+  .pop {
+    inset: 0;
+    margin: auto;
+  }
+}
+
+.popTitle {
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+/* Speed */
+.readout {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.slider {
+  width: 100%;
+  accent-color: var(--text);
+  cursor: pointer;
+}
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+.preset {
+  min-height: 2.2em;
+  padding: 0 0.8em;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--row-hover);
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-fast),
+    color var(--dur-fast) var(--ease-fast);
+}
+.preset:hover {
+  background: rgba(var(--tint), 0.16);
+  color: var(--text);
+}
+.preset[aria-pressed='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* Menu rows (SleepTimerControl) */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  margin: -0.4em;
+}
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  min-height: 2.6em;
+  padding: 0 0.8em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+}
+.option:hover:not(:disabled) {
+  background: var(--row-hover);
+  color: var(--text);
+}
+.option[aria-pressed='true'] {
+  color: var(--text);
+  font-weight: 600;
+}
+.option:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .preset {
+    transition: none;
+  }
+}
