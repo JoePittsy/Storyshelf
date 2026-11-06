@@ -36,3 +36,5 @@ export { useImageFallback } from './hooks/useImageFallback';
 export { fmtTime } from './lib/fmtTime';
 export { wavePath, startEnvelope, envelopeStrips } from './lib/wavePath';
 export type { WaveOptions, EnvelopeStrip } from './lib/wavePath';
+export { ExpandableText } from './components/ExpandableText';
+export { ListRow } from './components/ListRow';

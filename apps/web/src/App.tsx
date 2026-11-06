@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { onSignedOut, restoreSession } from './api/auth';
 import { Frame } from './frame/Frame';
+import { Book } from './screens/Book';
 import { Library } from './screens/Library';
 import { SignIn } from './screens/SignIn';
 
@@ -34,6 +35,7 @@ export function App() {
       <Route element={<RequireSession />}>
         <Route element={<Frame />}>
           <Route path="/" element={<Library />} />
+          <Route path="/book/:id" element={<Book />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

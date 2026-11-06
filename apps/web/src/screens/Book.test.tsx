@@ -1,0 +1,92 @@
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router';
+
+vi.mock('../api/auth', async (orig) => ({ ...(await orig<typeof import('../api/auth')>()), absFetch: vi.fn() }));
+
+import * as auth from '../api/auth';
+import { Book } from './Book';
+
+const absFetch = vi.mocked(auth.absFetch);
+
+const item = {
+  id: 'li_1',
+  updatedAt: 1,
+  media: {
+    metadata: {
+      title: 'The Hobbit',
+      subtitle: null,
+      authors: [{ id: 'a', name: 'J. R. R. Tolkien' }],
+      narrators: ['Rob Inglis'],
+      series: [],
+      description: '<p>There and back again.</p><script>alert(1)</script>',
+      publishedYear: '1937',
+    },
+    duration: 36000,
+    chapters: [
+      { id: 0, start: 0, end: 3600, title: 'An Unexpected Party' },
+      { id: 1, start: 3600, end: 7200, title: 'Roast Mutton' },
+    ],
+  },
+  userMediaProgress: { currentTime: 3730, progress: 0.1, isFinished: false },
+};
+
+function renderBook(onPlay = vi.fn(), onChapter = vi.fn()) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={['/book/li_1']}>
+        <Routes>
+          <Route path="/book/:id" element={<Book onPlay={onPlay} onChapter={onChapter} />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  return { onPlay, onChapter };
+}
+
+afterEach(() => {
+  cleanup();
+  vi.resetAllMocks();
+});
+
+describe('Book screen', () => {
+  it('REQ-13/14 shows details, time left and a Resume button', async () => {
+    absFetch.mockResolvedValue(item);
+    const { onPlay } = renderBook();
+    expect(await screen.findByRole('heading', { level: 1, name: 'The Hobbit' })).toBeInTheDocument();
+    expect(screen.getByText('Narrated by Rob Inglis')).toBeInTheDocument();
+    expect(screen.getByText('8h 57m left · Chapter 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('There and back again.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    expect(onPlay).toHaveBeenCalledWith(3730);
+  });
+
+  it('REQ-15 marks the current chapter and selecting one reports its start', async () => {
+    absFetch.mockResolvedValue(item);
+    const { onChapter } = renderBook();
+    const current = await screen.findByRole('button', { name: /Roast Mutton/ });
+    expect(current).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: /An Unexpected Party/ })).not.toHaveAttribute('aria-current');
+    await userEvent.click(screen.getByRole('button', { name: /An Unexpected Party/ }));
+    expect(onChapter).toHaveBeenCalledWith(0);
+  });
+
+  it('shows a friendly empty state on 404', async () => {
+    absFetch.mockRejectedValue(new auth.AbsError(404, 'Not Found'));
+    renderBook();
+    expect(await screen.findByText("This book isn't in your library")).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to your library' })).toHaveAttribute('href', '/');
+  });
+
+  it('offers a retry on other errors', async () => {
+    absFetch.mockRejectedValue(new auth.AbsError(500, 'boom'));
+    renderBook();
+    // The hook retries twice (1s, 2s backoff) before giving up.
+    expect(await screen.findByRole('button', { name: 'Try again' }, { timeout: 5000 })).toBeInTheDocument();
+  }, 10000);
+});
