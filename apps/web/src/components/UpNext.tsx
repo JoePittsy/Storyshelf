@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Artwork, UpNextCard, useDominantColor } from '@joepittsy/ui';
 import { coverUrl } from '../api/libraries';
 import { usePlayer } from '../player/engine';
@@ -68,7 +68,9 @@ export function NowPlayingUpNext({ className }: { className?: string }) {
 export function MiniUpNext() {
   const ended = useEndedBook();
   const next = useNextInSeries(ended);
-  if (!ended || !next) return null;
+  // The ended book's own page offers it already.
+  const onItsPage = useLocation().pathname === `/book/${ended}`;
+  if (!ended || !next || onItsPage) return null;
   return <NextCard next={next} variant="bar" caption={next.caption} onDismiss={() => dismissUpNext(ended)} />;
 }
 

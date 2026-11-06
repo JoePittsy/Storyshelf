@@ -74,6 +74,16 @@
   cursor: pointer;
   overflow-wrap: anywhere;
 }
+/* The strip stays one line of each, so it adds little to the mini player's height. */
+.bar .title {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.bar .caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .title:hover {
   text-decoration: underline;
   text-underline-offset: 0.18em;
