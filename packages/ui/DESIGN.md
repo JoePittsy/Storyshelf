@@ -319,7 +319,7 @@ A print with its label (ArtCard). The artwork fills the card edge to edge (`obje
 Borderless rows (ItemRow, ChartRow) with a 0.65em radius and 3.2em rounded thumbnails. The title is at Title-at-rest white (500) and the credit in tertiary label on the same line. Hover or focus-within fills the row with Tint Fill, brightens the title to white and reveals the quiet add button. Chart rows are a fixed grid (rank · title · credit · count · add) with zero-padded tabular ranks and counts, and optional ChartHead column labels on the same grid.
 
 ### Tiles
-Square art (ImageTile, 0.7–0.9em radius, or a circle for people) over a two-line caption: title in Title-at-rest, sub in tertiary label. Hover or focus rises the tile 2px and gives the art the Art-lifted shadow. With `href` the tile is a real link (a plain click still calls `onOpen`), and `overlay` draws over the art, e.g. a ProgressBar.
+Square art (ImageTile, 0.7–0.9em radius, or a circle for people) over a caption: the title in Title-at-rest, clamped to two lines (the full text is its `title` attribute), then the sub in tertiary label on one line. The tile's accessible name is one `aria-label`, "Title, Author". Hover or focus rises the tile 2px and gives the art the Art-lifted shadow. With `href` the tile is a real link (a plain click still calls `onOpen`), and `overlay` draws over the art, e.g. a ProgressBar.
 
 ### Top bar
 TopBar is a sticky header on the frosted material with start, centre and end slots; it pads its top by the safe-area inset and has no tokens of its own.
@@ -331,14 +331,14 @@ Stateless pieces (SeekBar, WavyProgress and EqBars first, then the controls belo
 - **EqBars:** three bars on the compositor meaning "this is the current item". Still when paused and under reduced motion.
 - **SkipButton:** a circular arrow with the seconds inside it, in two sizes (2.6em, 3.4em), quiet like the transport buttons. Named "Back 30 seconds" or "Forward 30 seconds".
 - **SpeedControl and SleepTimerControl:** a quiet pill trigger ("1.3×", or a moon and "Sleep", "12:30", "End of chapter") that opens a native popover on the frosted material. The popover is in the top layer, so nothing clips it, closes on Esc and outside click, and is placed with CSS anchor positioning, flipping to stay on screen. Speed is a range slider plus preset pills; sleep is a list of options ending in "Off". Remaining time reads m:ss, or h:mm:ss from an hour.
-- **MiniPlayer:** the frosted material in a bottom slot, padded by the safe-area inset. A 0.2em progress line runs along its top edge; art and title are one button ("Open player"), then skip back and the inverted play-pause circle, which shows a spinner (and `aria-busy`) while loading.
+- **MiniPlayer:** the frosted material in a bottom slot, padded by the safe-area inset. A 0.2em progress line runs along its top edge; art and title are one button ("Open player"), then skip back and the inverted play-pause circle, which shows a spinner (and `aria-busy`) while loading. Wide, it adds skip forward, the time and Expand; chapter buttons, the progress modes, speed, sleep and a chapters button are optional zones that appear only when their props are given. Storyshelf passes none of them, so its bar stays slim and those controls live on Now Playing.
 - **Sheet:** the Dialog surface as a bottom sheet under 40em wide (full width, rounded on top, safe-area padding) and a centred panel above that. It is a native `<dialog>`, so Esc and a backdrop click close it.
 
 ### Dialog
 One modal (Dialog): a native `<dialog>` opened with `showModal()`, so the page behind is inert, Tab stays inside, Esc closes it and focus returns to the opener. Raised Navy, 1.2em radius, the Floating shadow, widths of 26, 36 or 64em. The sentence-case title names the dialog, beside a 2.2em round close button. The action row is right-aligned: secondary actions first, the primary or danger pill last. An outside click closes it, except in a form dialog, so a stray click can't lose typed text.
 
 ### Toast and InfoTip
-**Toast** is the frosted material with a status dot and an optional action, such as Undo. **InfoTip** is a small info button whose tooltip is portalled to the page, flips to stay on screen and closes on Escape.
+**Toast** is the frosted material with a status dot and an optional action, such as Undo (a 44px target). It sits above the bottom player and any other pinned bar by offsets the app publishes on the root, pauses its timer while hovered or focused, and on closing returns focus to the control that raised it if focus would otherwise fall to the page. **InfoTip** is a small info button whose tooltip is portalled to the page, flips to stay on screen and closes on Escape.
 
 ### Inputs / Fields
 - **Dialog field:** a borderless tonal field (Tint Fill, hover tint 0.12, 0.65em radius, padding 0.65em × 0.85em) under a secondary-label label. Focus shows the global ring. Placeholders are tertiary label; errors are Danger text.

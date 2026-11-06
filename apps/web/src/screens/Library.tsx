@@ -167,7 +167,7 @@ export function Library({ onPlay = noop }: Props) {
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.srOnly}>Books</h1>
+      <h1 className={styles.srOnly}>Library</h1>
       {/* Not while searching or filtering: it would sit among narrowed results. */}
       {showShelf && <ResumeHome libraryId={libraryId} onPlay={onPlay} />}
       <div className={styles.toolbar}>

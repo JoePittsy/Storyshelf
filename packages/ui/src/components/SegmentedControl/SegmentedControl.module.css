@@ -21,8 +21,8 @@
     color var(--dur-fast) var(--ease-fast),
     background var(--dur-fast) var(--ease-fast);
 }
-/* Touch: a segment is a full 44px target; the group grows to hold it. */
-@media (pointer: coarse) {
+/* Touch and phone widths: a segment is a full 44px target; the group grows to hold it. */
+@media (pointer: coarse), (width < 40em) {
   .seg {
     min-height: 44px;
     min-width: 44px;

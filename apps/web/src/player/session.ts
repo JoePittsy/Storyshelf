@@ -1,5 +1,5 @@
 import { AbsError, absFetch } from '../api/auth';
-import type { Chapter } from './chapters';
+import { cleanChapters, type Chapter } from './chapters';
 import type { AudioTrack } from './timeline';
 
 export interface PlaybackSession {
@@ -68,7 +68,7 @@ export async function openSession(libraryItemId: string, supportedMimeTypes: str
     await closeSession(s);
     throw new UnsupportedFormatError();
   }
-  return s;
+  return { ...s, chapters: cleanChapters(s.chapters) };
 }
 
 /** POST /api/session/:id/sync. Only a 404 (server restarted) re-opens the session, once; resolves with the session now active. */

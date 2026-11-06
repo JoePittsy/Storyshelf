@@ -156,7 +156,7 @@ describe('Series page', () => {
   it('REQ-30 Continue opens the first unfinished book', async () => {
     serve(seriesRoutes);
     renderAt('/series/s1');
-    await userEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+    await userEvent.click(await screen.findByRole('button', { name: /^Continue #1/ }));
     expect(screen.getByTestId('where')).toHaveTextContent('/book/b1');
   });
 

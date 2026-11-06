@@ -60,7 +60,8 @@ export function History() {
   useDocumentTitle(current.key === 'log' ? 'History' : `${current.label} · History`);
   return (
     <main className={styles.page}>
-      <h1 className={styles.title}>History</h1>
+      {/* The active tab already says "History"; the heading stays for screen readers, as Library does. */}
+      <h1 className={styles.srOnly}>History</h1>
       <Tabs
         label="History sections"
         current={current.key}

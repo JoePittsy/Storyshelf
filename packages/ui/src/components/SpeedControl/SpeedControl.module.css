@@ -163,3 +163,15 @@
     transition: none;
   }
 }
+
+/* Touch and phone widths: triggers, presets and menu rows are 44px targets. */
+@media (pointer: coarse), (width < 40em) {
+  .trigger,
+  .option,
+  .preset {
+    min-height: 44px;
+  }
+  .trigger {
+    min-width: 44px;
+  }
+}

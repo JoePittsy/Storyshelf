@@ -12,7 +12,7 @@
   text-decoration: underline;
 }
 /* A finger needs 44px: grow the target, and pull the margin in by what the padding adds. */
-@media (pointer: coarse) {
+@media (pointer: coarse), (width < 40em) {
   .back {
     display: inline-flex;
     align-items: center;

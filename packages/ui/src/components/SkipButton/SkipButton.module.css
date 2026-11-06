@@ -49,3 +49,10 @@
     transition: none;
   }
 }
+
+@media (pointer: coarse), (width < 40em) {
+  .skip {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

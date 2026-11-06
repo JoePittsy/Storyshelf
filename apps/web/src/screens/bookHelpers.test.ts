@@ -4,7 +4,6 @@ import type { BookItem } from '../api/items';
 import {
   bookDetails,
   bookProgress,
-  chapterTitle,
   descriptionSource,
   currentChapterIndex,
   fmtClock,
@@ -213,22 +212,6 @@ describe('bookProgress', () => {
 
   it('reads as finished within a second of the end', () => {
     expect(bookProgress(book, { item: { id: 'li_1' }, position: 999.5, duration: 1000, chapterIndex: 1 }).isFinished).toBe(true);
-  });
-});
-
-describe('chapterTitle', () => {
-  it('strips a leading number that matches the chapter position', () => {
-    expect(chapterTitle('01 - The Tale of Peter Rabbit', 0)).toBe('The Tale of Peter Rabbit');
-    expect(chapterTitle('12. Roast Mutton', 11)).toBe('Roast Mutton');
-    expect(chapterTitle('003 – Three', 2)).toBe('Three');
-  });
-  it('keeps a number that is part of the name or does not match', () => {
-    expect(chapterTitle('07 - Seven', 0)).toBe('07 - Seven');
-    expect(chapterTitle('1984', 0)).toBe('1984');
-    expect(chapterTitle('2 Fast 2 Furious', 1)).toBe('2 Fast 2 Furious');
-  });
-  it('never returns an empty name', () => {
-    expect(chapterTitle('1 - ', 0)).toBe('1 - ');
   });
 });
 

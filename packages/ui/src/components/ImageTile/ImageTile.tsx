@@ -62,21 +62,20 @@ export function ImageTile({
     : { type: 'button' as const, onClick: onOpen };
   return (
     <div className={`${styles.tile} ${size === 'sm' ? styles.sm : styles.md}`} onMouseEnter={onHover}>
+      {/* The caption lines are stacked blocks, so "Title" and "Author" would be read run together. The separator that
+          keeps them apart is generated content in the CSS (.title::after), which assistive tech reads but which is not
+          text in the page, so it never shows up in the visible title or in copied text. */}
       <Main className={styles.main} {...mainProps}>
         <span className={`${styles.art} ${circular ? styles.round : ''}`} aria-hidden="true">
           <Artwork src={imageUrl} fit={artFit} placeholderClassName={styles.ph} />
           {overlay}
         </span>
-        {/* The lines are stacked blocks; read as one name, "Title" and "Author" would run together, so each line ends in a
-            hidden comma. */}
         <span className={styles.title} title={title}>
           {title}
-          {(sub || meta) && <span className={styles.sep}>,</span>}
         </span>
         {sub && (
           <span className={styles.sub} title={sub}>
             {sub}
-            {meta && <span className={styles.sep}>,</span>}
           </span>
         )}
         {meta && (

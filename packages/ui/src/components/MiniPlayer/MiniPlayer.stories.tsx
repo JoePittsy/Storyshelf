@@ -117,6 +117,12 @@ export const Desktop1440ManyChapters: Story = {
 /** A short title: the left zone is content-sized, so there is no dead gap before the controls. */
 export const Desktop1440ShortTitle: Story = { args: { markers: chapters(12), modeControl: modeControl('book', true), ...short }, decorators: frame(1440) };
 /** About 1870px wide, as on a large monitor. */
+/** What the app uses: none of the optional zones. Cover and title, skip back / play / skip forward, seek bar and time, Expand. */
+export const Slim1440: Story = {
+  args: { onPrevious: undefined, onNext: undefined, rate: undefined, onRateChange: undefined, sleep: undefined, onSleepChange: undefined, onChapters: undefined, markers: chapters(12) },
+  decorators: frame(1440),
+};
+
 export const Desktop1870: Story = { args: { markers: chapters(12) }, decorators: frame(1870) };
 export const Desktop1870ShortTitle: Story = { args: { markers: chapters(150), ...short }, decorators: frame(1870) };
 /** A book over 10 hours: the times show hours (1:54:57 / 13:41:20). */

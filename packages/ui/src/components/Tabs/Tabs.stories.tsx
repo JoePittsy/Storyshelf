@@ -3,7 +3,7 @@ import { fn } from 'storybook/test';
 import { Tabs } from './Tabs';
 
 const items = [
-  { key: 'books', label: 'Books', href: '/' },
+  { key: 'books', label: 'Library', href: '/' },
   { key: 'authors', label: 'Authors', href: '/authors' },
   { key: 'narrators', label: 'Narrators', href: '/narrators' },
   { key: 'series', label: 'Series', href: '/series' },

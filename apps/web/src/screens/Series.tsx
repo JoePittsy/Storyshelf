@@ -9,7 +9,7 @@ import { BackLink } from '../components/BackLink';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import { LoadFailed } from '../components/LoadFailed';
 import { sanitiseDescription } from './bookHelpers';
-import { nextBook, sequenceBadge, sortSeriesBooks } from './seriesHelpers';
+import { nextBook, nextBookLabel, sequenceBadge, sortSeriesBooks } from './seriesHelpers';
 import styles from './Collection.module.css';
 
 /** A series: name, authors, then its books in reading order with sequence badges and progress (REQ-30). */
@@ -98,7 +98,7 @@ export function Series() {
             className={styles.action}
             onClick={() => void navigate(`/book/${next.book.item.id}`)}
           >
-            {next.label}
+            {nextBookLabel(next, progress.data ?? new Map())}
           </PillButton>
         )}
       </HeroBand>

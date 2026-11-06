@@ -1,4 +1,5 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
+import { cleanChapters } from '../player/chapters';
 import { AbsError, absFetch } from './auth';
 
 // Only the fields the book page uses, from GET /api/items/:id?expanded=1&include=progress (ABS 2.37).
@@ -50,7 +51,10 @@ export const bookQuery = (id: string) =>
   queryOptions({
     queryKey: ['item', id],
     enabled: !!id,
-    queryFn: () => absFetch<BookItem>(`/api/items/${encodeURIComponent(id)}?expanded=1&include=progress`),
+    queryFn: async () => {
+      const item = await absFetch<BookItem>(`/api/items/${encodeURIComponent(id)}?expanded=1&include=progress`);
+      return { ...item, media: { ...item.media, chapters: cleanChapters(item.media.chapters) } };
+    },
     retry: (count, e) => !(e instanceof AbsError && e.status === 404) && count < 2,
   });
 

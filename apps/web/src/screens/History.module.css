@@ -5,11 +5,14 @@
   gap: 1.2em;
   padding-bottom: 3em;
 }
-.title {
-  margin: 0;
-  font-size: var(--fs-title-feature);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .loading {
   height: 16em;

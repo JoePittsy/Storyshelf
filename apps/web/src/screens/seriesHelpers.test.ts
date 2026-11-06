@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LibraryItem } from '../api/libraries';
-import { compareBooks, groupAuthorBooks, nextBook, sortSeriesBooks } from './seriesHelpers';
+import { compareBooks, groupAuthorBooks, nextBook, nextBookLabel, sortSeriesBooks } from './seriesHelpers';
 
 const book = (id: string, title: string, publishedYear?: string): LibraryItem => ({
   id,
@@ -90,5 +90,34 @@ describe('nextBook', () => {
   });
   it('is undefined with no books', () => {
     expect(nextBook([], new Map())).toBeUndefined();
+  });
+});
+
+describe('nextBookLabel', () => {
+  const withDuration = (id: string, seq: string, duration?: number) => ({
+    item: { id, updatedAt: 1, media: { metadata: { title: id, authorName: null }, duration } },
+    sequence: seq,
+  });
+  it('says which book and how much is left', () => {
+    const b = withDuration('b', '2', 7200);
+    expect(nextBookLabel({ book: b, label: 'Continue' }, new Map([['b', { currentTime: 4100 }]]))).toBe(
+      'Continue #2 \u00b7 51m left',
+    );
+  });
+  it('leaves out what is not known', () => {
+    const b = withDuration('b', '2');
+    expect(nextBookLabel({ book: b, label: 'Continue' }, new Map())).toBe('Continue #2');
+    expect(nextBookLabel({ book: { ...b, sequence: null }, label: 'Continue' }, new Map())).toBe('Continue');
+  });
+  it('says "under a minute" rather than 0m', () => {
+    const b = withDuration('b', '1', 1000);
+    expect(nextBookLabel({ book: b, label: 'Continue' }, new Map([['b', { currentTime: 980 }]]))).toBe(
+      'Continue #1 \u00b7 under a minute left',
+    );
+  });
+  it('keeps Start and Start again as they are', () => {
+    const b = withDuration('a', '1', 100);
+    expect(nextBookLabel({ book: b, label: 'Start' }, new Map())).toBe('Start');
+    expect(nextBookLabel({ book: b, label: 'Start again' }, new Map())).toBe('Start again');
   });
 });

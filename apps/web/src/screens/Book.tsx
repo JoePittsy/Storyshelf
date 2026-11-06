@@ -20,7 +20,6 @@ import { narratorPath } from '../api/libraries';
 import {
   bookDetails,
   bookProgress,
-  chapterTitle,
   descriptionSource,
   fmtClock,
   fmtLong,
@@ -206,7 +205,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
                     key={c.id}
                     // The number is a column of its own: hidden from assistive tech so a name isn't read as "101 - …".
                     lead={<span aria-hidden="true">{i + 1}</span>}
-                    title={chapterTitle(c.title, i)}
+                    title={c.title}
                     aside={fmtClock(c.start)}
                     trailing={fmtClock(c.end - c.start, false)}
                     current={i === chapterIdx}

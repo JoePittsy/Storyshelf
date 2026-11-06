@@ -1,6 +1,8 @@
 .container {
   position: fixed;
-  bottom: 24px;
+  /* Clear of the mini player (--player-h) and anything else pinned to the bottom edge (--toast-lift); the app
+     publishes both on the root. */
+  bottom: calc(24px + var(--player-h, 0px) + var(--toast-lift, 0px));
   right: 20px;
   z-index: 500;
   display: flex;
@@ -61,8 +63,14 @@
 
 .action {
   flex: none;
-  margin-left: 0.5em;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* A 44px target, drawn outward so the toast keeps its slim look. */
+  min-width: 44px;
+  min-height: 44px;
+  margin: -9px -8px -9px 0.25em;
+  padding: 0 0.75em;
   border: none;
   background: none;
   color: inherit;

@@ -31,3 +31,18 @@ export function nextChapterTarget(chapters: Chapter[], t: number): number | null
 /** Seek-bar markers for a book's chapters, shared by the full and mini players so their ticks and previews match. */
 export const chapterMarkers = (chapters: Chapter[]): { at: number; label: string }[] =>
   chapters.map((c, i) => ({ at: c.start * 1000, label: `Chapter ${i + 1}: ${c.title}` }));
+
+/**
+ * A chapter's name without a leading "04 - " or "4. " when that number is just its place in the list: the list already
+ * shows the number, so the name would be read out twice. A different number is part of the name and stays.
+ */
+export function chapterTitle(title: string, index: number): string {
+  const m = /^\s*0*(\d+)\s*(?:[-–—.:)]\s+|[-–—]\s*)(.+)$/.exec(title);
+  if (m && Number(m[1]) === index + 1 && m[2]!.trim()) return m[2]!.trim();
+  return title;
+}
+
+/** Applied once where ABS chapters become UI data (the playback session, the book), so every surface shows clean names. */
+export function cleanChapters<T extends { title: string }>(chapters: T[] | undefined): T[] {
+  return (chapters ?? []).map((c, i) => ({ ...c, title: chapterTitle(c.title, i) }));
+}

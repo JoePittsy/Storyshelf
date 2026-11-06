@@ -62,3 +62,10 @@
     transform: none;
   }
 }
+
+@media (pointer: coarse), (width < 40em) {
+  .btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

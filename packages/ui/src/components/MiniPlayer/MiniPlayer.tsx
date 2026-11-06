@@ -64,8 +64,9 @@ interface Props {
 /**
  * A bottom player bar for an app frame. A progress line runs flush along its top edge (a slim seek bar when `onSeek`
  * is given). Phone width: art and title (one button that opens the full player), skip back and play-pause.
- * Wide (72em container): art, title, chapter and author on the left; chapter and skip buttons around play-pause in
- * the centre; times, speed, sleep, chapters and expand on the right. Opaque. Stateless; pads its bottom by the
+ * Wide (72em container): art, title, chapter and author on the left; skip buttons around play-pause in the centre;
+ * the times and expand on the right. Chapter buttons, the progress modes, speed, sleep and a chapters button each
+ * appear only when their props are given (the app passes none of them, keeping the bar slim). Opaque. Stateless; pads its bottom by the
  * safe-area inset. Sized in em, so put it inside a .page-scale root.
  *
  * The bar's background is full-bleed; its content lines up with the app's content column. It reads the CSS custom
@@ -145,16 +146,17 @@ export function MiniPlayer({
           </span>
         </button>
         <div className={styles.controls} role="group" aria-label="Playback controls">
-          <button
-            type="button"
-            className={`${styles.step} ${styles.wide}`}
-            onClick={onPrevious}
-            disabled={!onPrevious}
-            aria-label="Previous chapter"
-            title="Previous chapter"
-          >
-            <SkipBack size="1.15em" aria-hidden="true" />
-          </button>
+          {onPrevious && (
+            <button
+              type="button"
+              className={`${styles.step} ${styles.wide}`}
+              onClick={onPrevious}
+              aria-label="Previous chapter"
+              title="Previous chapter"
+            >
+              <SkipBack size="1.15em" aria-hidden="true" />
+            </button>
+          )}
           <SkipButton direction="back" seconds={skipBackSeconds} onClick={onSkipBack} className={styles.skip} />
           <button
             type="button"
@@ -183,16 +185,17 @@ export function MiniPlayer({
               className={`${styles.skip} ${styles.wide}`}
             />
           )}
-          <button
-            type="button"
-            className={`${styles.step} ${styles.wide}`}
-            onClick={onNext}
-            disabled={!onNext}
-            aria-label="Next chapter"
-            title="Next chapter"
-          >
-            <SkipForward size="1.15em" aria-hidden="true" />
-          </button>
+          {onNext && (
+            <button
+              type="button"
+              className={`${styles.step} ${styles.wide}`}
+              onClick={onNext}
+              aria-label="Next chapter"
+              title="Next chapter"
+            >
+              <SkipForward size="1.15em" aria-hidden="true" />
+            </button>
+          )}
         </div>
         <div className={`${styles.side} ${styles.wide}`}>
           <div className={styles.readout}>

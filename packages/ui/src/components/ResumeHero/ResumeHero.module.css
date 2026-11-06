@@ -12,7 +12,7 @@
   min-width: 0;
   padding: 1.1em;
   border-radius: var(--r-card);
-  background: radial-gradient(120% 160% at 0% 0%, rgba(var(--tint), 0.3), transparent 65%), var(--surface-hi);
+  background: radial-gradient(120% 150% at 0% 0%, rgba(var(--tint), 0.3), transparent 65%), var(--surface-hi);
 }
 .art {
   grid-area: art;

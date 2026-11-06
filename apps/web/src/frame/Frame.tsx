@@ -21,12 +21,17 @@ export function Frame() {
     const set = () => {
       frame.style.setProperty('--bar-h', `${bar.offsetHeight}px`);
       frame.style.setProperty('--player-h', `${player.offsetHeight}px`);
+      // Toasts live in <body>, outside the frame, and sit above the player by this much.
+      document.documentElement.style.setProperty('--player-h', `${player.offsetHeight}px`);
     };
     set();
     const ro = new ResizeObserver(set);
     ro.observe(bar);
     ro.observe(player);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--player-h');
+    };
   }, []);
   const navigate = useNavigate();
   const { pathname } = useLocation();

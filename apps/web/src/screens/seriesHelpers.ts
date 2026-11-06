@@ -1,4 +1,5 @@
 import type { LibraryItem } from '../api/libraries';
+import { fmtLong } from './bookHelpers';
 
 interface Sortable {
   sequence?: string | null;
@@ -90,4 +91,22 @@ export function nextBook(
   const touched = books.some((b) => (progress.get(b.item.id)?.progress ?? 0) > 0);
   if (!open) return { book: first, label: 'Start again' };
   return { book: open, label: touched ? 'Continue' : 'Start' };
+}
+
+/**
+ * The series page's main button: "Start", "Start again", or for a book in progress which one and how much is left,
+ * "Continue #2 · 51m left". The pieces that aren't known are left out.
+ */
+export function nextBookLabel(
+  next: { book: SeriesBook; label: 'Start' | 'Continue' | 'Start again' },
+  progress: Map<string, { currentTime?: number }>,
+): string {
+  if (next.label !== 'Continue') return next.label;
+  const { item, sequence } = next.book;
+  const head = sequence ? `Continue #${sequence}` : 'Continue';
+  const duration = item.media.duration ?? 0;
+  const at = progress.get(item.id)?.currentTime ?? 0;
+  if (duration <= 0 || at <= 0) return head;
+  const left = Math.max(0, duration - at);
+  return `${head} \u00b7 ${left < 60 ? 'under a minute' : fmtLong(left)} left`;
 }

@@ -48,3 +48,11 @@
     transition: none;
   }
 }
+
+/* Touch and phone widths: a full 44px target. */
+@media (pointer: coarse), (width < 40em) {
+  .pill {
+    min-height: 44px;
+    justify-content: center;
+  }
+}

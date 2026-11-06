@@ -178,3 +178,11 @@ textarea.input {
     transition: none;
   }
 }
+
+/* Touch and phone widths: the close button is a 44px target. */
+@media (pointer: coarse), (width < 40em) {
+  .close {
+    width: 44px;
+    height: 44px;
+  }
+}

@@ -141,3 +141,11 @@
     transform: none;
   }
 }
+
+/* Touch and phone widths: a hit area of at least 32px around the thin track (the track itself keeps its size). */
+@media (pointer: coarse), (width < 40em) {
+  .seek,
+  .slim {
+    min-height: 32px;
+  }
+}

@@ -56,10 +56,26 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* A title gets two lines before it is cut, so two books in one series ("The Adventure of the ...") stay apart. The
+   full text is in the title attribute. */
 .title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.3;
   font-weight: 500;
   color: var(--title-rest);
   transition: color var(--dur-fast) var(--ease-fast);
+}
+.title:not(:last-child)::after,
+.sub:not(:last-child)::after {
+  content: ',';
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
 }
 .main:hover .title,
 .main:focus-visible .title {
@@ -165,11 +181,10 @@
   }
 }
 
-/* A comma for the accessible name only: zero-sized, so it neither shows nor shifts the line, and still inline, so the
-   name reads "Title, Author" with no stray space before the comma. */
-.sep {
-  display: inline-block;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+/* Touch and phone widths: the play disc is a 44px target. */
+@media (pointer: coarse), (width < 40em) {
+  .play {
+    width: 44px;
+    height: 44px;
+  }
 }

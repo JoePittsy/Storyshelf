@@ -37,6 +37,14 @@ export function AccountMenu() {
     };
   }, [open]);
 
+  // The dialog hands focus back to what opened it, which was the Sign out item in a panel that has since closed;
+  // when it goes away without signing out, focus belongs on the account button.
+  const wasConfirming = useRef(false);
+  useEffect(() => {
+    if (wasConfirming.current && !confirm && !busy) trigger.current?.focus();
+    wasConfirming.current = confirm;
+  }, [confirm, busy]);
+
   if (!user) return null;
   const name = user.username;
 

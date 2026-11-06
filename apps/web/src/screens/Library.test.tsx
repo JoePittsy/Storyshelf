@@ -138,7 +138,7 @@ describe('REQ-37 REQ-38 REQ-41 REQ-42 filters from the URL', () => {
     mockAbs();
     renderAt('/?library=L1');
     expect(await screen.findByRole('heading', { level: 2, name: 'All books · 2' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'Books' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Library' })).toBeInTheDocument();
   });
 
   it('says so when nothing matches', async () => {

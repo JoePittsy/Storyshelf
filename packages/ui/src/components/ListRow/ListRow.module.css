@@ -46,3 +46,11 @@
   min-width: 1.6em;
   text-align: right;
 }
+
+/* Touch and phone widths: a row is a 44px target. */
+@media (pointer: coarse), (width < 40em) {
+  .row {
+    min-height: 44px;
+    align-items: center;
+  }
+}

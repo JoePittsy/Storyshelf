@@ -6,7 +6,7 @@ export function PlaybackTime({ ms, className }: { ms: number; className?: string
   return <span className={[styles.time, className].filter(Boolean).join(' ')}>{fmtTime(ms)}</span>;
 }
 
-/** Time left as "−2:15", or nothing when the duration is unknown. Decorative: the slider already announces both times. */
+/** Time left as "2:15 left" (as the mini player writes it), or nothing when the duration is unknown. Decorative: the slider already announces both times. */
 export function PlaybackRemaining({
   position,
   duration,
@@ -19,7 +19,7 @@ export function PlaybackRemaining({
   if (duration <= 0) return null;
   return (
     <span className={[styles.time, className].filter(Boolean).join(' ')} aria-hidden="true">
-      {`−${fmtTime(Math.max(0, duration - position))}`}
+      {`${fmtTime(Math.max(0, duration - position))} left`}
     </span>
   );
 }

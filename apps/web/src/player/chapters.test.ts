@@ -12,7 +12,7 @@
  * chapters is possible: t in a gap is in no chapter (index -1).
  */
 import { describe, expect, it } from 'vitest';
-import { chapterIndexAt, chapterMarkers, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
+import { chapterIndexAt, chapterMarkers, chapterTitle, cleanChapters, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
 
 const ch = (id: number, start: number, end: number): Chapter => ({ id, start, end, title: `Chapter ${id + 1}` });
 
@@ -156,5 +156,39 @@ describe('chapterMarkers', () => {
       { at: 0, label: 'Chapter 1: Intro' },
       { at: 60000, label: 'Chapter 2: Two' },
     ]);
+  });
+});
+
+describe('chapterTitle', () => {
+  it('strips a leading number that matches the chapter position', () => {
+    expect(chapterTitle('01 - The Tale of Peter Rabbit', 0)).toBe('The Tale of Peter Rabbit');
+    expect(chapterTitle('12. Roast Mutton', 11)).toBe('Roast Mutton');
+    expect(chapterTitle('003 – Three', 2)).toBe('Three');
+  });
+  it('keeps a number that is part of the name or does not match', () => {
+    expect(chapterTitle('07 - Seven', 0)).toBe('07 - Seven');
+    expect(chapterTitle('1984', 0)).toBe('1984');
+    expect(chapterTitle('2 Fast 2 Furious', 1)).toBe('2 Fast 2 Furious');
+  });
+  it('never returns an empty name', () => {
+    expect(chapterTitle('1 - ', 0)).toBe('1 - ');
+  });
+});
+
+describe('cleanChapters', () => {
+  it('cleans each name by its own position and keeps the rest of the chapter', () => {
+    const out = cleanChapters([
+      { id: 0, start: 0, end: 5, title: '01 - The Tale of Peter Rabbit' },
+      { id: 1, start: 5, end: 9, title: '07 - Seven' },
+    ]);
+    expect(out.map((c) => c.title)).toEqual(['The Tale of Peter Rabbit', '07 - Seven']);
+    expect(out[1]).toMatchObject({ id: 1, start: 5, end: 9 });
+  });
+  it('tolerates a book with no chapters', () => {
+    expect(cleanChapters(undefined)).toEqual([]);
+  });
+  it('feeds clean names to the seek-bar markers', () => {
+    const [m] = chapterMarkers(cleanChapters([{ id: 0, start: 0, end: 5, title: '01 - The Tale of Peter Rabbit' }]));
+    expect(m!.label).toBe('Chapter 1: The Tale of Peter Rabbit');
   });
 });

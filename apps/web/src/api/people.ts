@@ -30,7 +30,7 @@ interface SeriesPage {
 
 /** The library's tabs, each a route. */
 export const LIBRARY_TABS = [
-  { key: 'books', label: 'Books', path: '/' },
+  { key: 'books', label: 'Library', path: '/' },
   { key: 'authors', label: 'Authors', path: '/authors' },
   { key: 'narrators', label: 'Narrators', path: '/narrators' },
   { key: 'series', label: 'Series', path: '/series' },

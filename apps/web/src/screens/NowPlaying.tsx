@@ -27,6 +27,7 @@ import { ProgressModeControl } from '../player/ProgressModeControl';
 import { useProgress } from '../player/progressMode';
 import { SKIP_OPTIONS } from '../player/settings';
 import { ChaptersSheet } from '../player/ChaptersSheet';
+import { usePlayerJump } from '../player/useUndoableJump';
 import { playerKeyAction } from '../player/shortcuts';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
@@ -42,6 +43,7 @@ const WIDE = '(width >= 60em)';
  */
 function ChapterList() {
   const p = usePlayer();
+  const { jumpTo } = usePlayerJump();
   const box = useRef<HTMLUListElement>(null);
   const first = useRef(true);
   useEffect(() => {
@@ -61,11 +63,12 @@ function ChapterList() {
         {p.chapters.map((c, i) => (
           <ListRow
             key={c.id}
-            lead={i + 1}
+            // The number is a column of its own: hidden from assistive tech so a name isn't read as "101 - …".
+            lead={<span aria-hidden="true">{i + 1}</span>}
             title={c.title}
             aside={fmtClock(c.start)}
             current={i === p.chapterIndex}
-            onClick={() => p.seek(c.start)}
+            onClick={() => jumpTo(c.start, `Chapter ${i + 1}`)}
           />
         ))}
       </ul>
@@ -79,6 +82,9 @@ export function NowPlaying() {
   const navigate = useNavigate();
   const hasHistory = useLocation().key !== 'default';
   const wide = useMediaQuery(WIDE);
+  // The shortcuts are for a keyboard; a touch screen has nothing to press them with.
+  const touch = useMediaQuery('(pointer: coarse)');
+  const bar = useRef<HTMLDivElement>(null);
   const [sheet, setSheet] = useState<'chapters' | 'settings' | null>(null);
   // The player only knows the author's name; the book (cached from the book page) has their ids.
   const meta = useBook(p.item?.id ?? '').data?.media.metadata;
@@ -101,7 +107,23 @@ export function NowPlaying() {
     };
   }, [wash]);
 
-  const { toggle, skip, previousChapter, nextChapter } = p;
+  // Toasts sit above the pinned Close bar as well as the mini player (which this screen replaces).
+  useEffect(() => {
+    const el = bar.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement.style;
+    const set = () => root.setProperty('--toast-lift', getComputedStyle(el).position === 'fixed' ? `${el.offsetHeight}px` : '0px');
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.removeProperty('--toast-lift');
+    };
+  }, []);
+
+  const { toggle, skip } = p;
+  const { previousChapter, nextChapter } = usePlayerJump();
   const sheetOpen = sheet !== null;
   useEffect(() => {
     if (sheetOpen) return;
@@ -130,8 +152,9 @@ export function NowPlaying() {
 
   return (
     <main className={`${styles.page} ${wide && !hasChapters && !description ? styles.solo : ''}`}>
-      <div className={styles.bar}>
+      <div className={styles.bar} ref={bar}>
         <PillButton onClick={close}>Close</PillButton>
+        {!touch && (
         <InfoTip label="Keyboard shortcuts">
           <dl className={styles.keys}>
             <dt>Space</dt>
@@ -142,6 +165,7 @@ export function NowPlaying() {
             <dd>Previous / next chapter</dd>
           </dl>
         </InfoTip>
+        )}
       </div>
 
       <div className={styles.player}>
@@ -203,8 +227,8 @@ export function NowPlaying() {
               className={styles.transport}
               playing={playing}
               onPlayPause={p.toggle}
-              onPrevious={p.previousChapter}
-              onNext={p.nextChapter}
+              onPrevious={previousChapter}
+              onNext={nextChapter}
               previousDisabled={!hasChapters}
               nextDisabled={!hasChapters}
               previousLabel="Previous chapter"
@@ -239,7 +263,7 @@ export function NowPlaying() {
       )}
       {!wide && <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />}
 
-      <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings">
+      <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings" doneLabel="Done">
         <div className={styles.settings}>
           <Select
             label="Skip back"
