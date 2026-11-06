@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
-import { EmptyState, ImageTile, ProgressBar, SearchField, Select } from '@joepittsy/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { EmptyState, SearchField, Select } from '@joepittsy/ui';
 import {
   SORTS,
-  coverUrl,
   mergeProgress,
   parseSort,
   pickLibrary,
@@ -14,12 +13,12 @@ import {
   useProgress,
 } from '../api/libraries';
 import type { LibraryItem } from '../api/libraries';
+import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import styles from './Library.module.css';
 
 const SORT_OPTIONS = SORTS.map((s) => ({ value: s.key, label: s.label }));
 
 export function Library() {
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const sort = parseSort(params.get('sort'));
   const q = params.get('q')?.trim() ?? '';
@@ -58,21 +57,7 @@ export function Library() {
   const loading = libs.isPending || (!!libraryId && active.isPending);
   const failed = libs.isError || active.isError;
 
-  // Load the next page when the sentinel scrolls into view.
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = items;
-  const sentinel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = sentinel.current;
-    if (!el || searching || !hasNextPage) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
-      },
-      { rootMargin: '400px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [searching, hasNextPage, isFetchingNextPage, fetchNextPage, tiles.length]);
 
   return (
     <main className={styles.page}>
@@ -101,11 +86,7 @@ export function Library() {
           Check your connection and reload.
         </EmptyState>
       ) : loading ? (
-        <div className={styles.grid} role="status" aria-label="Loading">
-          {Array.from({ length: 12 }, (_, i) => (
-            <div key={i} className={`skeleton ${styles.skeleton}`} />
-          ))}
-        </div>
+        <BookGridSkeleton />
       ) : tiles.length === 0 ? (
         searching ? (
           <EmptyState title="No results">
@@ -117,25 +98,10 @@ export function Library() {
           </EmptyState>
         )
       ) : (
-        <>
-          <ul className={styles.grid}>
-            {tiles.map(({ item, progress: p }) => (
-              <li key={item.id}>
-                <ImageTile
-                  title={item.media.metadata.title}
-                  sub={item.media.metadata.authorName}
-                  imageUrl={coverUrl(item)}
-                  href={`/book/${item.id}`}
-                  onOpen={() => void navigate(`/book/${item.id}`)}
-                  overlay={
-                    <ProgressBar variant="overlay" value={p} label={`Progress through ${item.media.metadata.title}`} />
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-          <div ref={sentinel} className={styles.sentinel} />
-        </>
+        <BookGrid
+          tiles={tiles}
+          onEndReached={searching || !hasNextPage || isFetchingNextPage ? undefined : () => void fetchNextPage()}
+        />
       )}
     </main>
   );
