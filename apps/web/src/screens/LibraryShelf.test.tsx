@@ -138,6 +138,35 @@ describe('REQ-54 Continue listening shelf', () => {
     expect(shelf()).not.toBeInTheDocument();
   });
 
+  it('holds the grid back until the shelf is known, so the tiles never jump down under the pointer', async () => {
+    serve([MYTHOS]);
+    let release: (v: object) => void = () => undefined;
+    const inner = absFetch.getMockImplementation();
+    absFetch.mockImplementation((path: string) =>
+      path.startsWith('/api/me/items-in-progress')
+        ? new Promise((r) => {
+            release = r;
+          })
+        : (inner?.(path) as Promise<unknown>),
+    );
+    renderAt('/');
+    // The books are loaded, but none is shown while the shelf's data is outstanding.
+    await waitFor(() => expect(absFetch.mock.calls.some((c) => String(c[0]).includes('/items?'))).toBe(true));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByText('Heroes')).not.toBeInTheDocument();
+    release({ libraryItems: [MYTHOS] });
+    // Then the shelf and the grid arrive together.
+    expect(await screen.findByText('Heroes')).toBeInTheDocument();
+    expect(shelf()).toBeInTheDocument();
+  });
+
+  it('shows the grid with no shelf, in one go, when nothing is in progress', async () => {
+    serve([]);
+    renderAt('/');
+    expect(await screen.findByText('Heroes')).toBeInTheDocument();
+    expect(shelf()).not.toBeInTheDocument();
+  });
+
   it('stays out of the way when ABS fails to list in-progress books', async () => {
     absFetch.mockImplementation((path: string) => {
       if (path.startsWith('/api/me/items-in-progress')) return Promise.reject(new auth.AbsError(500, 'boom'));

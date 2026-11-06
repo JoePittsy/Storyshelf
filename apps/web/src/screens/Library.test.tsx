@@ -219,4 +219,15 @@ describe('REQ-32 search chips', () => {
     expect(await screen.findByText('Mistborn')).toBeInTheDocument();
     expect(author.compareDocumentPosition(screen.getByText('Mistborn')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it('drops the search text when a chip is followed, and does not write it back', async () => {
+    mockAbs();
+    renderAt('/?library=L1&q=gaiman');
+    await userEvent.click(await screen.findByRole('link', { name: /Narrator:\s*Smith & Jones/ }));
+    expect(screen.getByTestId('where')).toHaveTextContent('narrator=Smith');
+    // The box's debounce is 300 ms: wait it out, so a stale write would have landed.
+    await new Promise((r) => setTimeout(r, 600));
+    expect(screen.getByTestId('where').textContent).not.toMatch(/[?&]q=/);
+    expect(screen.getByRole('searchbox', { name: 'Search books' })).toHaveValue('');
+  });
 });

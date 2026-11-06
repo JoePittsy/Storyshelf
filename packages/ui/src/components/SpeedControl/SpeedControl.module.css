@@ -25,6 +25,16 @@
     color var(--dur-fast) var(--ease-fast),
     background var(--dur-fast) var(--ease-fast);
 }
+.label {
+  display: inline-grid;
+  justify-items: start;
+}
+.label > * {
+  grid-area: 1 / 1;
+}
+.sizer {
+  visibility: hidden;
+}
 .trigger:hover,
 .trigger:popover-open,
 .trigger[aria-expanded='true'] {

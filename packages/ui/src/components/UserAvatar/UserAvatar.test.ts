@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { avatarGradient } from './UserAvatar';
+import { avatarGradient, initialOf } from './UserAvatar';
 
 /** WCAG contrast of white on hsl(h, s%, l%). */
 function whiteContrast(h: number, s: number, l: number): number {
@@ -32,5 +32,22 @@ describe('avatar colours', () => {
 
   it('is stable per name', () => {
     expect(avatarGradient('Rich')).toBe(avatarGradient('Rich'));
+  });
+});
+
+describe('initialOf', () => {
+  it('is the first letter of the name as written, upper-cased', () => {
+    expect(initialOf('Honoré de Balzac')).toBe('H');
+    expect(initialOf('de Balzac, Honoré')).toBe('D');
+    expect(initialOf('élodie')).toBe('É');
+  });
+  it('skips leading space and punctuation', () => {
+    expect(initialOf('  "Mark Twain"')).toBe('M');
+    expect(initialOf('(Anonymous)')).toBe('A');
+  });
+  it('keeps whole code points and is empty without letters', () => {
+    expect(initialOf('\u{1D4D0}lice')).toBe('\u{1D4D0}');
+    expect(initialOf('')).toBe('');
+    expect(initialOf('--')).toBe('');
   });
 });

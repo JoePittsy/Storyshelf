@@ -18,6 +18,17 @@ describe('SleepTimerControl', () => {
     render(<SleepTimerControl value={{ kind: 'minutes', remainingMs: 750000 }} onChange={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'Sleep timer, 12:30' })).toHaveTextContent('12:30');
   });
+  it('holds the widest label width with stableWidth, hidden from assistive tech', () => {
+    const { container } = render(<SleepTimerControl value={null} onChange={vi.fn()} stableWidth />);
+    const label = container.querySelector('button > span:last-of-type');
+    expect(label).toHaveTextContent('SleepEnd of chapter');
+    expect(label).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('button', { name: 'Sleep timer' })).toBeInTheDocument();
+  });
+  it('adds no sizer by default', () => {
+    const { container } = render(<SleepTimerControl value={null} onChange={vi.fn()} />);
+    expect(container.querySelector('button > span:last-of-type')).toHaveTextContent(/^Sleep$/);
+  });
   it('reports the choice made', async () => {
     const onChange = vi.fn();
     render(<SleepTimerControl value={null} onChange={onChange} />);

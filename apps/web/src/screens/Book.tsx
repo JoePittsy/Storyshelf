@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   Artwork,
@@ -12,7 +12,6 @@ import {
   PillButton,
   TitleButton,
   ProgressBar,
-  useDominantColor,
 } from '@joepittsy/ui';
 import type { DetailItem } from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
@@ -20,13 +19,15 @@ import { coverUrl, useBook } from '../api/items';
 import { narratorPath } from '../api/libraries';
 import {
   bookDetails,
-  currentChapterIndex,
+  bookProgress,
   fmtClock,
   fmtLong,
   playFrom,
   playLabel,
   sanitiseDescription,
 } from './bookHelpers';
+import { usePanelColor } from '../frame/usePanelColor';
+import { usePlayer } from '../player/engine';
 import { BackLink } from '../components/BackLink';
 import { useCoverDock } from './useCoverDock';
 import { BookListening } from '../components/BookListening';
@@ -46,25 +47,15 @@ const noop = () => undefined;
 export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const player = usePlayer();
   const { data: item, error, isPending, refetch } = useBook(id);
   const [pageEl, setPageEl] = useState<HTMLElement | null>(null);
   const [coverEl, setCoverEl] = useState<HTMLElement | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const cover = item ? coverUrl(item.id, item.updatedAt) : null;
-  const wash = useDominantColor(cover);
+  const wash = usePanelColor(cover);
   const slotRef = useRef<HTMLDivElement>(null);
   useCoverDock(pageEl, coverEl, dockRef, slotRef, cover);
-  // Hand the colour to the frame, which washes the page ground with it (Frame.module.css).
-  useEffect(() => {
-    if (!wash) return;
-    const root = document.documentElement.style;
-    root.setProperty('--panel-color', wash);
-    root.setProperty('--panel-on', '1');
-    return () => {
-      root.removeProperty('--panel-color');
-      root.removeProperty('--panel-on');
-    };
-  }, [wash]);
   const description = useMemo(
     () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
     [item]
@@ -104,15 +95,19 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
 
   const { metadata: m, duration, chapters } = item.media;
   const p = item.userMediaProgress;
-  const label = playLabel(p);
-  const chapterIdx = p ? currentChapterIndex(chapters, p.currentTime) : -1;
-  const started = !!p && p.currentTime > 0 && !p.isFinished;
+  // The book in the player moves under us: its position, chapter and progress are the player's, not the last fetch.
+  const now = bookProgress(item, player);
+  const chapterIdx = now.chapterIndex;
+  const started = now.currentTime > 0 && !now.isFinished;
+  // The button resumes from where the player is, not from the last fetch.
+  const resume = now.live ? { currentTime: now.currentTime, isFinished: now.isFinished } : p;
+  const label = playLabel(resume);
 
-  const status = p?.isFinished
+  const status = now.isFinished
     ? 'Finished'
     : started
       ? [
-          `${fmtLong(duration - p.currentTime)} left`,
+          `${fmtLong(duration - now.currentTime)} left`,
           chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`,
         ]
           .filter(Boolean)
@@ -176,10 +171,10 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         {series && <p className={styles.line}>{series}</p>}
         <p className={styles.line}>{meta}</p>
         <div className={styles.progress}>
-          <ProgressBar value={p?.isFinished ? 1 : (p?.progress ?? 0)} label={`Progress through ${m.title}`} />
+          <ProgressBar value={now.isFinished ? 1 : now.progress} label={`Progress through ${m.title}`} />
           <p className={styles.line}>{status}</p>
         </div>
-        <PillButton variant="primary" className={styles.action} onClick={() => onPlay(playFrom(p))}>
+        <PillButton variant="primary" className={styles.action} onClick={() => onPlay(playFrom(resume))}>
           {label}
         </PillButton>
       </HeroBand>

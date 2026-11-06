@@ -214,7 +214,12 @@ export function MiniPlayer({
           </div>
           {rate !== undefined && onRateChange && <SpeedControl value={rate} onChange={onRateChange} />}
           {sleep !== undefined && onSleepChange && (
-            <SleepTimerControl value={sleep} onChange={onSleepChange} chapterOptionDisabled={chapterOptionDisabled} />
+            <SleepTimerControl
+              value={sleep}
+              onChange={onSleepChange}
+              chapterOptionDisabled={chapterOptionDisabled}
+              stableWidth
+            />
           )}
           {onChapters && (
             <button type="button" className={styles.step} onClick={onChapters} aria-label="Chapters" title="Chapters">

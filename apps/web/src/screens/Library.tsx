@@ -29,6 +29,7 @@ import {
   writeFilters,
 } from '../api/filters';
 import type { Filters } from '../api/filters';
+import { useInProgress } from '../api/history';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import { ContinueShelf } from '../components/ContinueShelf';
 import { LibraryFilters } from '../components/LibraryFilters';
@@ -81,13 +82,26 @@ export function Library({ onPlay = noop }: Props) {
     if (countActive(saved) > 0) setParams((prev) => writeFilters(prev, saved), { replace: true });
   }, [libraryId, params, setParams]);
 
+  // The box and the URL's q are two copies of one thing. Typing reaches the URL after a pause (below); a change the
+  // box didn't make (following a narrator chip lands on this same route without q) has to reach the box, or the box
+  // would write its old text straight back.
+  const written = useRef(q);
+  useEffect(() => {
+    if (q === written.current) return;
+    written.current = q;
+    setText(q);
+  }, [q]);
+
   // Debounce typing into the URL, keeping the other params.
   useEffect(() => {
     const t = setTimeout(() => {
+      const wanted = text.trim();
+      if (wanted === written.current) return;
+      written.current = wanted;
       setParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (text.trim()) next.set('q', text.trim());
+          if (wanted) next.set('q', wanted);
           else next.delete('q');
           return next;
         },
@@ -111,7 +125,16 @@ export function Library({ onPlay = noop }: Props) {
   }, [list, progress.data, localActive, localKey]);
 
   const active = searching ? search : items;
-  const loading = libs.isPending || (!!libraryId && active.isPending) || (!!local.progress && progress.isPending);
+  // The Continue listening shelf sits above the grid. If it arrived after the grid it would push the tiles down under
+  // the pointer, so the grid stays a skeleton until the shelf's data is in: only the skeleton is ever pushed. The
+  // shelf stays mounted throughout (it renders nothing until it has books), so a failed query isn't refetched on
+  // every mount and unmount.
+  const inProgress = useInProgress();
+  const filtered = countActive(filters) > 0;
+  const showShelf = !searching && !filtered && !!libraryId;
+  const shelfPending = showShelf && (inProgress.isPending || progress.isPending);
+  const loading =
+    libs.isPending || (!!libraryId && active.isPending) || (!!local.progress && progress.isPending) || shelfPending;
   const failed = libs.isError || active.isError;
 
   const chips = searching ? (search.data?.chips ?? []) : [];
@@ -133,7 +156,6 @@ export function Library({ onPlay = noop }: Props) {
     void fetchNextPage();
   };
   const loadingMore = short && (isFetchingNextPage || pagesLoaded < budget);
-  const filtered = countActive(filters) > 0;
 
   return (
     <main className={styles.page}>
@@ -159,7 +181,7 @@ export function Library({ onPlay = noop }: Props) {
       </div>
       <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
       {/* Not while searching or filtering: it would sit among narrowed results. */}
-      {!searching && !filtered && libraryId && <ContinueShelf libraryId={libraryId} onPlay={onPlay} />}
+      {showShelf && <ContinueShelf libraryId={libraryId} onPlay={onPlay} />}
       {filters.narrator && <h2 className={styles.heading}>Narrated by {filters.narrator}</h2>}
       {!searching && !loading && !failed && !localActive && total !== undefined && (
         <p className={styles.count}>{total} {total === 1 ? 'book' : 'books'}</p>

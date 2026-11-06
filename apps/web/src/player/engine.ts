@@ -185,9 +185,20 @@ function doSync(): Promise<void> {
   return syncChain;
 }
 
-function syncIfDue(): void {
-  if (session && dueOnStop(clock, position())) void doSync();
+function syncIfDue(): Promise<void> {
+  return session && dueOnStop(clock, position()) ? doSync() : Promise.resolve();
 }
+
+const savedListeners = new Set<() => void>();
+/**
+ * Calls back when the server has been given the latest progress for a stop: after a pause has synced, and after a
+ * session has closed. Not on the periodic syncs while playing. Returns the unsubscribe.
+ */
+export function onProgressSaved(cb: () => void): () => void {
+  savedListeners.add(cb);
+  return () => void savedListeners.delete(cb);
+}
+const emitSaved = () => savedListeners.forEach((cb) => cb());
 
 function fail(e: unknown): void {
   awaitingPlaying = null;
@@ -272,7 +283,7 @@ function seekBook(t: number): void {
   if (tr.index === track?.index) audio.currentTime = offset;
   else load(tr, offset, state.status === 'playing');
   set({ position: target, chapterIndex: chapterIndexAt(state.chapters, target) });
-  if (state.status !== 'playing') syncIfDue();
+  if (state.status !== 'playing') void syncIfDue();
   mediaPosition();
 }
 
@@ -345,7 +356,7 @@ function getAudio(): HTMLAudioElement {
     set({ status: 'paused' });
     updatePlaybackState('paused');
     refresh();
-    syncIfDue();
+    void syncIfDue().then(emitSaved);
     mediaPosition();
   });
   a.addEventListener('timeupdate', onTimeUpdate);
@@ -394,13 +405,13 @@ if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       note('visibilitychange hidden');
-      syncIfDue();
+      void syncIfDue();
       diag.flush();
     } else wake('visibilitychange visible');
   });
   addEventListener('pagehide', () => {
     note('pagehide');
-    syncIfDue();
+    void syncIfDue();
     diag.flush();
   });
   addEventListener('pageshow', (e) => wake(`pageshow${e.persisted ? ' (from cache)' : ''}`));
@@ -437,7 +448,10 @@ export async function play(itemId: string, from?: number): Promise<void> {
   unlock(a);
   const mine = ++token;
   set({ status: 'loading', error: null });
-  if (old) await closeSession(old.s, old.p);
+  if (old) {
+    await closeSession(old.s, old.p);
+    emitSaved();
+  }
   let s: PlaybackSession;
   try {
     s = await openSession(itemId, getMimes(a));
@@ -509,7 +523,10 @@ export async function stop(): Promise<void> {
   set({ ...initial(), rate: state.rate, skipBack: state.skipBack, skipForward: state.skipForward });
   updateMetadata(null, '');
   updatePlaybackState('none');
-  if (old) await closeSession(old.s, old.p);
+  if (old) {
+    await closeSession(old.s, old.p);
+    emitSaved();
+  }
 }
 
 const mediaActions = {

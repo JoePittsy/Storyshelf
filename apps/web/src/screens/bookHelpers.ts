@@ -34,8 +34,68 @@ export function playLabel(p?: Progress | null): 'Play' | 'Resume' | 'Play again'
 /** Where playback starts for the primary button. */
 export const playFrom = (p?: Progress | null): number => (playLabel(p) === 'Resume' ? p!.currentTime : 0);
 
-/** ABS descriptions can carry HTML from the metadata provider; strip scripts and handlers. */
-export const sanitiseDescription = (html: string): string => DOMPurify.sanitize(html);
+const BARE_URL = /https?:\/\/[^\s<>"']+/gi;
+
+/** A URL ends before trailing sentence punctuation, and before a closing bracket that has no opener in the URL. */
+function trimUrl(raw: string): string {
+  let url = raw;
+  for (;;) {
+    const last = url.slice(-1);
+    const closer = ')]}'.indexOf(last);
+    const unbalanced = closer >= 0 && url.split(last).length > url.split('([{'[closer]).length;
+    if (/[.,;:!?'"]/.test(last) || unbalanced) url = url.slice(0, -1);
+    else return url;
+  }
+}
+
+/** Wraps bare http(s) URLs in text nodes in links. Never touches text already inside an anchor. */
+function linkify(root: DocumentFragment): void {
+  const doc = document;
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.parentElement?.closest('a') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  const texts: Text[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) texts.push(n as Text);
+  for (const node of texts) {
+    const text = node.data;
+    const frag = doc.createDocumentFragment();
+    let at = 0;
+    for (const m of text.matchAll(BARE_URL)) {
+      const url = trimUrl(m[0]);
+      let href: string;
+      try {
+        const u = new URL(url);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
+        href = u.href;
+      } catch {
+        continue;
+      }
+      frag.append(text.slice(at, m.index));
+      const a = doc.createElement('a');
+      a.href = href;
+      a.rel = 'noopener noreferrer';
+      a.target = '_blank';
+      a.textContent = url;
+      frag.append(a);
+      at = m.index + url.length;
+    }
+    if (at === 0) continue;
+    frag.append(text.slice(at));
+    node.replaceWith(frag);
+  }
+}
+
+/**
+ * ABS descriptions can carry HTML from the metadata provider: strip scripts and handlers, then turn bare http(s) URLs
+ * in the text into links that open in a new tab. Linking runs after sanitising and only builds anchors it made itself
+ * from http(s) URLs, so it can't introduce anything the sanitiser removed.
+ */
+export function sanitiseDescription(html: string): string {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = DOMPurify.sanitize(html);
+  linkify(tpl.content);
+  return tpl.innerHTML;
+}
 
 /** "656.4 MB": decimal units, as ABS shows them. */
 export function fmtSize(bytes: number): string {
@@ -72,4 +132,48 @@ export function bookDetails(item: BookItem): { label: string; value: string }[] 
     ['ASIN', m.asin],
   ];
   return rows.flatMap(([label, value]) => (value ? [{ label, value }] : []));
+}
+
+/** What the player knows about itself that the book page needs. */
+export interface LiveSource {
+  item: { id: string } | null;
+  position: number;
+  duration: number;
+  chapterIndex: number;
+}
+
+export interface BookProgress {
+  /** Book seconds. */
+  currentTime: number;
+  /** 0..1 */
+  progress: number;
+  isFinished: boolean;
+  chapterIndex: number;
+  /** True when these come from the player rather than the last fetch. */
+  live: boolean;
+}
+
+/**
+ * Where the listener is in a book. For the book loaded in the player, the player's own position, chapter and
+ * progress (the fetched ones only change on refetch); for any other, what the server last said.
+ */
+export function bookProgress(item: BookItem, player: LiveSource): BookProgress {
+  const p = item.userMediaProgress;
+  if (player.item?.id === item.id && player.duration > 0) {
+    const finished = player.position >= player.duration - 1;
+    return {
+      currentTime: player.position,
+      progress: Math.min(1, Math.max(0, player.position / player.duration)),
+      isFinished: finished,
+      chapterIndex: player.chapterIndex,
+      live: true,
+    };
+  }
+  return {
+    currentTime: p?.currentTime ?? 0,
+    progress: p?.progress ?? 0,
+    isFinished: !!p?.isFinished,
+    chapterIndex: p ? currentChapterIndex(item.media.chapters, p.currentTime) : -1,
+    live: false,
+  };
 }

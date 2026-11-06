@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BookItem } from '../api/items';
 import {
   bookDetails,
+  bookProgress,
   currentChapterIndex,
   fmtClock,
   fmtLong,
@@ -72,6 +73,49 @@ describe('description sanitising', () => {
   });
 });
 
+describe('description links', () => {
+  const links = (html: string) =>
+    [...new DOMParser().parseFromString(sanitiseDescription(html), 'text/html').querySelectorAll('a')];
+
+  it('links a bare http(s) URL, opening in a new tab without leaking the opener', () => {
+    const [a] = links('<p>Read more at https://en.wikipedia.org/wiki/Peter_Rabbit for the history.</p>');
+    expect(a?.getAttribute('href')).toBe('https://en.wikipedia.org/wiki/Peter_Rabbit');
+    expect(a?.textContent).toBe('https://en.wikipedia.org/wiki/Peter_Rabbit');
+    expect(a?.getAttribute('target')).toBe('_blank');
+    expect(a?.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+  it('keeps the surrounding text and links several URLs', () => {
+    const out = sanitiseDescription('See http://a.example/x and https://b.example/y.');
+    expect(out).toBe(
+      'See <a href="http://a.example/x" rel="noopener noreferrer" target="_blank">http://a.example/x</a> and ' +
+        '<a href="https://b.example/y" rel="noopener noreferrer" target="_blank">https://b.example/y</a>.',
+    );
+  });
+  it('leaves trailing punctuation, and an unmatched closing bracket, outside the link', () => {
+    expect(links('(see https://a.example/x), then https://b.example/y!')
+      .map((a) => a.getAttribute('href'))).toEqual(['https://a.example/x', 'https://b.example/y']);
+    expect(links('https://a.example/Foo_(bar)')[0]?.getAttribute('href')).toBe('https://a.example/Foo_(bar)');
+  });
+  it('leaves existing anchors alone, including their text and attributes', () => {
+    const html = '<a href="https://a.example/">https://a.example/</a> and <a href="https://b.example/">click https://c.example</a>';
+    const found = links(html);
+    expect(found.map((a) => a.getAttribute('href'))).toEqual(['https://a.example/', 'https://b.example/']);
+    expect(found[1]?.textContent).toBe('click https://c.example');
+    expect(found.every((a) => a.getAttribute('target') === null)).toBe(true);
+  });
+  it('never produces a javascript: link, and does not link other schemes', () => {
+    const out = sanitiseDescription(
+      'javascript:alert(1) data:text/html,x <a href="javascript:alert(2)">x</a> ftp://a.example http://javascript:alert(3)',
+    );
+    const hrefs = links(out).map((a) => a.getAttribute('href') ?? '');
+    expect(hrefs.some((h) => /^\s*javascript:/i.test(h))).toBe(false);
+    expect(out).not.toMatch(/href="(?!https?:)/);
+  });
+  it('escapes markup in the text around a link', () => {
+    expect(sanitiseDescription('1 &lt; 2 at https://a.example/')).toContain('1 &lt; 2 at <a ');
+  });
+});
+
 describe('REQ-13 book details', () => {
   const book = (over: Partial<BookItem['media']['metadata']> = {}, size?: number): BookItem => ({
     id: 'b',
@@ -132,5 +176,40 @@ describe('REQ-13 book details', () => {
   it('truncates long lists with a count', () => {
     expect(summariseList(['a', 'b'], 3)).toBe('a, b');
     expect(summariseList(['a', 'b', 'c', 'd', 'e', 'f', 'g'], 3)).toBe('a, b, c and 4 more');
+  });
+});
+
+describe('bookProgress', () => {
+  const book = {
+    id: 'li_1',
+    updatedAt: 1,
+    media: {
+      metadata: {} as never,
+      duration: 1000,
+      chapters: [
+        { id: 0, start: 0, end: 500, title: 'One' },
+        { id: 1, start: 500, end: 1000, title: 'Two' },
+      ],
+    },
+    userMediaProgress: { currentTime: 100, progress: 0.1, isFinished: false },
+  };
+  const idle = { item: null, position: 0, duration: 0, chapterIndex: -1 };
+
+  it('uses the fetched progress when the book is not the one playing', () => {
+    expect(bookProgress(book, idle)).toMatchObject({ currentTime: 100, progress: 0.1, chapterIndex: 0, live: false });
+    expect(bookProgress(book, { item: { id: 'other' }, position: 900, duration: 2000, chapterIndex: 1 }).live).toBe(false);
+  });
+
+  it('uses the player for the book that is loaded, however stale the fetch', () => {
+    const r = bookProgress(book, { item: { id: 'li_1' }, position: 750, duration: 1000, chapterIndex: 1 });
+    expect(r).toMatchObject({ currentTime: 750, progress: 0.75, chapterIndex: 1, isFinished: false, live: true });
+  });
+
+  it('starts from nothing when there is no fetched progress', () => {
+    expect(bookProgress({ ...book, userMediaProgress: null }, idle)).toMatchObject({ currentTime: 0, chapterIndex: -1 });
+  });
+
+  it('reads as finished within a second of the end', () => {
+    expect(bookProgress(book, { item: { id: 'li_1' }, position: 999.5, duration: 1000, chapterIndex: 1 }).isFinished).toBe(true);
   });
 });

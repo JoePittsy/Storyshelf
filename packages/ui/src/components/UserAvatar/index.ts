@@ -1,1 +1,1 @@
-export { UserAvatar, avatarGradient } from './UserAvatar';
+export { UserAvatar, avatarGradient, initialOf } from './UserAvatar';

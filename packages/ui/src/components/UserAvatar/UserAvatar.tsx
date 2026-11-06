@@ -24,6 +24,15 @@ export function avatarGradient(name: string): string {
 }
 
 /**
+ * The letter an avatar shows: the first letter or digit of the name as written (not of "Surname, First"), upper-cased.
+ * Whole code points, so an emoji or a letter outside the BMP isn't cut in half. Empty when the name has none.
+ */
+export function initialOf(name: string): string {
+  const m = /[\p{L}\p{N}]/u.exec(name);
+  return m ? m[0].toUpperCase() : '';
+}
+
+/**
  * Round profile picture, falling back to the initial on a per-name gradient (also when the photo fails to load).
  * It is decorative: put the person's name beside it. Size and shape default to a 2em circle, and any `className`
  * overrides them, so each panel keeps its own layout.
@@ -44,7 +53,7 @@ export function UserAvatar({
     ? undefined
     : ({
         background: avatarGradient(name),
-        '--initial': JSON.stringify(name.slice(0, 1).toUpperCase()),
+        '--initial': JSON.stringify(initialOf(name)),
       } as CSSProperties);
   return (
     <div

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { Artwork, ExpandableText, HeroBand, PeopleLinks, PillButton } from '@joepittsy/ui';
 import { useAuthorIds, useSeries, useSeriesBooks } from '../api/authors';
 import { coverUrl, mergeProgress, useProgress } from '../api/libraries';
+import { usePanelColor } from '../frame/usePanelColor';
 import { BackLink } from '../components/BackLink';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import { LoadFailed } from '../components/LoadFailed';
@@ -32,6 +33,9 @@ export function Series() {
       ).map((t, i) => ({ item: t.item, progress: t.progress, badge: sequenceBadge(books[i]?.sequence ?? null) })),
     [books, progress.data],
   );
+  const firstCover = books[0] ? coverUrl(books[0].item) : null;
+  // The cover's colour washes the hero and, via the frame, the page ground, as on the book page.
+  const wash = usePanelColor(firstCover);
   const description = useMemo(
     () => (series.data?.description ? sanitiseDescription(series.data.description) : ''),
     [series.data],
@@ -57,7 +61,6 @@ export function Series() {
   // Link only when every name resolves to an author; a half-linked credit reads as broken.
   const linkable = !!ids && names.length > 0 && names.every((n) => ids.has(n));
   const next = nextBook(books, progress.data ?? new Map());
-  const first = books[0];
   const count = books.length;
 
   return (
@@ -66,7 +69,8 @@ export function Series() {
       <HeroBand
         kind="Series"
         title={series.data.name}
-        art={<Artwork src={first ? coverUrl(first.item) : null} fit="contain" placeholderClassName={styles.ph} lazy={false} />}
+        wash={wash}
+        art={<Artwork src={firstCover} fit="contain" placeholderClassName={styles.ph} lazy={false} />}
       >
         {names.length > 0 && (
           <p className={styles.line}>

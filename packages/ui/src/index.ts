@@ -33,7 +33,7 @@ export { TextField } from './components/TextField';
 export { TopBar } from './components/TopBar';
 export { TopResultCard } from './components/TopResultCard';
 export { TransportButtons } from './components/TransportButtons';
-export { UserAvatar, avatarGradient } from './components/UserAvatar';
+export { UserAvatar, avatarGradient, initialOf } from './components/UserAvatar';
 export { WavyProgress } from './components/WavyProgress';
 export { BarList, ChartTooltip, TipRow, TipTitle, Heatmap, RAMP, RAMP_STEPS } from './components/stats';
 export type { BarListRow, Tip, HeatRow } from './components/stats';

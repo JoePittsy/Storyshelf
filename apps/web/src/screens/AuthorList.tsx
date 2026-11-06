@@ -12,6 +12,7 @@ export function AuthorList() {
   const rows = authors.data?.map((a) => ({
     key: a.id,
     name: a.lastFirst || a.name,
+    avatarName: a.name,
     caption: bookCount(a.numBooks),
     href: withLibrary(`/author/${encodeURIComponent(a.id)}`, libraryId),
     imageUrl: authorImageUrl(a),

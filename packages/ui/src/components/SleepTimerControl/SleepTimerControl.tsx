@@ -10,6 +10,8 @@ interface Props {
   minuteOptions?: number[];
   /** E.g. the media has no chapters. */
   chapterOptionDisabled?: boolean;
+  /** Hold the width of the longest label, so the button doesn't resize (and shove its neighbours) as the label changes. */
+  stableWidth?: boolean;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export function SleepTimerControl({
   onChange,
   minuteOptions = [5, 10, 15, 30, 45, 60],
   chapterOptionDisabled,
+  stableWidth,
   className,
 }: Props) {
   const id = useId();
@@ -40,7 +43,11 @@ export function SleepTimerControl({
         aria-label={value ? `Sleep timer, ${label}` : 'Sleep timer'}
       >
         <Moon size="1.2em" aria-hidden="true" />
-        <span aria-hidden="true">{label}</span>
+        <span className={styles.label} aria-hidden="true">
+          <span>{label}</span>
+          {/* Invisible, stacked in the same cell: the cell is as wide as the widest label. */}
+          {stableWidth && <span className={styles.sizer}>{sleepLabel({ kind: 'chapter' })}</span>}
+        </span>
       </button>
       <div id={id} ref={pop} popover="auto" className={styles.pop} role="group" aria-label="Sleep timer">
         <div className={styles.menu}>

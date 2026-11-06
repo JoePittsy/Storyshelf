@@ -1,14 +1,21 @@
 import { useEffect, type RefObject } from 'react';
 import { createGenie, measureBox, tFromScroll, type Genie } from '@joepittsy/ui';
+import { snapToDockEnd } from './dockSnap';
 
 /** The page is a container; Book.module.css goes two-column from this width. */
 const WIDE = 800;
+
+/** With no `scrollend` event, scrolling counts as settled after this long without a scroll event. */
+const SETTLE_MS = 120;
 
 /**
  * Scroll-scrubbed cover dock on the wide layout. As the hero cover scrolls under the top bar, progress t (0..1, a pure
  * function of its position) drives a WebGL genie warp of the cover image from the hero into the docked cover at the top
  * of the Details card. Between 0 and 1 both real covers are hidden and the canvas draws; at the ends the real element
  * shows, so the swap is invisible. The docked slot's reserved height follows t (`--dock-t`), so Details eases down.
+ *
+ * When scrolling settles part-way (0 < t < 1) the page eases to the nearer end, so a half-bent cover never rests over
+ * the cards; instantly under reduced motion. Any new scroll input cancels it.
  *
  * Under reduced motion, without WebGL, or if the image can't be used as a texture, it swaps once at t >= 0.5.
  * `page` and `cover` are elements (state, not refs) because the book renders after it loads.
@@ -70,6 +77,44 @@ export function useCoverDock(
       if (!raf) raf = requestAnimationFrame(run);
     };
 
+    // Settle: after scrolling stops, ease to the nearer dock end. `scrollend` where supported, else a quiet period.
+    const hasScrollEnd = 'onscrollend' in window;
+    let settleTimer = 0;
+    let snapping = false;
+    let held = 0; // touches down: don't snap under a finger
+    const settle = () => {
+      settleTimer = 0;
+      if (held > 0 || page.clientWidth < WIDE) return;
+      const r = cover.getBoundingClientRect();
+      const bar = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+      const max = document.documentElement.scrollHeight - innerHeight;
+      const { target } = snapToDockEnd(r.top, r.height, bar, scrollY, max);
+      snapping = target !== null;
+      if (target !== null) scrollTo({ top: target, behavior: reduced ? 'instant' : 'smooth' });
+    };
+    const onScrollForSettle = () => {
+      if (hasScrollEnd) return;
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(settle, SETTLE_MS);
+    };
+    const onScrollEnd = () => {
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(settle, 0);
+    };
+    // New input from the person wins: freeze the page where it is and let them carry on.
+    const cancelSnap = () => {
+      if (!snapping) return;
+      snapping = false;
+      scrollTo({ top: scrollY, behavior: 'instant' });
+    };
+    const onTouchStart = () => {
+      held++;
+      cancelSnap();
+    };
+    const onTouchEnd = () => {
+      held = Math.max(0, held - 1);
+    };
+
     if (!reduced && src && page.clientWidth >= WIDE) {
       genie = createGenie({
         src,
@@ -83,12 +128,27 @@ export function useCoverDock(
     run();
     addEventListener('scroll', schedule, { capture: true, passive: true });
     addEventListener('resize', schedule);
+    addEventListener('scroll', onScrollForSettle, { passive: true });
+    addEventListener('scrollend', onScrollEnd);
+    addEventListener('wheel', cancelSnap, { passive: true });
+    addEventListener('keydown', cancelSnap);
+    addEventListener('touchstart', onTouchStart, { passive: true });
+    addEventListener('touchend', onTouchEnd, { passive: true });
+    addEventListener('touchcancel', onTouchEnd, { passive: true });
     const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
     ro?.observe(page);
     return () => {
       cancelAnimationFrame(raf);
       removeEventListener('scroll', schedule, { capture: true });
       removeEventListener('resize', schedule);
+      clearTimeout(settleTimer);
+      removeEventListener('scroll', onScrollForSettle);
+      removeEventListener('scrollend', onScrollEnd);
+      removeEventListener('wheel', cancelSnap);
+      removeEventListener('keydown', cancelSnap);
+      removeEventListener('touchstart', onTouchStart);
+      removeEventListener('touchend', onTouchEnd);
+      removeEventListener('touchcancel', onTouchEnd);
       ro?.disconnect();
       genie?.destroy();
       show(cover, true);

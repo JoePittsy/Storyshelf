@@ -3,10 +3,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
 import { onSignedOut, restoreSession } from './api/auth';
 import { Frame } from './frame/Frame';
+import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
 import { Debug } from './screens/Debug';
 import { Book } from './screens/Book';
 import { play } from './player/engine';
+import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { PlayerToasts } from './player/PlayerToasts';
 import { AuthorList } from './screens/AuthorList';
@@ -41,6 +43,7 @@ function RequireSession() {
 }
 
 export function App() {
+  useRefreshOnSave();
   return (
     <>
       <PlayerToasts />
@@ -63,6 +66,7 @@ function PlayableLibrary() {
 }
 
 function AppRoutes() {
+  useScrollRestoration();
   return (
     <Routes>
       <Route path="/sign-in" element={<SignIn />} />

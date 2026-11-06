@@ -7,6 +7,8 @@ import styles from './PeopleList.module.css';
 export interface PersonRow {
   key: string;
   name: string;
+  /** Where the avatar's initial comes from when `name` is written "Surname, First". */
+  avatarName?: string;
   caption: string;
   href: string;
   imageUrl?: string;
@@ -60,6 +62,7 @@ export function PeopleList({ noun, rows, failed }: Props) {
             <li key={r.key}>
               <PersonLink
                 name={r.name}
+                avatarName={r.avatarName}
                 caption={r.caption}
                 imageUrl={r.imageUrl}
                 href={r.href}
