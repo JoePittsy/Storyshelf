@@ -50,7 +50,7 @@ export function Author() {
       <HeroBand
         kind="Author"
         title={data.name}
-        art={<UserAvatar name={data.name} imageUrl={authorImageUrl(data)} className={styles.avatar} />}
+        art={<UserAvatar name={data.name} imageUrl={authorImageUrl(data, 400)} className={styles.avatar} />}
       >
         <p className={styles.line}>{count === 1 ? '1 book' : `${count} books`}</p>
         {bio && (

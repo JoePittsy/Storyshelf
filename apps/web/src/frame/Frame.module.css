@@ -20,6 +20,13 @@
   width: 100%;
   max-width: 16em;
 }
+.tabs {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 0.4em max(var(--gutter), env(safe-area-inset-right)) 0 max(var(--gutter), env(safe-area-inset-left));
+}
 .content {
   box-sizing: border-box;
   flex: 1;

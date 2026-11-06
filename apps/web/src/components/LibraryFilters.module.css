@@ -1,0 +1,49 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9em;
+}
+/* Phone: just the one button, full width. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.8em;
+}
+.row > :not(.more) {
+  flex: 0 1 14em;
+}
+.more {
+  flex: 1 1 100%;
+}
+/* Wide: the selects and the button share a row, the button at the end. */
+@media (width >= 48em) {
+  .more {
+    flex: none;
+    margin-left: auto;
+  }
+}
+.chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em;
+}
+.chips > li {
+  min-width: 0;
+  max-width: 100%;
+}
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6em;
+  padding-top: 0.4em;
+}

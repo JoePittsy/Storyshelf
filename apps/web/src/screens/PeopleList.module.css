@@ -1,0 +1,48 @@
+.page {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4em;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8em 1.4em;
+}
+.controls > :first-child {
+  flex: 1 1 14em;
+  max-width: 32em;
+}
+.count {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-label);
+}
+/* Phone: search takes the full row. */
+@container (max-width: 30em) {
+  .controls > :first-child {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+/* Phone: one column, so the cards read as a list. */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6em;
+}
+/* Wider: a grid of cards, as many columns as fit. */
+@container (min-width: 36em) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(17em, 1fr));
+    gap: 0.9em;
+  }
+}
+.skeleton {
+  height: 4.6em;
+  border-radius: var(--r-art-card);
+}
