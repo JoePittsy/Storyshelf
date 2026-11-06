@@ -95,10 +95,38 @@ export async function syncSession(
  * the server stamps `lastUpdate` itself). For a move made on a restored book before it has been played.
  */
 export function saveProgress(libraryItemId: string, currentTime: number, duration: number): Promise<void> {
+  return patchProgress(libraryItemId, {
+    currentTime,
+    duration,
+    progress: duration > 0 ? Math.min(1, currentTime / duration) : 0,
+  });
+}
+
+/** What PATCH /api/me/progress/:id takes (ABS 2.37 MediaProgress.applyProgressUpdate; `createdAt` only when it creates). */
+export interface ProgressPatch {
+  currentTime?: number;
+  duration?: number;
+  progress?: number;
+  isFinished?: boolean;
+  /** ms since the epoch. Applied when the update finishes the book, or as it stands on an already finished one. */
+  finishedAt?: number | null;
+  hideFromContinueListening?: boolean;
+  ebookLocation?: string | null;
+  ebookProgress?: number | null;
+  /** ms since the epoch: ABS stamps it as the record's `updatedAt` (`lastUpdate`) after saving. */
+  lastUpdate?: number;
+  /** ms since the epoch: the record's `startedAt`, honoured only when this PATCH creates the record. */
+  createdAt?: number;
+  /** Seconds left under which ABS finishes the book by itself (default 10); 0 turns that off for this update. */
+  markAsFinishedTimeRemaining?: number;
+}
+
+/** PATCH /api/me/progress/:libraryItemId: creates the book's progress or updates it, with no playback session. */
+export function patchProgress(libraryItemId: string, body: ProgressPatch): Promise<void> {
   return absFetch<void>(`/api/me/progress/${libraryItemId}`, {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ currentTime, duration, progress: duration > 0 ? Math.min(1, currentTime / duration) : 0 }),
+    body: JSON.stringify(body),
     keepalive: true,
   });
 }
