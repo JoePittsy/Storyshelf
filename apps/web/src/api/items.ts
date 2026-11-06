@@ -12,6 +12,8 @@ export interface Chapter {
 export interface BookItem {
   id: string;
   updatedAt: number;
+  /** Bytes on disk. */
+  size?: number;
   media: {
     metadata: {
       title: string;
@@ -21,6 +23,11 @@ export interface BookItem {
       series: { id: string; name: string; sequence: string | null }[];
       description: string | null;
       publishedYear: string | null;
+      publisher?: string | null;
+      genres?: string[];
+      language?: string | null;
+      isbn?: string | null;
+      asin?: string | null;
     };
     duration: number;
     chapters: Chapter[];

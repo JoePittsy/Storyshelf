@@ -1,0 +1,23 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9em;
+  margin: 0;
+}
+.pair {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  min-width: 0;
+}
+.label {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-3);
+}
+.value {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}

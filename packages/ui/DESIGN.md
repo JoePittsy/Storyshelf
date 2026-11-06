@@ -303,7 +303,8 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **Border:** none.
 - **Internal Padding:** 1.5em (section), 1.7em (featured), 1.4em (HeroBand), 0.9em (person).
 - **SectionCard** is the shared card (`featured` for the lit wall and wash), labelled by its title, with an optional **SeeAll** link. **PersonCard** is avatar, name and caption, with the photo's colour washed across the header (`100deg`, 0.3, gone by 75%).
-- **HeroBand:** a detail page's header: 16em hero art beside a feature title, on Lit Wall with the wash, with an optional corner chip.
+- **HeroBand:** a detail page's header: hero art (12.5em to 19em, 22% of the container) beside a feature title and vertically centred against it, on Lit Wall with the wash, with an optional corner chip. Below 700px of container the band stacks, with the art centred.
+- **DetailList:** label and value pairs as a `<dl>`: a small tertiary label over a body-size value, stacked, so it fits a narrow side column. It has no surface of its own; put it on a card.
 
 ### Image card (signature)
 A print with its label (ArtCard). The artwork fills the card edge to edge (`object-fit: cover`). A two-part scrim, `rgba(0,0,0,.4)` fading over the top 22% and `rgba(0,0,0,.74) → .26 → 0` up from the bottom by 70%, keeps a sentence-case top-left caption and a bottom-left title and credit legible in white. The whole card is one button. Links and the add button sit above it. Hover or focus-within scales the image to 1.03 and dims it to `brightness(.88)` over 0.15s. A second image (a portrait) fades in over the cover when it arrives. An image that fails to load drops its layer and leaves Raised Navy behind the caption.

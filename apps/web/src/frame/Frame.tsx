@@ -17,6 +17,7 @@ export function Frame() {
     <Select
       label="Library"
       hideLabel
+      className={styles.picker}
       value={current}
       options={libs.map((l) => ({ value: l.id, label: l.name }))}
       onChange={(id) => {
@@ -29,6 +30,7 @@ export function Frame() {
   return (
     <div className={styles.frame}>
       <TopBar
+        className={styles.bar}
         start={<span className={styles.name}>Storyshelf</span>}
         centre={picker}
         end={

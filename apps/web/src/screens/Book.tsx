@@ -1,16 +1,37 @@
 import { useMemo } from 'react';
 import type { MouseEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Artwork, EmptyState, ExpandableText, HeroBand, ListRow, PillButton, ProgressBar } from '@joepittsy/ui';
+import {
+  Artwork,
+  DetailList,
+  EmptyState,
+  ExpandableText,
+  HeroBand,
+  ListRow,
+  PillButton,
+  ProgressBar,
+} from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
 import { coverUrl, useBook } from '../api/items';
-import { currentChapterIndex, fmtClock, fmtLong, playFrom, playLabel, sanitiseDescription } from './bookHelpers';
+import {
+  bookDetails,
+  currentChapterIndex,
+  fmtClock,
+  fmtLong,
+  playFrom,
+  playLabel,
+  sanitiseDescription,
+  summariseList,
+} from './bookHelpers';
 import styles from './Book.module.css';
 
 interface Props {
   onPlay?: (fromSeconds: number) => void;
   onChapter?: (startSeconds: number) => void;
 }
+
+/** More than this many narrators and the hero says "and N more"; Details has them all. */
+const NARRATORS_IN_HERO = 3;
 
 // PLACEHOLDER: player slice
 const noop = () => undefined;
@@ -36,7 +57,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { data: item, error, isPending, refetch } = useBook(id);
   const description = useMemo(
     () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
-    [item],
+    [item]
   );
 
   if (isPending)
@@ -65,7 +86,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
             )
           }
         >
-          {missing ? undefined : "Check your connection and try again. If it keeps happening, the server may be down."}
+          {missing ? undefined : 'Check your connection and try again. If it keeps happening, the server may be down.'}
         </EmptyState>
       </main>
     );
@@ -80,12 +101,16 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const status = p?.isFinished
     ? 'Finished'
     : started
-      ? [`${fmtLong(duration - p.currentTime)} left`, chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`]
+      ? [
+          `${fmtLong(duration - p.currentTime)} left`,
+          chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`,
+        ]
           .filter(Boolean)
           .join(' · ')
-      : fmtLong(duration);
+      : 'Not started';
   const series = m.series.map((s) => (s.sequence ? `${s.name} #${s.sequence}` : s.name)).join(', ');
   const meta = [m.publishedYear, fmtLong(duration)].filter(Boolean).join(' · ');
+  const details = bookDetails(item);
 
   return (
     <main className={styles.page}>
@@ -96,7 +121,9 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       >
         {m.subtitle && <p className={styles.sub}>{m.subtitle}</p>}
         {m.authors.length > 0 && <p className={styles.line}>{m.authors.map((a) => a.name).join(', ')}</p>}
-        {m.narrators.length > 0 && <p className={styles.line}>Narrated by {m.narrators.join(', ')}</p>}
+        {m.narrators.length > 0 && (
+          <p className={styles.line}>Narrated by {summariseList(m.narrators, NARRATORS_IN_HERO)}</p>
+        )}
         {series && <p className={styles.line}>{series}</p>}
         <p className={styles.line}>{meta}</p>
         <div className={styles.progress}>
@@ -108,36 +135,48 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         </PillButton>
       </HeroBand>
 
-      {description && (
-        <section className={styles.section} aria-labelledby="about">
-          <h2 id="about" className={styles.heading}>
-            About this book
-          </h2>
-          <ExpandableText>
-            <div dangerouslySetInnerHTML={{ __html: description }} />
-          </ExpandableText>
-        </section>
-      )}
+      <div className={styles.body}>
+        {details.length > 0 && (
+          <section className={styles.side} aria-labelledby="details">
+            <h2 id="details" className={styles.heading}>
+              Details
+            </h2>
+            <DetailList className={styles.card} items={details} />
+          </section>
+        )}
+        <div className={styles.main}>
+          {description && (
+            <section className={styles.section} aria-labelledby="about">
+              <h2 id="about" className={styles.heading}>
+                About this book
+              </h2>
+              <ExpandableText>
+                <div dangerouslySetInnerHTML={{ __html: description }} />
+              </ExpandableText>
+            </section>
+          )}
 
-      {chapters.length > 0 && (
-        <section className={styles.section} aria-labelledby="chapters">
-          <h2 id="chapters" className={styles.heading}>
-            Chapters
-          </h2>
-          <ul className={styles.chapters}>
-            {chapters.map((c, i) => (
-              <ListRow
-                key={c.id}
-                title={c.title}
-                aside={fmtClock(c.start)}
-                trailing={fmtClock(c.end - c.start, false)}
-                current={i === chapterIdx}
-                onClick={() => onChapter(c.start)}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+          {chapters.length > 0 && (
+            <section className={styles.section} aria-labelledby="chapters">
+              <h2 id="chapters" className={styles.heading}>
+                Chapters
+              </h2>
+              <ul className={styles.chapters}>
+                {chapters.map((c, i) => (
+                  <ListRow
+                    key={c.id}
+                    title={c.title}
+                    aside={fmtClock(c.start)}
+                    trailing={fmtClock(c.end - c.start, false)}
+                    current={i === chapterIdx}
+                    onClick={() => onChapter(c.start)}
+                  />
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

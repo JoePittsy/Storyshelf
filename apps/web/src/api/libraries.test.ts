@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { bookLibraries, coverUrl, itemsUrl, mergeProgress, parseSort, pickLibrary, progressByItem } from './libraries';
+import {
+  SEARCH_CAPS,
+  absFilter,
+  bookLibraries,
+  coverUrl,
+  filteredItemsUrl,
+  itemsUrl,
+  mergeProgress,
+  mergeResults,
+  parseSort,
+  pickLibrary,
+  progressByItem,
+  searchFilters,
+} from './libraries';
 import type { LibraryItem } from './libraries';
 
 const item = (id: string): LibraryItem => ({ id, updatedAt: 7, media: { metadata: { title: id, authorName: null } } });
@@ -64,5 +77,49 @@ describe('mergeProgress (REQ-10)', () => {
       [0, false],
       [0, false],
     ]);
+  });
+});
+
+describe('REQ-11 search finds books by title or author', () => {
+  it('builds ABS filters: base64 of the value, URL-encoded', () => {
+    expect(absFilter('authors', 'abc')).toBe('authors.YWJj');
+    // "??>" is "Pz8+" in base64: the + must be escaped
+    expect(absFilter('narrators', '??>')).toBe('narrators.Pz8%2B');
+    // non-ASCII goes through UTF-8
+    expect(absFilter('narrators', 'Zoë')).toBe('narrators.Wm%2FDqw%3D%3D');
+  });
+
+  it('double-encodes in the request so ABS decodes it once per layer', () => {
+    const url = filteredItemsUrl('lib', absFilter('narrators', '??>'));
+    expect(url).toContain('filter=narrators.Pz8%252B');
+    expect(new URL(url, 'http://x').searchParams.get('filter')).toBe('narrators.Pz8%2B');
+  });
+
+  it('filters matched authors by id, narrators by name and series by id, capped', () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => i);
+    const f = searchFilters({
+      authors: many(9).map((i) => ({ id: `a${i}` })),
+      narrators: many(9).map((i) => ({ name: `n${i}` })),
+      series: many(9).map((i) => ({ series: { id: `s${i}` } })),
+    });
+    expect(f.filter((x) => x.startsWith('authors.'))).toHaveLength(SEARCH_CAPS.authors);
+    expect(f.filter((x) => x.startsWith('narrators.'))).toHaveLength(SEARCH_CAPS.narrators);
+    expect(f.filter((x) => x.startsWith('series.'))).toHaveLength(SEARCH_CAPS.series);
+    expect(f[0]).toBe(absFilter('authors', 'a0'));
+  });
+
+  it('needs no extra fetches when only titles matched', () => {
+    expect(searchFilters({ book: [] })).toEqual([]);
+  });
+
+  it('lists title matches first and each book once', () => {
+    const merged = mergeResults(
+      [item('t1'), item('both')],
+      [
+        [item('a1'), item('both')],
+        [item('a1'), item('s1')],
+      ]
+    );
+    expect(merged.map((i) => i.id)).toEqual(['t1', 'both', 'a1', 's1']);
   });
 });

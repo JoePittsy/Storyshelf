@@ -1,15 +1,28 @@
 .page {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  gap: 1em;
+  gap: 1.4em;
 }
 .controls {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0.8em;
 }
 .controls > :first-child {
   flex: 1 1 14em;
+  max-width: 32em;
+}
+.controls > :nth-child(2) {
+  flex: 0 1 14em;
+}
+/* Phone: search takes the full row, sort sits under it. */
+@container (max-width: 30em) {
+  .controls > * {
+    flex: 1 1 100%;
+    max-width: none;
+  }
 }
 .grid {
   list-style: none;
@@ -18,6 +31,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
   gap: 1.2em 1em;
+}
+@container (min-width: 48em) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr));
+    gap: 1.8em 1.4em;
+  }
 }
 .skeleton {
   aspect-ratio: 1;

@@ -38,3 +38,5 @@ export { wavePath, startEnvelope, envelopeStrips } from './lib/wavePath';
 export type { WaveOptions, EnvelopeStrip } from './lib/wavePath';
 export { ExpandableText } from './components/ExpandableText';
 export { ListRow } from './components/ListRow';
+export { DetailList } from './components/DetailList';
+export type { DetailItem } from './components/DetailList';

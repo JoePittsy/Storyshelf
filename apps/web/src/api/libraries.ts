@@ -22,8 +22,11 @@ interface ItemsPage {
   page: number;
 }
 
-interface SearchResponse {
+export interface SearchResponse {
   book?: { libraryItem: LibraryItem }[];
+  authors?: { id: string }[];
+  narrators?: { name: string }[];
+  series?: { series: { id: string } }[];
 }
 
 export interface Progress {
@@ -136,10 +139,56 @@ export const useLibraryItems = (libraryId: string | undefined, sort: SortKey) =>
     getNextPageParam: (last) => ((last.page + 1) * last.limit < last.total ? last.page + 1 : undefined),
   });
 
+/** Most extra book lists fetched per search, by kind. */
+export const SEARCH_CAPS = { authors: 5, narrators: 3, series: 3 } as const;
+
+const toBase64 = (text: string): string => {
+  let bin = '';
+  for (const b of new TextEncoder().encode(text)) bin += String.fromCharCode(b);
+  return btoa(bin);
+};
+
+/**
+ * An ABS items filter: `group.` plus the base64 of the value, URL-encoded (ABS runs decodeURIComponent
+ * before it decodes the base64). Series and authors filter by id, narrators by name.
+ */
+export const absFilter = (group: 'authors' | 'narrators' | 'series', value: string): string =>
+  `${group}.${encodeURIComponent(toBase64(value))}`;
+
+/** The filters worth fetching for a search response: matched authors, narrators and series, capped. */
+export function searchFilters(res: SearchResponse): string[] {
+  return [
+    ...(res.authors ?? []).slice(0, SEARCH_CAPS.authors).map((a) => absFilter('authors', a.id)),
+    ...(res.narrators ?? []).slice(0, SEARCH_CAPS.narrators).map((n) => absFilter('narrators', n.name)),
+    ...(res.series ?? []).slice(0, SEARCH_CAPS.series).map((s) => absFilter('series', s.series.id)),
+  ];
+}
+
+export function filteredItemsUrl(libraryId: string, filter: string): string {
+  const qs = new URLSearchParams({ filter, limit: '40', page: '0', sort: 'media.metadata.title', minified: '1' });
+  return `/api/libraries/${libraryId}/items?${qs.toString()}`;
+}
+
+/** Direct title matches first, then each filtered list in order, each item once. */
+export function mergeResults(direct: LibraryItem[], extra: LibraryItem[][]): LibraryItem[] {
+  const seen = new Set<string>();
+  return [direct, ...extra].flat().filter((i) => !seen.has(i.id) && !!seen.add(i.id));
+}
+
+/** Books whose title matches, plus every book by a matched author or narrator or in a matched series. */
 export const useLibrarySearch = (libraryId: string | undefined, q: string) =>
   useQuery({
     queryKey: ['search', libraryId, q],
     enabled: !!libraryId && !!q,
-    queryFn: async () =>
-      ((await absFetch<SearchResponse>(searchUrl(libraryId ?? '', q))).book ?? []).map((b) => b.libraryItem),
+    queryFn: async () => {
+      const id = libraryId ?? '';
+      const res = await absFetch<SearchResponse>(searchUrl(id, q));
+      const extra = await Promise.all(
+        searchFilters(res).map(async (f) => (await absFetch<ItemsPage>(filteredItemsUrl(id, f))).results)
+      );
+      return mergeResults(
+        (res.book ?? []).map((b) => b.libraryItem),
+        extra
+      );
+    },
   });

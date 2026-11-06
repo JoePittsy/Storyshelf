@@ -1,17 +1,32 @@
 .frame {
+  --gutter: clamp(1em, 3vw, 2.5em);
+  --content-max: 84em;
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
   /* Reach past .app's side padding so the bar spans the screen. */
   margin: 0 calc(-1 * max(1em, env(safe-area-inset-right))) 0 calc(-1 * max(1em, env(safe-area-inset-left)));
 }
+/* The bar's content lines up with the centred content column below it. */
+.frame .bar {
+  padding-right: max(var(--gutter), env(safe-area-inset-right), calc((100% - var(--content-max)) / 2));
+  padding-left: max(var(--gutter), env(safe-area-inset-left), calc((100% - var(--content-max)) / 2));
+}
 .name {
   font-weight: 700;
   white-space: nowrap;
 }
+.picker {
+  width: 100%;
+  max-width: 16em;
+}
 .content {
+  box-sizing: border-box;
   flex: 1;
-  padding: 1em max(1em, env(safe-area-inset-right)) 1em max(1em, env(safe-area-inset-left));
+  width: 100%;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 1.4em max(var(--gutter), env(safe-area-inset-right)) 2em max(var(--gutter), env(safe-area-inset-left));
 }
 .player {
   position: sticky;
