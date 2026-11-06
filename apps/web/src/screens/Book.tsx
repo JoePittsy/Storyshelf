@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   Artwork,
@@ -49,9 +49,10 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { data: item, error, isPending, refetch } = useBook(id);
   const [pageEl, setPageEl] = useState<HTMLElement | null>(null);
   const [coverEl, setCoverEl] = useState<HTMLElement | null>(null);
-  const docked = useCoverDock(pageEl, coverEl);
+  const dockRef = useRef<HTMLDivElement>(null);
   const cover = item ? coverUrl(item.id, item.updatedAt) : null;
   const wash = useDominantColor(cover);
+  const docked = useCoverDock(pageEl, coverEl, dockRef, { src: cover, color: wash });
   // Hand the colour to the frame, which washes the page ground with it (Frame.module.css).
   useEffect(() => {
     if (!wash) return;
@@ -146,7 +147,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       ? { label: d.label, value: <PeopleLinks people={m.narrators.join(', ')} onOpenPerson={openNarrator} /> }
       : d.label === 'Series' && series
         ? { label: d.label, value: series }
-        : d,
+        : d
   );
   if (authors) details.unshift({ label: m.authors.length > 1 ? 'Authors' : 'Author', value: authors });
 
@@ -155,12 +156,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       <BackLink />
       <HeroBand
         art={
-          // Hidden, not removed, while docked so the hero doesn't reflow. Only one cover carries the transition name.
-          <div
-            ref={setCoverEl}
-            className={styles.hero}
-            style={docked ? { visibility: 'hidden' } : { viewTransitionName: 'book-cover' }}
-          >
+          // Hidden, not removed, while docked so the hero doesn't reflow.
+          <div ref={setCoverEl} className={styles.hero} style={docked ? { visibility: 'hidden' } : undefined}>
             <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
           </div>
         }
@@ -190,7 +187,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         {details.length > 0 && (
           <SectionCard className={styles.side} title="Details">
             {docked && (
-              <div className={styles.docked} aria-hidden="true" style={{ viewTransitionName: 'book-cover' }}>
+              <div className={styles.docked} aria-hidden="true" ref={dockRef}>
                 <Artwork src={cover} placeholderClassName={styles.ph} lazy={false} />
               </div>
             )}

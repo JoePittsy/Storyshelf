@@ -57,3 +57,7 @@ export type { SegmentOption } from './components/SegmentedControl';
 export { ActivityRow } from './components/ActivityRow';
 export { StatGrid } from './components/StatGrid';
 export type { Stat } from './components/StatGrid';
+export { morphBetween, createMorphOverlay, measureBox } from './lib/morphBetween';
+export type { MorphOptions } from './lib/morphBetween';
+export { morphShape, morphPath } from './lib/morphPath';
+export type { MorphBox, MorphShape } from './lib/morphPath';

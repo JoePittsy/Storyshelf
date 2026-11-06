@@ -1,24 +1,31 @@
 import { flushSync } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+import { morphBetween } from '@joepittsy/ui';
 import { DOCK_THRESHOLDS, nextDocked } from './coverDock';
 
 /** The page is a container; Book.module.css goes two-column from this width. */
 const WIDE = 800;
 
-type VT = { finished: Promise<unknown> };
-type Doc = Document & { startViewTransition?: (cb: () => void) => VT };
-
 /**
- * True while the hero cover is scrolled out of view on the wide layout. The change runs inside a view
- * transition so the browser flies the shared `view-transition-name` element between hero and details card;
- * without support, or under reduced motion, it swaps instantly. `page` and `cover` are elements (state,
- * not refs) because the book renders after it loads.
+ * True while the hero cover is scrolled out of view on the wide layout. The change pours the cover between the hero
+ * and the docked cover in the Details card as a liquid morph (morphBetween); under reduced motion it swaps instantly.
+ * `page` and `cover` are elements (state, not refs) because the book renders after it loads; `dock` is the docked
+ * cover's frame, which only exists while docked.
  */
-export function useCoverDock(page: HTMLElement | null, cover: HTMLElement | null): boolean {
+export function useCoverDock(
+  page: HTMLElement | null,
+  cover: HTMLElement | null,
+  dock: RefObject<HTMLElement | null>,
+  morph: { src: string | null; color: string | null }
+): boolean {
   const [docked, setDocked] = useState(false);
   const target = useRef(false);
   const current = useRef(false);
-  const running = useRef(false);
+  const running = useRef<{ to: boolean; abort: AbortController } | null>(null);
+  const latest = useRef(morph);
+  useEffect(() => {
+    latest.current = morph;
+  });
 
   useEffect(() => {
     if (!page || !cover || typeof IntersectionObserver === 'undefined') return;
@@ -28,17 +35,31 @@ export function useCoverDock(page: HTMLElement | null, cover: HTMLElement | null
     const apply = () => {
       if (running.current || target.current === current.current) return;
       const next = target.current;
-      const doc = document as Doc;
       const set = () => {
         current.current = next;
         flushSync(() => setDocked(next));
       };
-      if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return set();
-      running.current = true;
-      void doc.startViewTransition(set).finished.finally(() => {
-        running.current = false;
-        if (alive) apply(); // catch up with wherever the scroll ended while we were animating
-      });
+      const run = (from: Element, to: Element, after?: () => void) => {
+        const abort = new AbortController();
+        running.current = { to: next, abort };
+        const { src, color } = latest.current;
+        void morphBetween(from, to, { src: src ?? undefined, color: color ?? undefined, signal: abort.signal }).finally(
+          () => {
+            running.current = null;
+            if (alive) after?.();
+            if (alive) apply(); // catch up with wherever the scroll ended while we were animating
+          }
+        );
+      };
+      if (next) {
+        set(); // the docked cover has to exist to be measured; the morph hides both until it lands
+        if (dock.current) run(cover, dock.current);
+      } else if (dock.current) {
+        // Morph first, while the docked cover is still there; skip the swap if the user scrolled back mid-flight.
+        run(dock.current, cover, () => {
+          if (target.current === next) set();
+        });
+      } else set();
     };
 
     let wasWide: boolean | undefined;
@@ -57,9 +78,10 @@ export function useCoverDock(page: HTMLElement | null, cover: HTMLElement | null
         ([e]) => {
           if (!e) return;
           target.current = nextDocked(current.current, e.intersectionRatio);
+          if (running.current && running.current.to !== target.current) running.current.abort.abort(); // jump to the end, then reverse
           apply();
         },
-        { rootMargin: `-${Math.round(bar)}px 0px 0px 0px`, threshold: DOCK_THRESHOLDS },
+        { rootMargin: `-${Math.round(bar)}px 0px 0px 0px`, threshold: DOCK_THRESHOLDS }
       );
       io.observe(cover);
     };
@@ -69,10 +91,11 @@ export function useCoverDock(page: HTMLElement | null, cover: HTMLElement | null
     ro?.observe(page);
     return () => {
       alive = false;
+      running.current?.abort.abort();
       io?.disconnect();
       ro?.disconnect();
     };
-  }, [page, cover]);
+  }, [page, cover, dock]);
 
   return docked;
 }

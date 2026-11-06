@@ -16,22 +16,3 @@ body {
   border-radius: var(--r-xs);
 }
 
-/* Book cover docking (Book.tsx): only the cover animates; the page itself stays put. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-}
-::view-transition-group(book-cover) {
-  animation-duration: 350ms;
-  animation-timing-function: var(--ease);
-}
-::view-transition-old(book-cover),
-::view-transition-new(book-cover) {
-  height: 100%;
-  object-fit: cover;
-}
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(book-cover) {
-    animation: none;
-  }
-}
