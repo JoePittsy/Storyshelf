@@ -1,0 +1,184 @@
+/* The outer box is the container; the row inside responds to it. */
+.root {
+  container-type: inline-size;
+  min-width: 0;
+  color: var(--text);
+  text-align: start;
+}
+/* A lit wall, like ResumeHero; the art's colour is washed in inline from the top left. */
+.card {
+  border-radius: var(--r-card);
+  background: radial-gradient(120% 160% at 0% 0%, rgba(var(--tint), 0.26), transparent 62%), var(--surface-hi);
+}
+/* Opaque, like the mini player it sits on, with a hairline on top. */
+.bar {
+  background: var(--bg-1);
+  box-shadow: 0 -1px 0 var(--separator);
+}
+
+/* Narrow first: art, the words, a round Play, and the close. */
+.row {
+  --art: 3.4em;
+  display: grid;
+  grid-template-columns: var(--art) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.75em;
+}
+.closable {
+  grid-template-columns: var(--art) minmax(0, 1fr) auto auto;
+  gap: 0.75em 0.5em;
+  padding-right: 0.4em;
+}
+.bar .row {
+  /* The strip runs edge to edge; its content sits in the app's column, as the mini player's does. */
+  --edge: max(var(--gutter, 0.8em), calc((100% - var(--content-max, 100%)) / 2));
+  padding: 0.6em max(var(--edge), env(safe-area-inset-right)) 0.6em max(var(--edge), env(safe-area-inset-left));
+}
+.art {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--r-thumb);
+  overflow: hidden;
+  background: var(--bg-1);
+  box-shadow: var(--art-shadow);
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  min-width: 0;
+}
+.heading {
+  margin: 0;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-3);
+}
+.title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.title:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.caption {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+/* The room inverted, like the other primary actions. A 44px circle until there is room for its label. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-fast);
+}
+.action:hover {
+  opacity: 0.8;
+}
+.actionText {
+  display: none;
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-fast),
+    color var(--dur-fast) var(--ease-fast);
+}
+.close:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+.spinner {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Roomy: bigger art and a labelled pill. */
+@container (min-width: 28em) {
+  .row {
+    --art: 4.6em;
+    gap: 1em;
+    padding: 0.9em 1em 0.9em 0.9em;
+  }
+  .closable {
+    gap: 1em 0.5em;
+    padding-right: 0.5em;
+  }
+  /* The strip stays slim: small art, the title at body size. */
+  .bar .row {
+    --art: 3.4em;
+  }
+  .title {
+    font-size: var(--fs-title-dialog);
+  }
+  .caption {
+    font-size: var(--fs-label);
+  }
+  .action {
+    width: auto;
+    padding: 0 1.3em;
+  }
+  .actionText {
+    display: inline;
+  }
+  .bar .title {
+    font-size: var(--fs-body);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    opacity: 0.6;
+  }
+  .action,
+  .close {
+    transition: none;
+  }
+}
