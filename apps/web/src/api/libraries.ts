@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { absFetch } from './auth';
+import { absUrl } from './server';
 import type { MediaProgress } from './types';
 
 // Only the ABS fields the library screen uses.
@@ -94,7 +95,7 @@ export function authorImageUrl(
   a: { id: string; imagePath?: string | null; updatedAt?: number },
   width = 200
 ): string | undefined {
-  return a.imagePath ? `/api/authors/${a.id}/image?width=${width}&format=webp&ts=${a.updatedAt ?? 0}` : undefined;
+  return a.imagePath ? absUrl(`/api/authors/${a.id}/image?width=${width}&format=webp&ts=${a.updatedAt ?? 0}`) : undefined;
 }
 
 export function searchUrl(libraryId: string, q: string): string {
@@ -102,7 +103,7 @@ export function searchUrl(libraryId: string, q: string): string {
 }
 
 export function coverUrl(item: Pick<LibraryItem, 'id' | 'updatedAt'>): string {
-  return `/api/items/${item.id}/cover?width=400&format=webp&ts=${item.updatedAt}`;
+  return absUrl(`/api/items/${item.id}/cover?width=400&format=webp&ts=${item.updatedAt}`);
 }
 
 /** Books only; a podcast library has no place here. */

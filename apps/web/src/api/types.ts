@@ -20,7 +20,7 @@ export interface AbsUser {
   type?: string;
   /** Short-lived JWT; held in memory only. */
   accessToken: string;
-  /** Never read: the refresh token lives in ABS's httpOnly cookie. */
+  /** Same-origin: never read (the cookie holds it). Hosted: returned because login sends x-return-tokens. */
   refreshToken?: string | null;
   /** Legacy non-expiring token; ignored. */
   token?: string;

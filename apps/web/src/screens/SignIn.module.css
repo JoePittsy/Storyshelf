@@ -27,3 +27,19 @@
 .alert:empty {
   display: none;
 }
+.server {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em;
+  font-size: var(--fs-label);
+}
+.serverUrl {
+  overflow-wrap: anywhere;
+}
+.origin {
+  overflow-wrap: anywhere;
+}
+.copy {
+  margin-inline-start: 0.5em;
+}

@@ -7,6 +7,10 @@ import '@fontsource-variable/manrope';
 import '@joepittsy/ui/styles.css';
 import './app.css';
 import { App } from './App';
+import { detectMode } from './api/server';
+
+// Decide same-origin or hosted before anything builds an ABS URL.
+await detectMode();
 
 const queryClient = new QueryClient();
 

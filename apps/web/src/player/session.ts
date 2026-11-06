@@ -1,4 +1,5 @@
 import { AbsError, absFetch } from '../api/auth';
+import { absUrl } from '../api/server';
 import { cleanChapters, type Chapter } from './chapters';
 import type { AudioTrack } from './timeline';
 
@@ -112,5 +113,5 @@ export async function closeSession(s: PlaybackSession, p?: Progress): Promise<vo
 }
 
 export function trackUrl(s: PlaybackSession, index: number): string {
-  return `/public/session/${s.id}/track/${index}`;
+  return absUrl(`/public/session/${s.id}/track/${index}`);
 }
