@@ -1,158 +1,53 @@
-import { useEffect, type RefObject } from 'react';
-import { createGenie, measureBox, tFromScroll, type Genie } from '@joepittsy/ui';
-import { snapToDockEnd } from './dockSnap';
+import { useEffect } from 'react';
+import { dockProgress } from './dockProgress';
 
 /** The page is a container; Book.module.css goes two-column from this width. */
 const WIDE = 800;
 
-/** With no `scrollend` event, scrolling counts as settled after this long without a scroll event. */
-const SETTLE_MS = 120;
-
 /**
- * Scroll-scrubbed cover dock on the wide layout. As the hero cover scrolls under the top bar, progress t (0..1, a pure
- * function of its position) drives a WebGL genie warp of the cover image from the hero into the docked cover at the top
- * of the Details card. Between 0 and 1 both real covers are hidden and the canvas draws; at the ends the real element
- * shows, so the swap is invisible. The docked slot's reserved height follows t (`--dock-t`), so Details eases down.
+ * Scroll-driven cover dock on the wide layout. As the hero cover scrolls under the top bar, progress t (0..1, a pure
+ * function of its position) is published as `--dock-t` on the page. Book.module.css reads it: the hero cover
+ * minimises and fades while the docked cover at the top of Details grows and fades in, and the dock's slot opens.
+ * Only a custom property is written, inside rAF, so React never re-renders on scroll.
  *
- * When scrolling settles part-way (0 < t < 1) the page eases to the nearer end, so a half-bent cover never rests over
- * the cards; instantly under reduced motion. Any new scroll input cancels it.
- *
- * Under reduced motion, without WebGL, or if the image can't be used as a texture, it swaps once at t >= 0.5.
- * `page` and `cover` are elements (state, not refs) because the book renders after it loads.
+ * Narrower than WIDE, `--dock-t` stays 0 and the hero is untouched. Under reduced motion t snaps to 0 or 1 at 0.5
+ * (the CSS then only crossfades). `page` and `cover` are elements (state, not refs): the book renders after load.
  */
-export function useCoverDock(
-  page: HTMLElement | null,
-  cover: HTMLElement | null,
-  dock: RefObject<HTMLElement | null>,
-  slot: RefObject<HTMLElement | null>,
-  src: string | null
-): void {
+export function useCoverDock(page: HTMLElement | null, cover: HTMLElement | null): void {
   useEffect(() => {
     if (!page || !cover) return;
     const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let genie: Genie | null = null;
     let raf = 0;
     let last = '';
-
-    const show = (el: HTMLElement | null, visible: boolean) => {
-      if (el) el.style.visibility = visible ? '' : 'hidden';
-    };
     const run = () => {
       raf = 0;
-      const d = dock.current;
-      const s = slot.current;
-      const rect = cover.getBoundingClientRect();
-      if (page.clientWidth < WIDE || !d || !s || rect.height <= 0) {
-        show(cover, true);
-        show(d, false);
-        genie?.hide();
-        s?.style.setProperty('--dock-t', '0');
-        last = '';
-        return;
+      let t = 0;
+      if (page.clientWidth >= WIDE) {
+        const rect = cover.getBoundingClientRect();
+        const bar = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+        t = dockProgress(rect.top, rect.height, bar);
+        if (reduced) t = t >= 0.5 ? 1 : 0;
       }
-      const bar = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
-      const t = tFromScroll(rect.top, rect.height, bar);
-      const canWarp = !reduced && genie !== null && genie.ready && !genie.failed;
-      if (canWarp && t > 0 && t < 1) {
-        s.style.setProperty('--dock-t', String(t));
-        const a = measureBox(cover);
-        const b = measureBox(d);
-        const key = `${t}|${a?.x}|${a?.y}|${b?.x}|${b?.y}|${innerWidth}|${innerHeight}`;
-        if (a && b && key !== last) {
-          last = key;
-          genie?.draw(a, b, t);
-        }
-        show(cover, false);
-        show(d, false);
-        return;
+      const v = String(t);
+      if (v !== last) {
+        last = v;
+        page.style.setProperty('--dock-t', v);
       }
-      last = '';
-      genie?.hide();
-      const swapped = canWarp ? t >= 1 : t >= 0.5;
-      s.style.setProperty('--dock-t', String(canWarp ? t : Number(swapped)));
-      show(cover, !swapped);
-      show(d, swapped);
     };
     const schedule = () => {
       if (!raf) raf = requestAnimationFrame(run);
     };
-
-    // Settle: after scrolling stops, ease to the nearer dock end. `scrollend` where supported, else a quiet period.
-    const hasScrollEnd = 'onscrollend' in window;
-    let settleTimer = 0;
-    let snapping = false;
-    let held = 0; // touches down: don't snap under a finger
-    const settle = () => {
-      settleTimer = 0;
-      if (held > 0 || page.clientWidth < WIDE) return;
-      const r = cover.getBoundingClientRect();
-      const bar = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
-      const max = document.documentElement.scrollHeight - innerHeight;
-      const { target } = snapToDockEnd(r.top, r.height, bar, scrollY, max);
-      snapping = target !== null;
-      if (target !== null) scrollTo({ top: target, behavior: reduced ? 'instant' : 'smooth' });
-    };
-    const onScrollForSettle = () => {
-      if (hasScrollEnd) return;
-      clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(settle, SETTLE_MS);
-    };
-    const onScrollEnd = () => {
-      clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(settle, 0);
-    };
-    // New input from the person wins: freeze the page where it is and let them carry on.
-    const cancelSnap = () => {
-      if (!snapping) return;
-      snapping = false;
-      scrollTo({ top: scrollY, behavior: 'instant' });
-    };
-    const onTouchStart = () => {
-      held++;
-      cancelSnap();
-    };
-    const onTouchEnd = () => {
-      held = Math.max(0, held - 1);
-    };
-
-    if (!reduced && src && page.clientWidth >= WIDE) {
-      genie = createGenie({
-        src,
-        onChange: () => {
-          const box = measureBox(cover);
-          if (box) genie?.prepare(box);
-          schedule();
-        },
-      });
-    }
     run();
     addEventListener('scroll', schedule, { capture: true, passive: true });
     addEventListener('resize', schedule);
-    addEventListener('scroll', onScrollForSettle, { passive: true });
-    addEventListener('scrollend', onScrollEnd);
-    addEventListener('wheel', cancelSnap, { passive: true });
-    addEventListener('keydown', cancelSnap);
-    addEventListener('touchstart', onTouchStart, { passive: true });
-    addEventListener('touchend', onTouchEnd, { passive: true });
-    addEventListener('touchcancel', onTouchEnd, { passive: true });
     const ro = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
     ro?.observe(page);
     return () => {
       cancelAnimationFrame(raf);
       removeEventListener('scroll', schedule, { capture: true });
       removeEventListener('resize', schedule);
-      clearTimeout(settleTimer);
-      removeEventListener('scroll', onScrollForSettle);
-      removeEventListener('scrollend', onScrollEnd);
-      removeEventListener('wheel', cancelSnap);
-      removeEventListener('keydown', cancelSnap);
-      removeEventListener('touchstart', onTouchStart);
-      removeEventListener('touchend', onTouchEnd);
-      removeEventListener('touchcancel', onTouchEnd);
       ro?.disconnect();
-      genie?.destroy();
-      show(cover, true);
-      show(dock.current, false); // eslint-disable-line react-hooks/exhaustive-deps -- the current node is what we hide
+      page.style.removeProperty('--dock-t');
     };
-  }, [page, cover, dock, slot, src]);
+  }, [page, cover]);
 }

@@ -25,3 +25,15 @@
 .toggle:focus-visible {
   text-decoration: underline;
 }
+
+/* Links inside the text (descriptions carry them): the text colour, underlined, never the browser's default blue. */
+.text a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+}
+.text a:hover {
+  color: var(--title-rest);
+  text-decoration-thickness: 0.12em;
+}

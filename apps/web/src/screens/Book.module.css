@@ -11,19 +11,25 @@
 }
 .hero,
 .docked {
-  /* the named view-transition frame: Artwork's contain layers sit inside it, not in the outer wrap */
   position: relative;
   width: 100%;
   height: 100%;
   border-radius: inherit;
   overflow: hidden;
 }
-/* Wide only (the dock never runs narrower): the hero cover pours into the top of the Details card. */
+/* Wide only (--dock-t stays 0, and the hero untouched, narrower): as the hero cover scrolls under the bar it
+   minimises and fades, and the docked cover in Details grows and fades in. Transform and opacity, from one property. */
+.hero {
+  transform: scale(calc(1 - 0.4 * var(--dock-t, 0)));
+  opacity: calc(1 - clamp(0, (var(--dock-t, 0) - 0.6) * 2.5, 1));
+}
 .slot {
   display: none;
   position: relative;
-  /* the docked cover's 9em plus its 1em gap, scaled by the scroll progress useCoverDock publishes */
+  /* Opens with the progress: the docked cover's 9em plus its 1em gap. Clipped at the bottom only (not the sides, for
+     its shadow), so the growing cover never reaches over the list below. */
   height: calc(10em * var(--dock-t, 0));
+  clip-path: inset(-2em -2em 0 -2em);
 }
 .docked {
   position: absolute;
@@ -33,6 +39,17 @@
   border-radius: var(--r-art-card);
   background: var(--bg-1);
   box-shadow: var(--hero-shadow);
+  transform: scale(calc(0.6 + 0.4 * var(--dock-t, 0)));
+  transform-origin: top left;
+  opacity: clamp(0, (var(--dock-t, 0) - 0.4) * 1.67, 1);
+}
+/* Reduced motion: no scaling; t snaps at 0.5 and the two covers crossfade. */
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .docked {
+    transform: none;
+    transition: opacity var(--dur-fast) linear;
+  }
 }
 .line {
   margin: 0;

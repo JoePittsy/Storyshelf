@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   Artwork,
@@ -51,11 +51,9 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { data: item, error, isPending, refetch } = useBook(id);
   const [pageEl, setPageEl] = useState<HTMLElement | null>(null);
   const [coverEl, setCoverEl] = useState<HTMLElement | null>(null);
-  const dockRef = useRef<HTMLDivElement>(null);
   const cover = item ? coverUrl(item.id, item.updatedAt) : null;
   const wash = usePanelColor(cover);
-  const slotRef = useRef<HTMLDivElement>(null);
-  useCoverDock(pageEl, coverEl, dockRef, slotRef, cover);
+  useCoverDock(pageEl, coverEl);
   const description = useMemo(
     () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
     [item]
@@ -152,7 +150,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       <BackLink />
       <HeroBand
         art={
-          // useCoverDock hides it (visibility, so the hero keeps its space) while the cover is docked or warping.
+          // useCoverDock's --dock-t minimises and fades it on the wide layout; it keeps its space in the hero.
           <div ref={setCoverEl} className={styles.hero}>
             <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
           </div>
@@ -183,8 +181,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         {details.length > 0 && (
           <SectionCard className={styles.side} title="Details">
             {/* Wide only. The slot's height grows with the dock progress; the frame inside is always full size. */}
-            <div className={styles.slot} ref={slotRef}>
-              <div className={styles.docked} aria-hidden="true" ref={dockRef} style={{ visibility: 'hidden' }}>
+            <div className={styles.slot}>
+              <div className={styles.docked} aria-hidden="true">
                 <Artwork src={cover} fit="contain" placeholderClassName={styles.ph} lazy={false} />
               </div>
             </div>

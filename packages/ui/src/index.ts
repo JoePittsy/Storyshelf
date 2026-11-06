@@ -57,7 +57,3 @@ export type { SegmentOption } from './components/SegmentedControl';
 export { ActivityRow } from './components/ActivityRow';
 export { StatGrid } from './components/StatGrid';
 export type { Stat } from './components/StatGrid';
-export { createGenie, measureBox } from './lib/genieWarp';
-export type { Genie, GenieOptions } from './lib/genieWarp';
-export { tFromScroll } from './lib/genieMath';
-export type { GenieBox } from './lib/genieMath';
