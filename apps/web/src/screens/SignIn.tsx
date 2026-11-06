@@ -28,7 +28,11 @@ export function SignIn() {
 
   const support = useQuery({
     queryKey: ['server-support'],
-    queryFn: async () => assertSupported(await getStatus()),
+    queryFn: async () => {
+      const status = await getStatus();
+      assertSupported(status);
+      return status; // a query must not resolve to undefined, or TanStack treats it as an error
+    },
     retry: false,
     staleTime: Infinity,
   });

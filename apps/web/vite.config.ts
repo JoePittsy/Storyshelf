@@ -1,8 +1,9 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Everything ABS serves; the browser only ever talks to this origin.
-const ABS_PATHS = ['/api', '/login', '/logout', '/auth', '/status', '/public'];
+// Everything ABS serves; the browser only ever talks to this origin. Anchored like the nginx
+// template, so our own routes that merely start with these words (e.g. /authors) stay in the SPA.
+const ABS_PATHS = '^/(api|login|logout|auth|status|public)(/|\\?|$)';
 
 export default defineConfig(({ command, mode }) => {
   const common = { plugins: [react()], resolve: { conditions: ['@joepittsy/source'] } };
@@ -14,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
     server: {
       // Phone testing over HTTPS via `tailscale serve --bg 5173` (https://<machine>.<tailnet>.ts.net).
       allowedHosts: ['.ts.net'],
-      proxy: Object.fromEntries(ABS_PATHS.map((p) => [p, { target, changeOrigin: true }])),
+      proxy: { [ABS_PATHS]: { target, changeOrigin: true } },
     },
   };
 });

@@ -78,6 +78,13 @@ describe('SignIn', () => {
     expect(screen.queryByLabelText('Username')).toBeNull();
   });
 
+  it('shows no error for a supported, reachable server', async () => {
+    renderSignIn();
+    await screen.findByLabelText('Username');
+    await new Promise((r) => setTimeout(r, 50)); // let the status query settle
+    expect(screen.getByRole('alert')).toHaveTextContent('');
+  });
+
   it('navigates away on success', async () => {
     mocked.login.mockResolvedValue({ username: 'joe' } as never);
     renderSignIn();
