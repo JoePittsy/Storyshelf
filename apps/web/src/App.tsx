@@ -7,7 +7,11 @@ import { Book } from './screens/Book';
 import { play } from './player/engine';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { PlayerToasts } from './player/PlayerToasts';
+import { AuthorList } from './screens/AuthorList';
 import { Library } from './screens/Library';
+import { Narrator } from './screens/Narrator';
+import { NarratorList } from './screens/NarratorList';
+import { SeriesList } from './screens/SeriesList';
 import { NowPlaying } from './screens/NowPlaying';
 import { SignIn } from './screens/SignIn';
 
@@ -56,6 +60,10 @@ function AppRoutes() {
       <Route element={<RequireSession />}>
         <Route element={<Frame />}>
           <Route path="/" element={<Library />} />
+          <Route path="/authors" element={<AuthorList />} />
+          <Route path="/narrators" element={<NarratorList />} />
+          <Route path="/series" element={<SeriesList />} />
+          <Route path="/narrator/:name" element={<Narrator />} />
           <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />
         </Route>

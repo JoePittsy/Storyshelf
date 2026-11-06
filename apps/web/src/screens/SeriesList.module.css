@@ -1,0 +1,28 @@
+.page {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4em;
+}
+/* Same columns as the book grid, so switching tabs keeps the rhythm. */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
+  gap: 1.2em 1em;
+}
+@container (min-width: 48em) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr));
+    gap: 1.8em 1.4em;
+  }
+}
+.skeleton {
+  aspect-ratio: 1;
+  border-radius: var(--r-tile);
+}
+.sentinel {
+  height: 1px;
+}

@@ -98,9 +98,9 @@ describe('REQ-11 search finds books by title or author', () => {
   it('filters matched authors by id, narrators by name and series by id, capped', () => {
     const many = (n: number) => Array.from({ length: n }, (_, i) => i);
     const f = searchFilters({
-      authors: many(9).map((i) => ({ id: `a${i}` })),
+      authors: many(9).map((i) => ({ id: `a${i}`, name: `A${i}` })),
       narrators: many(9).map((i) => ({ name: `n${i}` })),
-      series: many(9).map((i) => ({ series: { id: `s${i}` } })),
+      series: many(9).map((i) => ({ series: { id: `s${i}`, name: `S${i}` } })),
     });
     expect(f.filter((x) => x.startsWith('authors.'))).toHaveLength(SEARCH_CAPS.authors);
     expect(f.filter((x) => x.startsWith('narrators.'))).toHaveLength(SEARCH_CAPS.narrators);

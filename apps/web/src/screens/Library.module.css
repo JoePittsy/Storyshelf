@@ -24,3 +24,29 @@
     max-width: none;
   }
 }
+/* Matching authors, narrators and series: a wrapping row of pills above the books. */
+.chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+}
+.chips > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.count,
+.more {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-label);
+}
+.more {
+  text-align: center;
+}
+.moreButton {
+  align-self: center;
+}

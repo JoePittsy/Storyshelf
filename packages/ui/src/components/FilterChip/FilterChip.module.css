@@ -1,0 +1,44 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  max-width: 100%;
+  padding: 0 0.2em 0 0.9em;
+  border-radius: var(--r-pill);
+  background: rgba(var(--tint), 0.16);
+  color: var(--text);
+  font-size: var(--fs-label);
+}
+.label {
+  min-width: 0;
+  padding: 0.35em 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2em;
+  height: 2em;
+  border: none;
+  border-radius: var(--r-round);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-fast),
+    color var(--dur-fast) var(--ease-fast);
+}
+.remove:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .remove {
+    transition: none;
+  }
+}

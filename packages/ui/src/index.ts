@@ -47,3 +47,8 @@ export { ExpandableText } from './components/ExpandableText';
 export { ListRow } from './components/ListRow';
 export { DetailList } from './components/DetailList';
 export type { DetailItem } from './components/DetailList';
+export { Tabs } from './components/Tabs';
+export type { TabItem } from './components/Tabs';
+export { Chip } from './components/Chip';
+export { PersonLink } from './components/PersonLink';
+export { FilterChip } from './components/FilterChip';
