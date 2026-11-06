@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router';
 import { narratorPath, pickLibrary, storedLibrary, useLibraries } from '../api/libraries';
-import { bookCount, useNarrators, withLibrary } from '../api/people';
+import { bookCount, useNarrators } from '../api/people';
 import { PeopleList } from './PeopleList';
 
 /** Library tab: every narrator A–Z with book count. */
@@ -13,7 +13,7 @@ export function NarratorList() {
     key: n.name,
     name: n.name,
     caption: bookCount(n.numBooks),
-    href: withLibrary(narratorPath(n.name), libraryId),
+    href: narratorPath(n.name, libraryId),
   }));
   return <PeopleList noun="narrators" rows={rows} failed={libs.isError || narrators.isError} />;
 }

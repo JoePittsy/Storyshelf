@@ -32,6 +32,43 @@ const book = (over: Partial<LibraryItem['media']['metadata']> = {}, media: Parti
 });
 const none = new Map<string, Progress>();
 
+describe('narrator filter', () => {
+  const awkward = ['Zoë Wanamaker', 'Smith & Jones', 'A/B #1', 'Hays, Jeff', '100% Real?', 'a+b'];
+  it.each(awkward)('round trips %s through the URL', (name) => {
+    const params = writeFilters(new URLSearchParams('library=L1'), f({ narrator: name }));
+    expect(parseFilters(new URLSearchParams(params.toString())).narrator).toBe(name);
+  });
+  it('wins the server filter and encodes the exact name', () => {
+    const all = f({ narrator: 'Zoë Wanamaker', genre: 'g', tag: 't', progress: 'hide-finished' });
+    expect(serverKey(all)).toBe('narrator');
+    expect(decodeFilter(serverFilterValue(all))).toEqual(['narrators', 'Zoë Wanamaker']);
+    expect(clientFilters(all, true)).toEqual(f({ genre: 'g', tag: 't', progress: 'hide-finished' }));
+    expect(clientFilters(all, false)).toEqual(all);
+  });
+  it('matches whole names only, case-insensitively, in a comma-joined list', () => {
+    const n = (narratorName: string | null | undefined, name: string) =>
+      matchesFilters(book({ narratorName }), f({ narrator: name }), none);
+    expect(n('Jeff Hays', 'jeff hays')).toBe(true);
+    expect(n('Rob Inglis, Jeff Hays,Zoë Wanamaker', ' JEFF HAYS ')).toBe(true);
+    expect(n('Jeff Haysworth', 'Jeff Hays')).toBe(false);
+    expect(n('Jeff Hays, Jr.', 'Jeff Hays')).toBe(true); // ponytail: ABS joins with commas, so a comma in a name is ambiguous
+    expect(n('Mr Jeff Hays', 'Jeff Hays')).toBe(false);
+    expect(n('Hays, Jeff', 'Hays, Jeff')).toBe(true);
+    expect(n(null, 'Jeff Hays')).toBe(false);
+    expect(n(undefined, 'Jeff Hays')).toBe(false);
+  });
+  it('is labelled, counted, and never remembered', () => {
+    expect(chipLabel(f({ narrator: 'Jeff Hays' }), 'narrator')).toBe('Narrated by Jeff Hays');
+    expect(countActive(f({ narrator: 'x' }))).toBe(1);
+    storeFilters('L9', f({ narrator: 'Jeff Hays' }));
+    expect(localStorage.getItem(filtersStoreKey('L9'))).toBeNull();
+    storeFilters('L9', f({ narrator: 'Jeff Hays', genre: 'Fantasy' }));
+    expect(localStorage.getItem(filtersStoreKey('L9'))).toBe('genre=Fantasy');
+    expect(storedFilters('L9').narrator).toBe('');
+    localStorage.clear();
+  });
+});
+
 describe('REQ-43 URL and filter state round trip', () => {
   it('writes and reads every filter', () => {
     const all = f({ genre: 'Sci-Fi & Fantasy', progress: 'in-progress', lang: 'English', tag: 'a/b #1', publisher: 'Zoë Press', decade: '1980', abridged: true, ebook: true });

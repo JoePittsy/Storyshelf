@@ -5,6 +5,8 @@ import type { LibraryItem, Progress } from './libraries';
 
 /** What the user has asked to narrow the library by. Empty string / false = not set. */
 export interface Filters {
+  /** A narrator's exact name. Set by following a narrator link; never remembered between visits. */
+  narrator: string;
   genre: string;
   /** One of PROGRESS_OPTIONS' values, or ''. */
   progress: string;
@@ -19,6 +21,7 @@ export interface Filters {
 }
 
 export const NO_FILTERS: Filters = {
+  narrator: '',
   genre: '',
   progress: '',
   lang: '',
@@ -33,6 +36,7 @@ export type FilterKey = keyof Filters;
 
 /** URL parameter per filter. */
 export const FILTER_PARAMS: Record<FilterKey, string> = {
+  narrator: 'narrator',
   genre: 'genre',
   progress: 'progress',
   lang: 'lang',
@@ -62,6 +66,7 @@ export function parseFilters(params: URLSearchParams): Filters {
   const text = (k: FilterKey) => params.get(FILTER_PARAMS[k])?.trim() ?? '';
   const progress = text('progress');
   return {
+    narrator: text('narrator'),
     genre: text('genre'),
     progress: PROGRESS_OPTIONS.some((o) => o.value === progress) ? progress : '',
     lang: text('lang'),
@@ -89,7 +94,7 @@ export const hasFilterParams = (params: URLSearchParams): boolean => countActive
 // --- Server filter: ABS takes one `filter=group.<base64>` per request. -------------------------------------------
 
 /** The filter sent to ABS, most selective first. The rest are applied here. */
-export const SERVER_PRIORITY: FilterKey[] = ['genre', 'tag', 'publisher', 'lang', 'decade', 'progress', 'ebook', 'abridged'];
+export const SERVER_PRIORITY: FilterKey[] = ['narrator', 'genre', 'tag', 'publisher', 'lang', 'decade', 'progress', 'ebook', 'abridged'];
 
 export function serverKey(f: Filters): FilterKey | null {
   return SERVER_PRIORITY.find((k) => isOn(f, k)) ?? null;
@@ -98,6 +103,8 @@ export function serverKey(f: Filters): FilterKey | null {
 /** The `filter` query value for ABS, or undefined when nothing is filtered server-side. */
 export function serverFilterValue(f: Filters): string | undefined {
   switch (serverKey(f)) {
+    case 'narrator':
+      return absFilter('narrators', f.narrator);
     case 'genre':
       return absFilter('genres', f.genre);
     case 'tag':
@@ -131,9 +138,15 @@ const same = (a: string | null | undefined, b: string): boolean =>
   (a ?? '').trim().toLowerCase() === b.trim().toLowerCase();
 const has = (list: string[] | null | undefined, v: string): boolean => (list ?? []).some((x) => same(x, v));
 
+const names = (s: string): string => s.split(',').map((x) => x.trim().toLowerCase()).join(', ');
+/** ABS joins narrators with ", ". Compare whole names (a name with a comma still works), never substrings. */
+const hasNarrator = (joined: string | null | undefined, name: string): boolean =>
+  `, ${names(joined ?? '')}, `.includes(`, ${names(name)}, `);
+
 /** Whether a book passes every filter set in `f`. Missing metadata never matches a filter that needs it. */
 export function matchesFilters(item: LibraryItem, f: Filters, progress: Map<string, Progress>): boolean {
   const m = item.media.metadata;
+  if (f.narrator && !hasNarrator(m.narratorName, f.narrator)) return false;
   if (f.genre && !has(m.genres, f.genre)) return false;
   if (f.tag && !has(item.media.tags, f.tag)) return false;
   if (f.publisher && !same(m.publisher, f.publisher)) return false;
@@ -170,12 +183,13 @@ export function storedFilters(libraryId: string): Filters {
   }
 }
 
-/** Remembers `f` for the library; clearing all filters forgets them. */
+/** Remembers `f` (minus any narrator) for the library; clearing all filters forgets them. */
 export function storeFilters(libraryId: string, f: Filters): void {
   try {
     const key = filtersStoreKey(libraryId);
-    if (countActive(f) === 0) localStorage.removeItem(key);
-    else localStorage.setItem(key, writeFilters(new URLSearchParams(), f).toString());
+    const keep = { ...f, narrator: '' }; // following a narrator is navigation, not a preference
+    if (countActive(keep) === 0) localStorage.removeItem(key);
+    else localStorage.setItem(key, writeFilters(new URLSearchParams(), keep).toString());
   } catch {
     // Storage blocked: the URL still carries the filters.
   }
@@ -190,6 +204,8 @@ export function resolveFilters(params: URLSearchParams, libraryId: string): Filt
 
 export function chipLabel(f: Filters, k: FilterKey): string {
   switch (k) {
+    case 'narrator':
+      return `Narrated by ${f.narrator}`;
     case 'genre':
       return `Genre: ${f.genre}`;
     case 'progress':

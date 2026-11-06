@@ -24,6 +24,11 @@
     max-width: none;
   }
 }
+.heading {
+  margin: 0;
+  font-size: var(--fs-title-card);
+  overflow-wrap: anywhere;
+}
 /* Matching authors, narrators and series: a wrapping row of pills above the books. */
 .chips {
   list-style: none;

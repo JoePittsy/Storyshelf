@@ -104,7 +104,7 @@ describe('Book screen', () => {
         },
       },
     });
-    const at = (to: string) => () => <p>{`${to}: ${decodeURIComponent(useLocation().pathname)} ${useLocation().pathname}`}</p>;
+    const at = (to: string) => () => <p>{`${to}: ${decodeURIComponent(useLocation().pathname + useLocation().search)}`}</p>;
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const renderAt = () =>
       render(
@@ -113,7 +113,7 @@ describe('Book screen', () => {
             <Routes>
               <Route path="/book/:id" element={<Book />} />
               <Route path="/author/:id" element={React.createElement(at('author'))} />
-              <Route path="/narrator/:name" element={React.createElement(at('narrator'))} />
+              <Route path="/" element={React.createElement(at('narrator'))} />
               <Route path="/series/:id" element={React.createElement(at('series'))} />
             </Routes>
           </MemoryRouter>
@@ -121,7 +121,7 @@ describe('Book screen', () => {
       );
     for (const [name, expected] of [
       ['Neil Gaiman, open', 'author: /author/au 1'],
-      ['Zoë Wanamaker, open', 'narrator: /narrator/Zoë Wanamaker'],
+      ['Zoë Wanamaker, open', 'narrator: /?narrator=Zoë+Wanamaker'],
       ['The Sandman, open', 'series: /series/se_1'],
     ] as const) {
       cleanup();
@@ -130,7 +130,7 @@ describe('Book screen', () => {
       const links = await screen.findAllByRole('button', { name });
       expect(links).toHaveLength(2);
       await userEvent.click(links[0] as HTMLElement);
-      expect(await screen.findByText(new RegExp(`^${expected.split(':')[0]}: ${expected.split(': ')[1]}`))).toBeInTheDocument();
+      expect(await screen.findByText(new RegExp(`^${expected}`.replace(/[?+]/g, '\\$&')))).toBeInTheDocument();
     }
     expect(encodeURIComponent('Zoë Wanamaker')).toBe('Zo%C3%AB%20Wanamaker');
   });

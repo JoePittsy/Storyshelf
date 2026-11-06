@@ -22,6 +22,8 @@ export interface LibraryItem {
       language?: string | null;
       publishedYear?: string | null;
       abridged?: boolean;
+      /** Comma-joined (", "). */
+      narratorName?: string | null;
     };
     tags?: string[];
     ebookFormat?: string;
@@ -164,8 +166,13 @@ export const useLibraryItems = (libraryId: string | undefined, sort: SortKey, fi
 /** Most extra book lists fetched per search, by kind. */
 export const SEARCH_CAPS = { authors: 5, narrators: 3, series: 3 } as const;
 
-/** The narrator page's path. Narrators have no id in ABS, so the name is the id. */
-export const narratorPath = (name: string): string => `/narrator/${encodeURIComponent(name)}`;
+/** The library filtered to a narrator. Narrators have no id or page in ABS, so the name is the filter. */
+export const narratorPath = (name: string, libraryId?: string | null): string => {
+  const p = new URLSearchParams();
+  if (libraryId) p.set('library', libraryId);
+  p.set('narrator', name);
+  return `/?${p.toString()}`;
+};
 
 const toBase64 = (text: string): string => {
   let bin = '';
@@ -218,7 +225,7 @@ export function searchChips(res: SearchResponse, libraryId: string): SearchChip[
       key: `n-${n.name}`,
       kind: 'Narrator',
       label: n.name,
-      href: `${narratorPath(n.name)}${lib}`,
+      href: narratorPath(n.name, libraryId),
       avatar: { name: n.name },
     })),
     ...(res.series ?? []).slice(0, SEARCH_CAPS.series).map((s): SearchChip => ({

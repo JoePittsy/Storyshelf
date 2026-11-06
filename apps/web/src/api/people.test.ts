@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { matchPath } from 'react-router';
 import { authorImageUrl, narratorPath, searchChips } from './libraries';
 import {
   authorsUrl,
   bookCount,
   decodeName,
   filterByName,
-  narratorItemsUrl,
   narratorsUrl,
   seriesAuthors,
   seriesUrl,
@@ -51,22 +49,15 @@ describe('REQ-33 filter as you type', () => {
   });
 });
 
-describe('REQ-36 narrator names round trip', () => {
-  const names = ['Zoë Wanamaker', 'Smith & Jones', 'AC/DC Reader', 'Narrator #1', '100% Real?', 'Jörg Ünal 日本'];
-  it.each(names)('%s survives the route', (name) => {
-    const match = matchPath('/narrator/:name', narratorPath(name));
-    expect(match).not.toBeNull();
-    // The router decodes the param once; decodeName leaves a decoded name alone.
-    expect(decodeName(match?.params.name ?? '')).toBe(name);
+describe('REQ-36 narrator links', () => {
+  it('opens the library filtered to the exact name', () => {
+    expect(narratorPath('Zoë Wanamaker', 'L1')).toBe('/?library=L1&narrator=Zo%C3%AB+Wanamaker');
+    expect(narratorPath('Jeff Hays')).toBe('/?narrator=Jeff+Hays');
+    for (const name of ['Smith & Jones', 'A/B #1', 'Hays, Jeff'])
+      expect(new URL(narratorPath(name, 'L1'), 'http://x').searchParams.get('narrator')).toBe(name);
   });
   it('keeps a malformed escape as typed', () => {
     expect(decodeName('50%')).toBe('50%');
-  });
-  it('filters items by the base64 of the exact name', () => {
-    const filter = new URL(narratorItemsUrl('l', 'Zoë Wanamaker'), 'http://x').searchParams.get('filter');
-    const [group, enc] = (filter ?? '').split('.');
-    expect(group).toBe('narrators');
-    expect(Buffer.from(decodeURIComponent(enc ?? ''), 'base64').toString('utf8')).toBe('Zoë Wanamaker');
   });
 });
 
@@ -80,7 +71,7 @@ describe('REQ-32 search chips', () => {
     const chips = searchChips(res, 'L1');
     expect(chips.map((c) => [c.kind, c.label, c.href])).toEqual([
       ['Author', 'Neil Gaiman', '/author/au%201?library=L1'],
-      ['Narrator', 'Smith & Jones', '/narrator/Smith%20%26%20Jones?library=L1'],
+      ['Narrator', 'Smith & Jones', '/?library=L1&narrator=Smith+%26+Jones'],
       ['Series', 'The Sandman', '/series/s1?library=L1'],
     ]);
     expect(chips[0]?.avatar?.imageUrl).toContain('/api/authors/au 1/image');

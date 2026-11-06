@@ -150,6 +150,7 @@ export function Library() {
         )}
       </div>
       <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
+      {filters.narrator && <h2 className={styles.heading}>Narrated by {filters.narrator}</h2>}
       {!searching && !loading && !failed && !localActive && total !== undefined && (
         <p className={styles.count}>{total} {total === 1 ? 'book' : 'books'}</p>
       )}

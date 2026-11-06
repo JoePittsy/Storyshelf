@@ -1,6 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { absFetch } from './auth';
-import { absFilter } from './libraries';
 import type { LibraryItem } from './libraries';
 
 // Only the ABS fields these screens use.
@@ -54,16 +53,6 @@ export const seriesUrl = (libraryId: string, page: number): string =>
     minified: '1',
   }).toString()}`;
 
-/** Every book a narrator reads in the library, by title. ABS filters narrators by (base64) name. */
-export const narratorItemsUrl = (libraryId: string, name: string): string =>
-  `/api/libraries/${libraryId}/items?${new URLSearchParams({
-    filter: absFilter('narrators', name),
-    limit: '500',
-    page: '0',
-    sort: 'media.metadata.title',
-    minified: '1',
-  }).toString()}`;
-
 /** The route param is already decoded by the router; a stray malformed escape is kept as typed. */
 export function decodeName(param: string): string {
   try {
@@ -110,12 +99,4 @@ export const useSeriesList = (libraryId: string | undefined) =>
     initialPageParam: 0,
     queryFn: ({ pageParam }) => absFetch<SeriesPage>(seriesUrl(libraryId ?? '', pageParam)),
     getNextPageParam: (last) => ((last.page + 1) * last.limit < last.total ? last.page + 1 : undefined),
-  });
-
-export const useNarratorBooks = (libraryId: string | undefined, name: string) =>
-  useQuery({
-    queryKey: ['narrator', libraryId, name],
-    enabled: !!libraryId && !!name,
-    queryFn: async () =>
-      (await absFetch<{ results: LibraryItem[] }>(narratorItemsUrl(libraryId ?? '', name))).results,
   });

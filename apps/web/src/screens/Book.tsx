@@ -15,6 +15,7 @@ import {
 import type { DetailItem } from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
 import { coverUrl, useBook } from '../api/items';
+import { narratorPath } from '../api/libraries';
 import {
   bookDetails,
   currentChapterIndex,
@@ -105,7 +106,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       }}
     />
   );
-  const openNarrator = (name: string) => void navigate(`/narrator/${encodeURIComponent(name)}`);
+  const openNarrator = (name: string) => void navigate(narratorPath(name));
   const heroNarrators = m.narrators.slice(0, NARRATORS_IN_HERO);
   const moreNarrators = m.narrators.length - heroNarrators.length;
   const series = m.series.length > 0 && (

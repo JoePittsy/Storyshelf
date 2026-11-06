@@ -64,7 +64,7 @@ export function LibraryFilters({ filters, onChange, data }: Props) {
     ) : null;
 
   const moreCount = countActive({ ...NO_FILTERS, tag: filters.tag, publisher: filters.publisher, decade: filters.decade, abridged: filters.abridged, ebook: filters.ebook });
-  const buttonCount = wide ? moreCount : countActive(filters);
+  const buttonCount = wide ? moreCount : countActive({ ...filters, narrator: '' }); // narrator has no control here
   const buttonLabel = wide ? 'More filters' : 'Filters';
 
   return (

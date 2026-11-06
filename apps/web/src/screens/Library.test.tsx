@@ -11,6 +11,7 @@ vi.mock('../api/auth', async (orig) => ({ ...(await orig<typeof import('../api/a
 import * as auth from '../api/auth';
 import { filtersStoreKey } from '../api/filters';
 import { Library } from './Library';
+import { NarratorRedirect } from './NarratorRedirect';
 
 const absFetch = vi.mocked(auth.absFetch);
 
@@ -56,6 +57,7 @@ function renderAt(url: string) {
       <MemoryRouter initialEntries={[url]}>
         <Routes>
           <Route path="/" element={<Library />} />
+          <Route path="/narrator/:name" element={<NarratorRedirect />} />
         </Routes>
         <Where />
       </MemoryRouter>
@@ -125,6 +127,40 @@ describe('REQ-37 REQ-38 REQ-41 REQ-42 filters from the URL', () => {
   });
 });
 
+describe('narrator filter', () => {
+  it('redirects the old narrator route to the filtered library and shows the chip', async () => {
+    mockAbs();
+    renderAt('/narrator/Zo%C3%AB%20Wanamaker?library=L1');
+    expect(await screen.findByRole('button', { name: 'Remove filter: Narrated by Zoë Wanamaker' })).toBeInTheDocument();
+    expect(screen.getByTestId('where').textContent).toBe('/?library=L1&narrator=Zo%C3%AB+Wanamaker');
+    await screen.findByText('Mistborn');
+    const f = new URL(itemsCalls()[0] ?? '', 'http://x').searchParams.get('filter') ?? '';
+    expect(Buffer.from(decodeURIComponent(f.split('.')[1] ?? ''), 'base64').toString('utf8')).toBe('Zoë Wanamaker');
+    expect(f).toMatch(/^narrators\./);
+    expect(screen.getByRole('heading', { name: 'Narrated by Zoë Wanamaker' })).toBeInTheDocument();
+    expect(screen.getByText('2 books')).toBeInTheDocument();
+  });
+
+  it('with Hide finished: narrator goes to ABS, progress is applied here, no count', async () => {
+    mockAbs();
+    renderAt('/?library=L1&narrator=Jeff%20Hays&progress=hide-finished');
+    await screen.findByText('Mistborn');
+    expect(screen.queryByText('Finished fantasy')).not.toBeInTheDocument();
+    expect(new URL(itemsCalls()[0] ?? '', 'http://x').searchParams.get('filter')).toMatch(/^narrators\./);
+    expect(screen.queryByText(/^\d+ books?$/)).not.toBeInTheDocument();
+  });
+
+  it('removing the chip clears the narrator, Clear all too, and nothing is remembered', async () => {
+    mockAbs();
+    renderAt('/?library=L1&narrator=Jeff%20Hays');
+    await screen.findByText('Mistborn');
+    expect(localStorage.getItem(filtersStoreKey('L1'))).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove filter: Narrated by Jeff Hays' }));
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/?library=L1'));
+    expect(screen.queryByRole('heading', { name: /Narrated by/ })).not.toBeInTheDocument();
+  });
+});
+
 describe('REQ-39 language control', () => {
   it('is hidden in the sheet when the library has one language', async () => {
     mockAbs();
@@ -177,7 +213,7 @@ describe('REQ-32 search chips', () => {
     expect(author).toHaveAttribute('href', '/author/a1?library=L1');
     expect(screen.getByRole('link', { name: /Narrator:\s*Smith & Jones/ })).toHaveAttribute(
       'href',
-      '/narrator/Smith%20%26%20Jones?library=L1',
+      '/?library=L1&narrator=Smith+%26+Jones',
     );
     expect(screen.getByRole('link', { name: /Series:\s*The Sandman/ })).toHaveAttribute('href', '/series/s1?library=L1');
     expect(await screen.findByText('Mistborn')).toBeInTheDocument();
