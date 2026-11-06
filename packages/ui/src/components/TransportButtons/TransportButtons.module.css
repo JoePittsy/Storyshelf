@@ -33,6 +33,12 @@
   cursor: default;
 }
 
+/* Full-screen player: everything scales with the font size. */
+.lg {
+  gap: 0.35em;
+  font-size: var(--fs-title-dialog);
+}
+
 /* Play-pause: the room inverted, as a circle. */
 .play {
   width: 2.6em;

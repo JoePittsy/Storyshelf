@@ -32,4 +32,26 @@ describe('TransportButtons', () => {
     rerender(<TransportButtons playing={false} onPlayPause={noop} onPrevious={noop} onNext={noop} disabled />);
     screen.getAllByRole('button').forEach((b) => expect(b).toBeDisabled());
   });
+
+  it('renames the outer buttons and places extra controls around Play', () => {
+    render(
+      <TransportButtons
+        playing={false}
+        onPlayPause={noop}
+        onPrevious={noop}
+        onNext={noop}
+        previousLabel="Previous chapter"
+        nextLabel="Next chapter"
+        beforePlay={<button>Back</button>}
+        afterPlay={<button>Forward</button>}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.textContent || b.getAttribute('aria-label'))).toEqual([
+      'Previous chapter',
+      'Back',
+      'Play',
+      'Forward',
+      'Next chapter',
+    ]);
+  });
 });

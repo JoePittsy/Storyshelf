@@ -1,3 +1,4 @@
+/* Phone first: one centred column. From 60em it becomes two columns with the chapter list alongside. */
 .page {
   display: flex;
   flex-direction: column;
@@ -10,6 +11,7 @@
 }
 .bar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   width: 100%;
 }
@@ -18,14 +20,8 @@
   width: min(100%, 22em);
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-card);
   background: var(--surface-2);
-}
-.art img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 .ph {
   display: grid;
@@ -34,14 +30,36 @@
   font-size: var(--fs-glyph);
   color: var(--text-3);
 }
+.info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  width: 100%;
+  min-width: 0;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  width: 100%;
+}
 .title {
   margin: 0;
   font-size: var(--fs-title-card);
+  overflow-wrap: anywhere;
 }
 .line {
   margin: 0;
   font-size: var(--fs-body);
   color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+.chapter {
+  margin: 0.3em 0 0;
+  font-size: var(--fs-label);
+  color: var(--text-3);
+  overflow-wrap: anywhere;
 }
 .seek {
   width: 100%;
@@ -49,10 +67,7 @@
 .mode {
   display: flex;
   width: fit-content;
-  margin: 0 auto 0.6em;
-}
-.times > span:only-child {
-  margin-inline: auto;
+  margin: 0 auto 0.8em;
 }
 .times {
   display: flex;
@@ -60,12 +75,14 @@
   margin-top: 0.4em;
   font-size: var(--fs-label);
   color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.times > span:only-child {
+  margin-inline: auto;
 }
 .transport {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 0.5em;
+  max-width: 100%;
 }
 .options {
   display: flex;
@@ -74,13 +91,87 @@
   justify-content: center;
   gap: 0.75em;
 }
-.chapters {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 .settings {
   display: flex;
   flex-direction: column;
   gap: 1em;
+}
+.keys {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.3em 1em;
+  margin: 0;
+  text-align: left;
+}
+.keys dt {
+  font-weight: 600;
+}
+.keys dd {
+  margin: 0;
+}
+.chapterCard,
+.chapterList {
+  min-width: 0;
+}
+.chapterList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (width >= 60em) {
+  .page {
+    display: grid;
+    grid-template-columns: minmax(0, 30em) minmax(0, 1fr);
+    grid-template-areas:
+      'bar bar'
+      'art info'
+      'art chapters';
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: clamp(2em, 5vw, 4.5em);
+    row-gap: 1.4em;
+    max-width: none;
+    text-align: left;
+  }
+  .bar {
+    grid-area: bar;
+  }
+  .art {
+    grid-area: art;
+    position: sticky;
+    top: 1em;
+    width: 100%;
+  }
+  .info {
+    grid-area: info;
+    align-items: stretch;
+    gap: 1.6em;
+  }
+  .title {
+    font-size: var(--fs-title-feature);
+    line-height: 1.15;
+  }
+  .chapter {
+    font-size: var(--fs-body);
+    color: var(--text-2);
+  }
+  .mode {
+    margin: 0 0 1em;
+  }
+  .transport {
+    font-size: var(--fs-title);
+  }
+  .transport,
+  .options {
+    justify-content: flex-start;
+  }
+  .chapterCard {
+    grid-area: chapters;
+  }
+  .chapterList {
+    position: relative;
+    max-height: max(12em, calc(100dvh - 47em));
+    overflow-y: auto;
+  }
 }
