@@ -1,19 +1,47 @@
-/* Phone first: one centred column. From 60em it becomes two columns with the chapter list alongside. */
+/* Phone first: one centred column. The cover and the words sit at the top; the seek bar, transport and options sit at
+   the bottom, in thumb reach, with Close pinned under them. From 60em it is two columns: the player (cover, words,
+   controls, centred) beside the chapter list, which is as tall as its chapters and scrolls with the page. */
 .page {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1em;
   max-width: 28em;
+  min-height: 78dvh;
   margin: 0 auto;
-  padding-bottom: 2em;
+  /* Room for the pinned Close bar. */
+  padding-bottom: calc(5em + env(safe-area-inset-bottom));
   text-align: center;
 }
+/* Phone: Close (and the shortcuts, for a keyboard on a tablet) pinned to the bottom edge, under the thumb. */
 .bar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1em;
+  padding: 0.7em max(1em, env(safe-area-inset-right)) calc(0.7em + env(safe-area-inset-bottom))
+    max(1em, env(safe-area-inset-left));
+  background: var(--material-bg);
+  -webkit-backdrop-filter: var(--material-filter);
+  backdrop-filter: var(--material-filter);
+  box-shadow: var(--material-edge);
+}
+.bar > button:first-child {
+  min-width: 8em;
+  min-height: 44px;
+  justify-content: center;
+}
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  flex: 1;
   width: 100%;
+  min-width: 0;
 }
 .art {
   position: relative;
@@ -35,6 +63,7 @@
   flex-direction: column;
   align-items: center;
   gap: 1.2em;
+  flex: 1;
   width: 100%;
   min-width: 0;
 }
@@ -60,6 +89,15 @@
   font-size: var(--fs-label);
   color: var(--text-3);
   overflow-wrap: anywhere;
+}
+/* Seek, transport and options as one group, pushed to the bottom of the phone column. */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  width: 100%;
+  margin-top: auto;
 }
 .seek {
   width: 100%;
@@ -109,7 +147,7 @@
 .keys dd {
   margin: 0;
 }
-.chapterCard,
+.side,
 .chapterList {
   min-width: 0;
 }
@@ -122,31 +160,55 @@
 @media (width >= 60em) {
   .page {
     display: grid;
-    grid-template-columns: minmax(0, 30em) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 36em) minmax(0, 1fr);
     grid-template-areas:
       'bar bar'
-      'art info'
-      'art chapters';
-    grid-template-rows: auto auto minmax(0, 1fr);
+      'player side';
     align-items: start;
     column-gap: clamp(2em, 5vw, 4.5em);
-    row-gap: 1.4em;
+    row-gap: 1.2em;
     max-width: none;
-    text-align: left;
+    min-height: 0;
+    padding-bottom: 2em;
   }
+  /* A book with no chapters and no description: the player alone, centred. */
+  .solo {
+    grid-template-columns: minmax(0, 36em);
+    grid-template-areas:
+      'bar'
+      'player';
+    justify-content: center;
+  }
+  /* Desk: Close sits at the top again, in the page's flow. */
   .bar {
+    position: static;
     grid-area: bar;
+    padding: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
   }
-  .art {
-    grid-area: art;
+  .bar > button:first-child {
+    min-width: 0;
+  }
+  /* Stays in view while the chapters scroll past. The cover is sized by the viewport's height as well as the
+     column's width, so the cover, words and controls fit together on one screen. */
+  .player {
+    grid-area: player;
     position: sticky;
     top: 1em;
-    width: 100%;
+    flex: none;
+    gap: 1.5em;
+  }
+  .art {
+    width: auto;
+    height: min(34em, 40dvh);
+    max-width: 100%;
   }
   .info {
-    grid-area: info;
-    align-items: stretch;
-    gap: 1.6em;
+    flex: none;
+    gap: 1.4em;
   }
   .title {
     font-size: var(--fs-title-feature);
@@ -156,22 +218,21 @@
     font-size: var(--fs-body);
     color: var(--text-2);
   }
+  .controls {
+    margin-top: 0;
+    gap: 1.4em;
+  }
   .mode {
-    margin: 0 0 1em;
+    margin: 0 auto 1em;
   }
-  .transport {
+  /* Centred under the seek bar, with a big play button. */
+  .page .transport {
     font-size: var(--fs-title);
+    justify-content: center;
+    gap: 0.5em;
   }
-  .transport,
-  .options {
-    justify-content: flex-start;
-  }
-  .chapterCard {
-    grid-area: chapters;
-  }
-  .chapterList {
-    position: relative;
-    max-height: max(12em, calc(100dvh - 47em));
-    overflow-y: auto;
+  .side {
+    grid-area: side;
+    text-align: left;
   }
 }

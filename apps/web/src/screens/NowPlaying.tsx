@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import {
   Artwork,
   InfoTip,
+  ExpandableText,
   ListRow,
   PeopleLinks,
   PillButton,
@@ -27,7 +28,7 @@ import { useProgress } from '../player/progressMode';
 import { SKIP_OPTIONS } from '../player/settings';
 import { ChaptersSheet } from '../player/ChaptersSheet';
 import { playerKeyAction } from '../player/shortcuts';
-import { fmtClock } from './bookHelpers';
+import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
 
 const skipOptions = SKIP_OPTIONS.map((n) => ({ value: String(n), label: `${n} seconds` }));
@@ -35,20 +36,27 @@ const skipOptions = SKIP_OPTIONS.map((n) => ({ value: String(n), label: `${n} se
 /** Wide enough for two columns and a permanent chapter list; below this it is one column with a Sheet. */
 const WIDE = '(width >= 60em)';
 
-/** The chapter list for wide screens: the current chapter is highlighted and kept in view as the book plays. */
+/**
+ * The chapter list for wide screens, a column as tall as the chapters, so the page scrolls it (the player beside it
+ * stays put). The current chapter is brought into view when the screen opens, and again as the book moves on.
+ */
 function ChapterList() {
   const p = usePlayer();
   const box = useRef<HTMLUListElement>(null);
+  const first = useRef(true);
   useEffect(() => {
-    const list = box.current;
-    const row = list?.querySelector<HTMLElement>('[aria-current="true"]')?.parentElement;
-    if (!list || !row) return;
-    // Scroll the list itself, never the page.
-    const top = row.offsetTop - (list.clientHeight - row.offsetHeight) / 2;
-    list.scrollTo({ top: Math.max(0, top) });
+    const row = box.current?.querySelector<HTMLElement>('[aria-current="true"]')?.parentElement;
+    if (!row) return;
+    const wasFirst = first.current;
+    first.current = false;
+    const r = row.getBoundingClientRect();
+    const visible = r.top >= 0 && r.bottom <= window.innerHeight;
+    if (visible) return;
+    // Opening the screen centres the chapter you are in; afterwards the page only moves as far as it must.
+    row.scrollIntoView({ block: wasFirst ? 'center' : 'nearest', behavior: wasFirst ? 'auto' : 'smooth' });
   }, [p.chapterIndex]);
   return (
-    <SectionCard title="Chapters" sub={`${p.chapters.length} chapters`} className={styles.chapterCard}>
+    <SectionCard title="Chapters" sub={`${p.chapters.length} chapters`} className={styles.side}>
       <ul ref={box} className={styles.chapterList}>
         {p.chapters.map((c, i) => (
           <ListRow
@@ -76,6 +84,9 @@ export function NowPlaying() {
   const meta = useBook(p.item?.id ?? '').data?.media.metadata;
   const authors = meta?.authors;
   const narrators = meta?.narrators;
+  const rawDescription = meta?.description;
+  const description = useMemo(() => (rawDescription ? sanitiseDescription(rawDescription) : ''), [rawDescription]);
+
 
   // The cover's colour washes the page ground, as on the book page (frame/Frame.module.css reads these).
   const wash = useDominantColor(p.item?.coverUrl ?? null);
@@ -118,7 +129,7 @@ export function NowPlaying() {
   const close = () => void (hasHistory ? navigate(-1) : navigate('/'));
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${wide && !hasChapters && !description ? styles.solo : ''}`}>
       <div className={styles.bar}>
         <PillButton onClick={close}>Close</PillButton>
         <InfoTip label="Keyboard shortcuts">
@@ -133,87 +144,99 @@ export function NowPlaying() {
         </InfoTip>
       </div>
 
-      <div className={styles.art}>
-        <Artwork src={p.item.coverUrl} fit="contain" lazy={false} placeholderClassName={styles.ph} />
-      </div>
-
-      <div className={styles.info}>
-        <header className={styles.head}>
-          <h1 className={styles.title}>{p.item.title}</h1>
-          <p className={styles.line}>
-            {authors?.length ? (
-              <PeopleLinks
-                people={authors.map((a) => a.name).join(', ')}
-                onOpenPerson={(name) => {
-                  const a = authors.find((x) => x.name === name);
-                  if (a) void navigate(`/author/${encodeURIComponent(a.id)}`);
-                }}
-              />
-            ) : (
-              p.item.author
-            )}
-          </p>
-          {!!narrators?.length && (
-            <p className={styles.line}>
-              Narrated by{' '}
-              <PeopleLinks people={narrators.join(', ')} onOpenPerson={(name) => void navigate(narratorPath(name))} />
-            </p>
-          )}
-          {chapter && <p className={styles.chapter}>{chapter.title}</p>}
-        </header>
-
-        <div className={styles.seek}>
-          <ProgressModeControl className={styles.mode} />
-          <SeekBar
-            position={rel}
-            duration={span}
-            onSeek={(ms) => p.seek(ms / 1000 + w.start)}
-            readOnly={!w.seekable}
-            valueText={w.label}
-            label={`Progress through ${p.item.title}`}
-            markers={w.markers}
-          />
-          <div className={styles.times}>
-            {w.label ? (
-              <span>{w.label}</span>
-            ) : (
-              <>
-                <PlaybackTime ms={rel} />
-                <PlaybackRemaining position={rel} duration={span} />
-              </>
-            )}
-          </div>
+      <div className={styles.player}>
+        <div className={styles.art}>
+          <Artwork src={p.item.coverUrl} fit="contain" lazy={false} placeholderClassName={styles.ph} />
         </div>
 
-        <TransportButtons
-          size="lg"
-          className={styles.transport}
-          playing={playing}
-          onPlayPause={p.toggle}
-          onPrevious={p.previousChapter}
-          onNext={p.nextChapter}
-          previousDisabled={!hasChapters}
-          nextDisabled={!hasChapters}
-          previousLabel="Previous chapter"
-          nextLabel="Next chapter"
-          disabled={p.status === 'loading'}
-          beforePlay={<SkipButton direction="back" seconds={p.skipBack} onClick={() => p.skip(-1)} />}
-          afterPlay={<SkipButton direction="forward" seconds={p.skipForward} onClick={() => p.skip(1)} />}
-        />
+        <div className={styles.info}>
+          <header className={styles.head}>
+            <h1 className={styles.title}>{p.item.title}</h1>
+            <p className={styles.line}>
+              {authors?.length ? (
+                <PeopleLinks
+                  people={authors.map((a) => a.name).join(', ')}
+                  onOpenPerson={(name) => {
+                    const a = authors.find((x) => x.name === name);
+                    if (a) void navigate(`/author/${encodeURIComponent(a.id)}`);
+                  }}
+                />
+              ) : (
+                p.item.author
+              )}
+            </p>
+            {!!narrators?.length && (
+              <p className={styles.line}>
+                Narrated by{' '}
+                <PeopleLinks people={narrators.join(', ')} onOpenPerson={(name) => void navigate(narratorPath(name))} />
+              </p>
+            )}
+            {chapter && <p className={styles.chapter}>{chapter.title}</p>}
+          </header>
 
-        <div className={styles.options}>
-          <SpeedControl value={p.rate} onChange={p.setRate} />
-          <SleepTimerControl
-            value={p.sleep?.kind === 'minutes' ? p.sleep : p.sleep ? { kind: 'chapter' } : null}
-            onChange={p.setSleep}
-            chapterOptionDisabled={!hasChapters}
-          />
-          <PillButton onClick={() => setSheet('settings')}>Settings</PillButton>
-          {hasChapters && !wide && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
+          <div className={styles.controls}>
+            <div className={styles.seek}>
+              <ProgressModeControl className={styles.mode} />
+              <SeekBar
+                position={rel}
+                duration={span}
+                onSeek={(ms) => p.seek(ms / 1000 + w.start)}
+                readOnly={!w.seekable}
+                valueText={w.label}
+                label={`Progress through ${p.item.title}`}
+                markers={w.markers}
+              />
+              <div className={styles.times}>
+                {w.label ? (
+                  <span>{w.label}</span>
+                ) : (
+                  <>
+                    <PlaybackTime ms={rel} />
+                    <PlaybackRemaining position={rel} duration={span} />
+                  </>
+                )}
+              </div>
+            </div>
+
+            <TransportButtons
+              size="lg"
+              className={styles.transport}
+              playing={playing}
+              onPlayPause={p.toggle}
+              onPrevious={p.previousChapter}
+              onNext={p.nextChapter}
+              previousDisabled={!hasChapters}
+              nextDisabled={!hasChapters}
+              previousLabel="Previous chapter"
+              nextLabel="Next chapter"
+              disabled={p.status === 'loading'}
+              beforePlay={<SkipButton direction="back" seconds={p.skipBack} onClick={() => p.skip(-1)} />}
+              afterPlay={<SkipButton direction="forward" seconds={p.skipForward} onClick={() => p.skip(1)} />}
+            />
+
+            <div className={styles.options}>
+              <SpeedControl value={p.rate} onChange={p.setRate} />
+              <SleepTimerControl
+                value={p.sleep?.kind === 'minutes' ? p.sleep : p.sleep ? { kind: 'chapter' } : null}
+                onChange={p.setSleep}
+                chapterOptionDisabled={!hasChapters}
+              />
+              <PillButton onClick={() => setSheet('settings')}>Settings</PillButton>
+              {hasChapters && !wide && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
+            </div>
+          </div>
         </div>
       </div>
 
       {hasChapters && wide && <ChapterList />}
+      {/* A book without chapters has nothing for the second column but its description. */}
+      {!hasChapters && wide && description && (
+        <SectionCard title="About this book" className={styles.side}>
+          <ExpandableText lines={14}>
+            <div dangerouslySetInnerHTML={{ __html: description }} />
+          </ExpandableText>
+        </SectionCard>
+      )}
       {!wide && <ChaptersSheet open={sheet === 'chapters'} onClose={() => setSheet(null)} />}
 
       <Sheet open={sheet === 'settings'} onClose={() => setSheet(null)} title="Settings">

@@ -164,3 +164,12 @@
     transform: none;
   }
 }
+
+/* A comma for the accessible name only: zero-sized, so it neither shows nor shifts the line, and still inline, so the
+   name reads "Title, Author" with no stray space before the comma. */
+.sep {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}

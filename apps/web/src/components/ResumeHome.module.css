@@ -1,0 +1,7 @@
+/* The hero, then the shelf: a looser gap than the page's, so they read as two things. */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8em;
+  min-width: 0;
+}

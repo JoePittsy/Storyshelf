@@ -23,12 +23,13 @@
   transform-origin: left center;
   transition: transform 1s linear;
 }
-/* Seekable form: a 1.8em hit area (25px or more) with its slim track on the top edge, reaching above and below it.
+/* Seekable form: a 1.8em hit area (at least 32px) with its slim track on the top edge, reaching above and below it.
    The preview rises above the bar, outside it, so nothing clips it. */
 .mini .seek {
+  --hit: max(32px, 1.8em);
   position: absolute;
-  inset: -0.8em 0 auto;
-  height: 1.8em;
+  inset: calc(var(--hit) / -2) 0 auto;
+  height: var(--hit);
   z-index: 1;
 }
 
@@ -37,7 +38,12 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.6em;
-  padding: 0.75em 0.8em calc(0.65em + env(safe-area-inset-bottom));
+  /* The bar's background runs edge to edge; the content sits in the app's column (--content-max, set by the frame). */
+  --edge: max(var(--gutter, 0.8em), calc((100% - var(--content-max, 100%)) / 2));
+  padding-top: 0.75em;
+  padding-bottom: calc(0.65em + env(safe-area-inset-bottom));
+  padding-left: max(var(--edge), env(safe-area-inset-left));
+  padding-right: max(var(--edge), env(safe-area-inset-right));
 }
 /* Wide: three zones. The outer two take equal shares, so the controls sit in the middle of the bar, and the
    left and right content hug the bar's ends. */
@@ -45,7 +51,6 @@
   .row {
     grid-template-columns: minmax(13em, 1fr) auto minmax(13em, 1fr);
     gap: 1.5em;
-    padding-inline: 1.2em;
   }
 }
 @container (max-width: 71.99em) {
@@ -59,6 +64,7 @@
   align-items: center;
   gap: 0.8em;
   min-width: 0;
+  min-height: 44px;
   padding: 0.2em;
   border: none;
   border-radius: var(--r-row);
@@ -151,8 +157,8 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 2.4em;
-  height: 2.4em;
+  width: max(2.4em, 44px);
+  height: max(2.4em, 44px);
   padding: 0;
   border: none;
   border-radius: var(--r-round);
@@ -172,13 +178,19 @@
   cursor: default;
 }
 
+/* The skip buttons are the shared SkipButton; here they keep a 44px target on a phone. */
+.skip {
+  width: max(2.6em, 44px);
+  height: max(2.6em, 44px);
+}
+
 /* Play-pause: the room inverted, as a circle (the same as TransportButtons). */
 .play {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 2.6em;
-  height: 2.6em;
+  width: max(2.6em, 44px);
+  height: max(2.6em, 44px);
   padding: 0;
   border: none;
   border-radius: var(--r-round);

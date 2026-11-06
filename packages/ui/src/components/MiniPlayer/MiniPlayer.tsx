@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { ListMusic, Loader2, Maximize2, Play, SkipBack, SkipForward } from 'lucide-react';
 import { fmtTime } from '../../lib/fmtTime';
@@ -68,6 +67,10 @@ interface Props {
  * Wide (72em container): art, title, chapter and author on the left; chapter and skip buttons around play-pause in
  * the centre; times, speed, sleep, chapters and expand on the right. Opaque. Stateless; pads its bottom by the
  * safe-area inset. Sized in em, so put it inside a .page-scale root.
+ *
+ * The bar's background is full-bleed; its content lines up with the app's content column. It reads the CSS custom
+ * properties `--content-max` (the column's max width) and `--gutter` from an ancestor, and falls back to the full
+ * width with a 0.8em inset when they are not set.
  */
 export function MiniPlayer({
   art,
@@ -101,7 +104,6 @@ export function MiniPlayer({
   modeControl,
   className,
 }: Props) {
-  const titleId = useId();
   const fraction = duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0;
   const playLabel = playing ? 'Pause' : 'Play';
   return (
@@ -131,15 +133,13 @@ export function MiniPlayer({
         </div>
       )}
       <div className={styles.row}>
-        <button type="button" className={styles.open} onClick={onOpen} aria-describedby={titleId}>
-          <span className={styles.srOnly}>Open player</span>
+        <button type="button" className={styles.open} onClick={onOpen}>
+          <span className={styles.srOnly}>Open player: {title}</span>
           <span className={styles.art}>
             <Artwork src={art} fit={artFit} lazy={false} className={styles.img} placeholderClassName={styles.noArt} />
           </span>
           <span className={styles.text} aria-hidden="true">
-            <span id={titleId} className={styles.title}>
-              {title}
-            </span>
+            <span className={styles.title}>{title}</span>
             {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
             {author && <span className={`${styles.subtitle} ${styles.author}`}>{author}</span>}
           </span>
@@ -155,7 +155,7 @@ export function MiniPlayer({
           >
             <SkipBack size="1.15em" aria-hidden="true" />
           </button>
-          <SkipButton direction="back" seconds={skipBackSeconds} onClick={onSkipBack} />
+          <SkipButton direction="back" seconds={skipBackSeconds} onClick={onSkipBack} className={styles.skip} />
           <button
             type="button"
             className={styles.play}
@@ -180,7 +180,7 @@ export function MiniPlayer({
               direction="forward"
               seconds={skipForwardSeconds}
               onClick={onSkipForward}
-              className={styles.wide}
+              className={`${styles.skip} ${styles.wide}`}
             />
           )}
           <button
@@ -196,21 +196,21 @@ export function MiniPlayer({
         </div>
         <div className={`${styles.side} ${styles.wide}`}>
           <div className={styles.readout}>
-          {modeControl}
-          {timeLabel ? (
-            <span className={styles.times}>
-              <span className={styles.clock}>{timeLabel}</span>
-            </span>
-          ) : (
-            duration > 0 && (
-              <span className={styles.times} aria-hidden="true">
-                <span className={styles.clock}>
-                  {fmtTime(position)} / {fmtTime(duration)}
-                </span>
-                <span className={styles.left}>−{fmtTime(Math.max(0, duration - position))} left</span>
+            {modeControl}
+            {timeLabel ? (
+              <span className={styles.times}>
+                <span className={styles.clock}>{timeLabel}</span>
               </span>
-            )
-          )}
+            ) : (
+              duration > 0 && (
+                <span className={styles.times} aria-hidden="true">
+                  <span className={styles.clock}>
+                    {fmtTime(position)} / {fmtTime(duration)}
+                  </span>
+                  <span className={styles.left}>{fmtTime(Math.max(0, duration - position))} left</span>
+                </span>
+              )
+            )}
           </div>
           {rate !== undefined && onRateChange && <SpeedControl value={rate} onChange={onRateChange} />}
           {sleep !== undefined && onSleepChange && (
@@ -227,7 +227,13 @@ export function MiniPlayer({
             </button>
           )}
           {onExpand && (
-            <button type="button" className={styles.step} onClick={onExpand} aria-label="Expand player" title="Expand player">
+            <button
+              type="button"
+              className={styles.step}
+              onClick={onExpand}
+              aria-label="Expand player"
+              title="Expand player"
+            >
               <Maximize2 size="1.05em" aria-hidden="true" />
             </button>
           )}

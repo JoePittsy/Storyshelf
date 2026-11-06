@@ -36,10 +36,14 @@ describe('SegmentedControl', () => {
   });
   it('a disabled option cannot be chosen and explains why', () => {
     const onChange = setup();
-    const sleep = screen.getByRole('radio', { name: /Sleep/ });
+    const sleep = screen.getByRole('radio', { name: 'Sleep' });
     expect(sleep).toBeDisabled();
     expect(sleep).toHaveAccessibleDescription('Set a sleep timer first');
     fireEvent.click(sleep);
     expect(onChange).not.toHaveBeenCalled();
+  });
+  it('keeps the reason out of the name: the name is the label alone', () => {
+    setup();
+    expect(screen.getByRole('radio', { name: 'Sleep' })).toHaveAccessibleName('Sleep');
   });
 });
