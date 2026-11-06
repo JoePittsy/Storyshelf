@@ -17,6 +17,10 @@ server {
 
   location = /manifest.webmanifest { default_type application/manifest+json; }
 
+  # Cloudflare Pages config files (public/_headers, public/_redirects) end up in dist; nginx does not use them, so don't serve them.
+  location = /_headers { return 404; }
+  location = /_redirects { return 404; }
+
   location /assets/ { add_header Cache-Control "public, max-age=31536000, immutable"; }
 
   location / {

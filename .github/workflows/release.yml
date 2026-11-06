@@ -1,0 +1,124 @@
+name: Release
+
+# Push a tag such as v1.2.0 from main. This runs the CI checks, publishes the Docker image to
+# GHCR, creates the GitHub Release (or keeps one already published for the tag) and fast-forwards
+# the `release` branch, which Cloudflare Pages builds for the hosted site.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/joepittsy/storyshelf
+
+jobs:
+  verify:
+    name: Tag is semver and on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag $TAG is not vMAJOR.MINOR.PATCH[-prerelease]"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $TAG points at a commit that is not on main"
+            exit 1
+          fi
+
+  checks:
+    name: CI
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    name: Docker image
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        env:
+          # Put the annotations on the multi-arch index too, which is what GHCR's package page reads.
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: ${{ env.IMAGE }}
+          # {{version}} drops the leading v. `latest` is added for releases only, not pre-releases.
+          tags: |
+            type=semver,pattern={{version}}
+          flavor: |
+            latest=auto
+          labels: |
+            org.opencontainers.image.title=Storyshelf
+            org.opencontainers.image.description=A listening-first web app for Audiobookshelf
+            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.url=${{ github.server_url }}/${{ github.repository }}
+          annotations: |
+            org.opencontainers.image.title=Storyshelf
+            org.opencontainers.image.description=A listening-first web app for Audiobookshelf
+            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish:
+    name: GitHub Release and release branch
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving it as it is."
+          else
+            flags=(--generate-notes --verify-tag)
+            [[ $TAG == *-* ]] && flags+=(--prerelease)
+            gh release create "$TAG" "${flags[@]}"
+          fi
+      - name: Fast-forward the release branch
+        # Not for pre-releases: the hosted site follows full releases only.
+        # A plain push (no --force) fails if `release` is not an ancestor of the tag.
+        if: ${{ !contains(github.ref_name, '-') }}
+        run: git push origin HEAD:refs/heads/release

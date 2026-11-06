@@ -2,5 +2,9 @@
 **/dist
 **/storybook-static
 .git
+.github
+.claude
+# the e2e ABS server's data (audiobooks, config) and scripts are not part of the image
+e2e
 **/.env*
 !**/.env.example

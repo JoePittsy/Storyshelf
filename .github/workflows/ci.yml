@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # The release workflow runs the same checks before it publishes anything.
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# NODE_ENV is deliberately left unset. It must not be "development" (packages/ui/vite.config.ts
+# guards the JSX runtime against it), and "production" would make pnpm skip devDependencies.
+
+jobs:
+  checks:
+    name: Typecheck, lint, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6 # version from packageManager in package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r typecheck
+      - run: pnpm lint
+      - name: Web unit tests
+        run: pnpm --filter @storyshelf/web test
+      - name: UI unit tests
+        run: pnpm --filter @joepittsy/ui test:unit
+      - run: pnpm --filter @storyshelf/web build
+
+  stories:
+    name: UI story tests (Chromium + axe)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm --filter @joepittsy/ui exec playwright install --with-deps chromium
+      - run: pnpm --filter @joepittsy/ui test:stories
