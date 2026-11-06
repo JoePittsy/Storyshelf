@@ -2,19 +2,6 @@
   container-type: inline-size;
   padding: 0 0 3em;
 }
-.back {
-  display: inline-block;
-  margin-bottom: 1em;
-  font-size: var(--fs-label);
-  font-weight: 600;
-  color: var(--text-2);
-  text-decoration: none;
-}
-.back:hover,
-.back:focus-visible {
-  color: var(--text);
-  text-decoration: underline;
-}
 .ph {
   display: grid;
   place-items: center;

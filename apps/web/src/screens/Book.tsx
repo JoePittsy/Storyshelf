@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
-import type { MouseEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { Fragment, useMemo } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import {
   Artwork,
   DetailList,
@@ -8,9 +7,12 @@ import {
   ExpandableText,
   HeroBand,
   ListRow,
+  PeopleLinks,
   PillButton,
+  TitleButton,
   ProgressBar,
 } from '@joepittsy/ui';
+import type { DetailItem } from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
 import { coverUrl, useBook } from '../api/items';
 import {
@@ -21,8 +23,8 @@ import {
   playFrom,
   playLabel,
   sanitiseDescription,
-  summariseList,
 } from './bookHelpers';
+import { BackLink } from '../components/BackLink';
 import styles from './Book.module.css';
 
 interface Props {
@@ -36,24 +38,9 @@ const NARRATORS_IN_HERO = 3;
 // Default handlers for stories/tests; the app wires onPlay/onChapter to the player in App.tsx.
 const noop = () => undefined;
 
-/** Back to the library as the user left it (query string and all) when there is history, else to /. */
-function BackLink() {
-  const navigate = useNavigate();
-  const hasHistory = useLocation().key !== 'default';
-  const onClick = (e: MouseEvent) => {
-    if (!hasHistory) return;
-    e.preventDefault();
-    void navigate(-1);
-  };
-  return (
-    <Link to="/" className={styles.back} onClick={onClick}>
-      <span aria-hidden="true">← </span>Library
-    </Link>
-  );
-}
-
 export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const { data: item, error, isPending, refetch } = useBook(id);
   const description = useMemo(
     () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
@@ -108,9 +95,39 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           .filter(Boolean)
           .join(' · ')
       : 'Not started';
-  const series = m.series.map((s) => (s.sequence ? `${s.name} #${s.sequence}` : s.name)).join(', ');
+  // Names link to their pages. An author is opened by id; a narrator is only a name, so it travels in the URL.
+  const authors = m.authors.length > 0 && (
+    <PeopleLinks
+      people={m.authors.map((a) => a.name).join(', ')}
+      onOpenPerson={(name) => {
+        const author = m.authors.find((a) => a.name === name);
+        if (author) void navigate(`/author/${encodeURIComponent(author.id)}`);
+      }}
+    />
+  );
+  const openNarrator = (name: string) => void navigate(`/narrator/${encodeURIComponent(name)}`);
+  const heroNarrators = m.narrators.slice(0, NARRATORS_IN_HERO);
+  const moreNarrators = m.narrators.length - heroNarrators.length;
+  const series = m.series.length > 0 && (
+    <>
+      {m.series.map((s, i) => (
+        <Fragment key={s.id}>
+          {i > 0 && ', '}
+          <TitleButton title={s.name} onOpen={() => void navigate(`/series/${encodeURIComponent(s.id)}`)} />
+          {s.sequence && ` #${s.sequence}`}
+        </Fragment>
+      ))}
+    </>
+  );
   const meta = [m.publishedYear, fmtLong(duration)].filter(Boolean).join(' · ');
-  const details = bookDetails(item);
+  const details: DetailItem[] = bookDetails(item).map((d) =>
+    d.label === 'Narrators'
+      ? { label: d.label, value: <PeopleLinks people={m.narrators.join(', ')} onOpenPerson={openNarrator} /> }
+      : d.label === 'Series' && series
+        ? { label: d.label, value: series }
+        : d,
+  );
+  if (authors) details.unshift({ label: m.authors.length > 1 ? 'Authors' : 'Author', value: authors });
 
   return (
     <main className={styles.page}>
@@ -120,9 +137,12 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         title={m.title}
       >
         {m.subtitle && <p className={styles.sub}>{m.subtitle}</p>}
-        {m.authors.length > 0 && <p className={styles.line}>{m.authors.map((a) => a.name).join(', ')}</p>}
+        {authors && <p className={styles.line}>{authors}</p>}
         {m.narrators.length > 0 && (
-          <p className={styles.line}>Narrated by {summariseList(m.narrators, NARRATORS_IN_HERO)}</p>
+          <p className={styles.line}>
+            Narrated by <PeopleLinks people={heroNarrators.join(', ')} onOpenPerson={openNarrator} />
+            {moreNarrators > 0 && ` and ${moreNarrators} more`}
+          </p>
         )}
         {series && <p className={styles.line}>{series}</p>}
         <p className={styles.line}>{meta}</p>

@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
 vi.mock('../api/auth', async (orig) => ({ ...(await orig<typeof import('../api/auth')>()), absFetch: vi.fn() }));
 
@@ -59,7 +60,7 @@ describe('Book screen', () => {
     absFetch.mockResolvedValue(item);
     const { onPlay } = renderBook();
     expect(await screen.findByRole('heading', { level: 1, name: 'The Hobbit' })).toBeInTheDocument();
-    expect(screen.getByText('Narrated by Rob Inglis')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Rob Inglis, open' }).length).toBeGreaterThan(0);
     expect(screen.getByText('8h 57m left · Chapter 2 of 2')).toBeInTheDocument();
     expect(screen.getByText('There and back again.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Resume' }));
@@ -89,4 +90,48 @@ describe('Book screen', () => {
     // The hook retries twice (1s, 2s backoff) before giving up.
     expect(await screen.findByRole('button', { name: 'Try again' }, { timeout: 5000 })).toBeInTheDocument();
   }, 10000);
+
+  it('REQ-31/REQ-36 links author, narrator and series names to their pages, encoding the narrator', async () => {
+    absFetch.mockResolvedValue({
+      ...item,
+      media: {
+        ...item.media,
+        metadata: {
+          ...item.media.metadata,
+          authors: [{ id: 'au 1', name: 'Neil Gaiman' }],
+          narrators: ['Zoë Wanamaker'],
+          series: [{ id: 'se_1', name: 'The Sandman', sequence: '1' }],
+        },
+      },
+    });
+    const at = (to: string) => () => <p>{`${to}: ${decodeURIComponent(useLocation().pathname)} ${useLocation().pathname}`}</p>;
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const renderAt = () =>
+      render(
+        <QueryClientProvider client={qc}>
+          <MemoryRouter initialEntries={['/book/li_1']}>
+            <Routes>
+              <Route path="/book/:id" element={<Book />} />
+              <Route path="/author/:id" element={React.createElement(at('author'))} />
+              <Route path="/narrator/:name" element={React.createElement(at('narrator'))} />
+              <Route path="/series/:id" element={React.createElement(at('series'))} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+    for (const [name, expected] of [
+      ['Neil Gaiman, open', 'author: /author/au 1'],
+      ['Zoë Wanamaker, open', 'narrator: /narrator/Zoë Wanamaker'],
+      ['The Sandman, open', 'series: /series/se_1'],
+    ] as const) {
+      cleanup();
+      renderAt();
+      // The hero and the Details list both carry the link.
+      const links = await screen.findAllByRole('button', { name });
+      expect(links).toHaveLength(2);
+      await userEvent.click(links[0] as HTMLElement);
+      expect(await screen.findByText(new RegExp(`^${expected.split(':')[0]}: ${expected.split(': ')[1]}`))).toBeInTheDocument();
+    }
+    expect(encodeURIComponent('Zoë Wanamaker')).toBe('Zo%C3%AB%20Wanamaker');
+  });
 });

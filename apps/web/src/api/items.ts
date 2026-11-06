@@ -43,6 +43,7 @@ export const coverUrl = (id: string, updatedAt: number, width = 800) =>
 export const useBook = (id: string) =>
   useQuery({
     queryKey: ['item', id],
+    enabled: !!id,
     queryFn: () => absFetch<BookItem>(`/api/items/${encodeURIComponent(id)}?expanded=1&include=progress`),
     retry: (count, e) => !(e instanceof AbsError && e.status === 404) && count < 2,
   });

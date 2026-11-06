@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router';
 import {
   Artwork,
   ListRow,
+  PeopleLinks,
   PillButton,
   PlaybackRemaining,
   PlaybackTime,
@@ -14,6 +15,7 @@ import {
   SpeedControl,
   TransportButtons,
 } from '@joepittsy/ui';
+import { useBook } from '../api/items';
 import { usePlayer } from '../player/engine';
 import { SKIP_OPTIONS } from '../player/settings';
 import { fmtClock } from './bookHelpers';
@@ -27,6 +29,8 @@ export function NowPlaying() {
   const navigate = useNavigate();
   const hasHistory = useLocation().key !== 'default';
   const [sheet, setSheet] = useState<'chapters' | 'settings' | null>(null);
+  // The player only knows the author's name; the book (cached from the book page) has their ids.
+  const authors = useBook(p.item?.id ?? '').data?.media.metadata.authors;
 
   if (!p.item) return <Navigate to="/" replace />;
   const chapter = p.chapters[p.chapterIndex];
@@ -43,7 +47,19 @@ export function NowPlaying() {
         <Artwork src={p.item.coverUrl} lazy={false} placeholderClassName={styles.ph} />
       </div>
       <h1 className={styles.title}>{p.item.title}</h1>
-      <p className={styles.line}>{p.item.author}</p>
+      <p className={styles.line}>
+        {authors?.length ? (
+          <PeopleLinks
+            people={authors.map((a) => a.name).join(', ')}
+            onOpenPerson={(name) => {
+              const a = authors.find((x) => x.name === name);
+              if (a) void navigate(`/author/${encodeURIComponent(a.id)}`);
+            }}
+          />
+        ) : (
+          p.item.author
+        )}
+      </p>
       {chapter && <p className={styles.line}>{chapter.title}</p>}
 
       <div className={styles.seek}>
@@ -52,6 +68,7 @@ export function NowPlaying() {
           duration={p.duration * 1000}
           onSeek={(ms) => p.seek(ms / 1000)}
           label={`Progress through ${p.item.title}`}
+          markers={p.chapters.map((c, i) => ({ at: c.start * 1000, label: `Chapter ${i + 1}: ${c.title}` }))}
         />
         <div className={styles.times}>
           <PlaybackTime ms={p.position * 1000} />

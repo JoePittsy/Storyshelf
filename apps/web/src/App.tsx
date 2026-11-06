@@ -3,12 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
 import { onSignedOut, restoreSession } from './api/auth';
 import { Frame } from './frame/Frame';
+import { Author } from './screens/Author';
 import { Book } from './screens/Book';
 import { play } from './player/engine';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { PlayerToasts } from './player/PlayerToasts';
 import { Library } from './screens/Library';
 import { NowPlaying } from './screens/NowPlaying';
+import { Series } from './screens/Series';
 import { SignIn } from './screens/SignIn';
 
 const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
@@ -58,6 +60,8 @@ function AppRoutes() {
           <Route path="/" element={<Library />} />
           <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />
+          <Route path="/author/:id" element={<Author />} />
+          <Route path="/series/:id" element={<Series />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

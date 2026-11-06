@@ -78,3 +78,28 @@ describe('PlaybackTime and PlaybackRemaining', () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe('SeekBar markers', () => {
+  const markers = [
+    { at: 0, label: 'Chapter 1: Start' },
+    { at: 100000, label: 'Chapter 2: Middle' },
+  ];
+
+  it('speaks the marker at the playhead', () => {
+    cleanup();
+    render(<SeekBar position={105000} duration={210000} onSeek={vi.fn()} markers={markers} />);
+    expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', '1:45 of 3:30, Chapter 2: Middle');
+  });
+
+  it('draws a hidden tick per marker but none at 0, and a hidden preview on hover', () => {
+    cleanup();
+    const { container } = render(<SeekBar position={0} duration={200000} onSeek={vi.fn()} markers={markers} />);
+    expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(1);
+    const bar = screen.getByRole('slider');
+    bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect;
+    fireEvent.pointerMove(bar, { clientX: 150, pointerType: 'mouse' });
+    expect(screen.getByText('2:30 · Chapter 2: Middle')).toHaveAttribute('aria-hidden', 'true');
+    fireEvent.pointerLeave(bar);
+    expect(screen.queryByText(/Chapter 2: Middle/)).toBeNull();
+  });
+});

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
+import type { SeekMarker } from '../../lib/seekMarkers';
 import { PlaybackRemaining, PlaybackTime } from './PlaybackTime';
 import { SeekBar } from './SeekBar';
 
@@ -11,10 +12,14 @@ const DURATION = 222000;
 function Row({
   position: initial,
   duration,
+  markers,
+  previewAt,
   onSeek,
 }: {
   position: number;
   duration: number;
+  markers?: SeekMarker[];
+  previewAt?: number;
   onSeek: (ms: number) => void;
 }) {
   const [position, setPosition] = useState(initial);
@@ -24,6 +29,8 @@ function Row({
       <SeekBar
         position={position}
         duration={duration}
+        markers={markers}
+        previewAt={previewAt}
         onSeek={(ms) => {
           setPosition(ms);
           onSeek(ms);
@@ -50,3 +57,12 @@ export const AtStart: Story = { args: { position: 0 } };
 export const NearlyDone: Story = { args: { position: 215000 } };
 /** No known duration (nothing loaded): the bar is disabled and does nothing when pressed. */
 export const NoDuration: Story = { args: { position: 0, duration: 0 } };
+const chapters = (n: number): SeekMarker[] =>
+  Array.from({ length: n }, (_, i) => ({ at: i * (DURATION / n), label: `Chapter ${i + 1}: Title ${i + 1}` }));
+
+/** Chapter starts as ticks. Hover the bar for the time and chapter; the next story holds that preview open. */
+export const WithChapterTicks: Story = { args: { markers: chapters(12) } };
+/** The hover preview held open at 1:30, as it looks under a pointer or a dragging finger. */
+export const PreviewOpen: Story = { args: { markers: chapters(12), previewAt: 90000 } };
+/** A long book: 64 chapters. The 1px ticks stay legible at this density. */
+export const ManyChapterTicks: Story = { args: { markers: chapters(64) } };

@@ -12,7 +12,7 @@ export interface Library {
 export interface LibraryItem {
   id: string;
   updatedAt: number;
-  media: { metadata: { title: string; authorName: string | null } };
+  media: { metadata: { title: string; authorName: string | null; publishedYear?: string | null } };
 }
 
 interface ItemsPage {
@@ -192,3 +192,10 @@ export const useLibrarySearch = (libraryId: string | undefined, q: string) =>
       );
     },
   });
+
+/** An author's photo; undefined when they have none. Unauthenticated like covers, so an <img> can load it. */
+export const authorImageUrl = (
+  a: { id: string; imagePath?: string | null; updatedAt: number },
+  width = 400,
+): string | undefined =>
+  a.imagePath ? `/api/authors/${a.id}/image?width=${width}&format=webp&ts=${a.updatedAt}` : undefined;

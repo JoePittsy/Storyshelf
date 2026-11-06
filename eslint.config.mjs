@@ -11,7 +11,7 @@ const RAW_COLOUR = String.raw`/^\s*(#[0-9a-f]{3,8}|(rgba?|hsla?)\(.*|white|black
 const RAW_SIZE = String.raw`/^(?!var\(|inherit|0$|50%$|100%$)/`;
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/storybook-static/**', '**/coverage/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/storybook-static/**', '**/coverage/**', '.claude/**'] },
 
   // ── All TypeScript ───────────────────────────────────────────────────────────
   {

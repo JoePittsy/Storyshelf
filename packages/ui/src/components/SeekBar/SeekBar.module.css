@@ -4,9 +4,12 @@
   flex: 1;
   display: flex;
   align-items: center;
+  position: relative;
   height: 1.2em;
   min-width: 0;
   cursor: pointer;
+  /* Horizontal drags reach the bar (for the touch preview); vertical ones still scroll the page. */
+  touch-action: pan-y;
 }
 .seek[aria-disabled='true'] {
   cursor: default;
@@ -30,6 +33,40 @@
   border-radius: var(--r-pill);
   transform-origin: left center;
   transition: transform 1s linear;
+}
+/* A hairline over the track. Difference blending flips it against what is under it, so it shows on the
+   white fill and on the dark track alike. It never takes the pointer, so clicks reach the bar. */
+.tick {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 0.6em;
+  transform: translate(-50%, -50%);
+  background: var(--on-art);
+  mix-blend-mode: difference;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Hover and touch preview: frosted, above the bar, its edge pinned to the bar ends so it stays on screen. */
+.preview {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 0.4em;
+  max-width: 100%;
+  padding: 0.4em 0.7em;
+  background: var(--material-bg);
+  backdrop-filter: var(--material-filter);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-row);
+  box-shadow: var(--float-shadow);
+  color: var(--text);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .time {
