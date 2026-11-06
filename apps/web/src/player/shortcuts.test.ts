@@ -1,0 +1,53 @@
+import { describe, it, expect } from 'vitest';
+import { playerKeyAction } from './shortcuts';
+
+const on = (tagName: string, role?: string, isContentEditable = false) =>
+  ({
+    tagName,
+    isContentEditable,
+    getAttribute: (n: string) => (n === 'role' ? (role ?? null) : null),
+  }) as unknown as EventTarget;
+
+describe('playerKeyAction', () => {
+  it('maps the keys on a neutral target', () => {
+    const body = on('BODY');
+    expect(playerKeyAction({ key: ' ', target: body })).toBe('toggle');
+    expect(playerKeyAction({ key: 'ArrowLeft', target: body })).toBe('back');
+    expect(playerKeyAction({ key: 'ArrowRight', target: body })).toBe('forward');
+    expect(playerKeyAction({ key: '[', target: body })).toBe('previousChapter');
+    expect(playerKeyAction({ key: ']', target: body })).toBe('nextChapter');
+    expect(playerKeyAction({ key: 'a', target: body })).toBeNull();
+  });
+
+  it('works with no target', () => {
+    expect(playerKeyAction({ key: ' ' })).toBe('toggle');
+  });
+
+  it('ignores keys typed into fields', () => {
+    for (const tag of ['INPUT', 'TEXTAREA', 'SELECT']) {
+      expect(playerKeyAction({ key: ' ', target: on(tag) })).toBeNull();
+      expect(playerKeyAction({ key: '[', target: on(tag) })).toBeNull();
+    }
+    expect(playerKeyAction({ key: 'ArrowLeft', target: on('DIV', undefined, true) })).toBeNull();
+  });
+
+  it('leaves Space to a focused button or link, but still takes the chapter keys', () => {
+    expect(playerKeyAction({ key: ' ', target: on('BUTTON') })).toBeNull();
+    expect(playerKeyAction({ key: ' ', target: on('A') })).toBeNull();
+    expect(playerKeyAction({ key: ']', target: on('BUTTON') })).toBe('nextChapter');
+    expect(playerKeyAction({ key: 'ArrowRight', target: on('BUTTON') })).toBe('forward');
+  });
+
+  it('leaves the arrows to the seek bar and the mode switch', () => {
+    expect(playerKeyAction({ key: 'ArrowLeft', target: on('DIV', 'slider') })).toBeNull();
+    expect(playerKeyAction({ key: 'ArrowRight', target: on('BUTTON', 'radio') })).toBeNull();
+    expect(playerKeyAction({ key: ' ', target: on('DIV', 'slider') })).toBeNull();
+  });
+
+  it('ignores chords', () => {
+    const body = on('BODY');
+    expect(playerKeyAction({ key: ' ', ctrlKey: true, target: body })).toBeNull();
+    expect(playerKeyAction({ key: 'ArrowLeft', metaKey: true, target: body })).toBeNull();
+    expect(playerKeyAction({ key: ']', altKey: true, target: body })).toBeNull();
+  });
+});

@@ -39,6 +39,7 @@ export { BarList, ChartTooltip, TipRow, TipTitle, Heatmap, RAMP, RAMP_STEPS } fr
 export type { BarListRow, Tip, HeatRow } from './components/stats';
 export { useDominantColor } from './hooks/useDominantColor';
 export { useImageFallback } from './hooks/useImageFallback';
+export { useMediaQuery } from './hooks/useMediaQuery';
 export { fmtTime } from './lib/fmtTime';
 export { fmtRemaining } from './lib/fmtRemaining';
 export { wavePath, startEnvelope, envelopeStrips } from './lib/wavePath';

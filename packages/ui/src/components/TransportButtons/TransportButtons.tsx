@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { SkipBack, Play, SkipForward } from 'lucide-react';
 import styles from './TransportButtons.module.css';
 
@@ -14,6 +15,14 @@ interface Props {
   nextDisabled?: boolean;
   /** Solid glyphs instead of outlines. */
   filled?: boolean;
+  /** `lg` scales the whole row up for a full-screen player. */
+  size?: 'md' | 'lg';
+  /** Accessible names for the outer buttons; "Previous" and "Next" by default. */
+  previousLabel?: string;
+  nextLabel?: string;
+  /** Extra controls between Previous and Play, and between Play and Next (e.g. skip back / forward). */
+  beforePlay?: ReactNode;
+  afterPlay?: ReactNode;
   className?: string;
 }
 
@@ -27,13 +36,18 @@ export function TransportButtons({
   previousDisabled = false,
   nextDisabled = false,
   filled,
+  size = 'md',
+  previousLabel = 'Previous',
+  nextLabel = 'Next',
+  beforePlay,
+  afterPlay,
   className,
 }: Props) {
   const fill = filled ? 'currentColor' : undefined;
   const playLabel = playing ? 'Pause' : 'Play';
   return (
     <div
-      className={[styles.transport, className].filter(Boolean).join(' ')}
+      className={[styles.transport, size === 'lg' ? styles.lg : '', className].filter(Boolean).join(' ')}
       role="group"
       aria-label="Playback controls"
     >
@@ -42,11 +56,12 @@ export function TransportButtons({
         className={styles.btn}
         disabled={disabled || previousDisabled || !onPrevious}
         onClick={onPrevious}
-        title="Previous"
-        aria-label="Previous"
+        title={previousLabel}
+        aria-label={previousLabel}
       >
         <SkipBack size="1.15em" fill={fill} aria-hidden="true" />
       </button>
+      {beforePlay}
       <button
         type="button"
         className={`${styles.btn} ${styles.play}`}
@@ -64,13 +79,14 @@ export function TransportButtons({
           <Play size="1em" fill={fill} aria-hidden="true" />
         )}
       </button>
+      {afterPlay}
       <button
         type="button"
         className={styles.btn}
         disabled={disabled || nextDisabled || !onNext}
         onClick={onNext}
-        title="Next"
-        aria-label="Next"
+        title={nextLabel}
+        aria-label={nextLabel}
       >
         <SkipForward size="1.15em" fill={fill} aria-hidden="true" />
       </button>

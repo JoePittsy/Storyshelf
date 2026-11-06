@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
+import { SkipButton } from '../SkipButton';
 import { TransportButtons } from './TransportButtons';
 
 // Previous / play-pause / next. Stateless: pressing one only calls the handler (logged in the Actions panel).
@@ -23,3 +24,14 @@ export const NoNext: Story = { args: { onNext: undefined } };
 /** Solid glyphs. */
 export const Filled: Story = { args: { filled: true } };
 export const FilledPlaying: Story = { args: { filled: true, playing: true } };
+/** The full-screen player: large, with skip buttons between the chapter buttons and Play. */
+export const Large: Story = {
+  args: {
+    size: 'lg',
+    playing: true,
+    previousLabel: 'Previous chapter',
+    nextLabel: 'Next chapter',
+    beforePlay: <SkipButton direction="back" seconds={10} onClick={fn()} />,
+    afterPlay: <SkipButton direction="forward" seconds={30} onClick={fn()} />,
+  },
+};
