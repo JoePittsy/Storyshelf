@@ -6,6 +6,7 @@ import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/l
 import { AccountMenu } from './AccountMenu';
 import { pageTitle, useDocumentTitle } from './useDocumentTitle';
 import { usePlayer } from '../player/engine';
+import { RestoreLastBook } from '../player/RestoreLastBook';
 import { appKeyAction } from '../player/shortcuts';
 import { usePlayerJump } from '../player/useUndoableJump';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -73,6 +74,7 @@ export function Frame() {
       <a href="#main" className={styles.skip} onClick={skipToContent}>
         Skip to content
       </a>
+      <RestoreLastBook libraryId={current} />
       <GlobalKeys onSearch={focusSearch} onHelp={() => setHelp('key')} />
       <TopBar
         className={`${styles.bar}${immersive ? ' ' + styles.hidden : ''}`}

@@ -7,6 +7,7 @@ import { diag } from './diag';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
 import { supportedMimeTypes } from './mime';
 import { isRepeatFailure, srcNotSupportedError } from './failure';
+import { restoredPatch, restoredSeek, type Restorable } from './restore';
 import { createRetryOnce, decide, stalledFor, STALL_MS, type Intent } from './resume';
 import {
   UnsupportedFormatError,
@@ -48,6 +49,11 @@ export interface PlayerState {
   /** Book seconds at the moment the sleep timer was set or changed: where the sleep progress window starts. */
   sleepFrom: number;
   error: string | null;
+  /**
+   * The book was put back on load: shown paused where it was left, but with no playback session and no audio loaded.
+   * The first Play opens the session (`play()` runs, inside the click) and clears this.
+   */
+  restored: boolean;
 }
 
 const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
@@ -65,6 +71,7 @@ const initial = (): PlayerState => ({
   sleep: null,
   sleepFrom: 0,
   error: null,
+  restored: false,
 });
 
 let state = initial();
@@ -284,6 +291,13 @@ function load(tr: AudioTrack, offset: number, autoplay: boolean): void {
 }
 
 function seekBook(t: number): void {
+  if (!session && state.restored) {
+    // Nothing is loaded: move the place Play will start from.
+    const r = restoredSeek(t, state.duration, state.chapters);
+    if (lastRequest) lastRequest = { ...lastRequest, from: r.position };
+    set(r);
+    return;
+  }
   if (!session || !audio) return;
   const target = clampSeek(t, totalDuration(session.audioTracks));
   const { track: tr, offset } = locate(session.audioTracks, target);
@@ -458,7 +472,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
   const old = detach();
   unlock(a);
   const mine = ++token;
-  set({ status: 'loading', error: null });
+  set({ status: 'loading', error: null, restored: false });
   if (old) {
     await closeSession(old.s, old.p);
     emitSaved();
@@ -486,6 +500,18 @@ export async function play(itemId: string, from?: number): Promise<void> {
   });
   setMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
   load(tr, offset, true);
+}
+
+/**
+ * Puts a book into the player paused where the listener left it, so the mini player is there on load. It opens no
+ * session and loads no audio: the first Play does, through `play()`. Does nothing once anything is in the player.
+ */
+export function restore(r: Restorable, chapters: Chapter[]): void {
+  if (state.status !== 'idle' || state.item) return;
+  const patch = restoredPatch(r, coverFor(r.id), chapters);
+  lastRequest = { itemId: r.id, from: r.position };
+  set(patch);
+  setMetadata(patch.item, chapters[patch.chapterIndex]?.title ?? '');
 }
 
 export function toggle(): void {
