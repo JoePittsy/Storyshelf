@@ -53,8 +53,21 @@ export type Spine = {
 
 export function createSpine(): Spine {
   return {
-    ax: 1, ay: 0, cx: 0, cy: 0, cp: new Float64Array(8), lut: new Float64Array(LUT + 1),
-    startRun: 0, curve: 0, length: 0, a: 0, b: 0, wA: 0, wB: 0, rA: 0, rB: 0,
+    ax: 1,
+    ay: 0,
+    cx: 0,
+    cy: 0,
+    cp: new Float64Array(8),
+    lut: new Float64Array(LUT + 1),
+    startRun: 0,
+    curve: 0,
+    length: 0,
+    a: 0,
+    b: 0,
+    wA: 0,
+    wB: 0,
+    rA: 0,
+    rB: 0,
   };
 }
 
@@ -202,6 +215,10 @@ export const META_FLOATS = 3;
  * `meta` receives [extent along, extent across, corner radius].
  */
 const P = new Float64Array(4);
+const P2 = new Float64Array(4);
+const P3 = new Float64Array(4);
+/** (0.85)^4: the inner edge may reach 85% of the way to the centre of curvature. */
+const FOLD = 0.85 ** 4;
 export function buildMesh(s: Spine, t: number, out: Float32Array, meta: Float64Array): void {
   t = clamp01(Number.isFinite(t) ? t : 0);
   const W = genieWindowScratch;
@@ -217,7 +234,14 @@ export function buildMesh(s: Spine, t: number, out: Float32Array, meta: Float64A
     const v = row / ALONG;
     const q = q0 + (q1 - q0) * v;
     spineAt(s, q, P);
-    const w = genieWidth(s, q);
+    // Where the spine bends tighter than half the width the inner edge would fold over itself: narrow it there.
+    const step = Math.max(s.length / 200, 1e-3);
+    spineAt(s, q - step, P2);
+    spineAt(s, q + step, P3);
+    const inCurve = q > s.startRun + 1e-6 && q < s.startRun + s.curve - 1e-6;
+    const kappa = !inCurve ? 0 : Math.hypot(P3[2] - P2[2], P3[3] - P2[3]) / (2 * step);
+    const half = genieWidth(s, q) / 2;
+    const w = (2 * half) / (1 + (half * kappa) ** 4 / FOLD) ** 0.25;
     widthSum += w;
     // Normal: the tangent turned a quarter, signed so it equals the image's cross direction at the ends.
     const nx = k * -P[3];

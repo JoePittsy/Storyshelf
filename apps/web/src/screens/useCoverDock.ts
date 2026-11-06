@@ -22,7 +22,7 @@ export function useCoverDock(
 ): void {
   useEffect(() => {
     if (!page || !cover) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     let genie: Genie | null = null;
     let raf = 0;
     let last = '';
@@ -92,7 +92,7 @@ export function useCoverDock(
       ro?.disconnect();
       genie?.destroy();
       show(cover, true);
-      show(dock.current, false);
+      show(dock.current, false); // eslint-disable-line react-hooks/exhaustive-deps -- the current node is what we hide
     };
   }, [page, cover, dock, slot, src]);
 }

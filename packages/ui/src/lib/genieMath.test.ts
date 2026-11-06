@@ -158,9 +158,21 @@ describe('mesh', () => {
     expect(meta[2]).toBe(12);
   });
   it('lands on both boxes in every direction, with the image upright', () => {
-    const dirs: [number, number][] = [[-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]];
+    const dirs: [number, number][] = [
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [1, 1],
+      [-1, -1],
+    ];
     for (const [dx, dy] of dirs) {
-      const b: GenieBox = { x: A.x + 500 * dx + 200 * dy * dy * 0, y: A.y + 500 * dy + (dx ? 30 : 0), w: 144, h: 144, r: 12 };
+      const b: GenieBox = {
+        x: A.x + 500 * dx + 200 * dy * dy * 0,
+        y: A.y + 500 * dy + (dx ? 30 : 0),
+        w: 144,
+        h: 144,
+        r: 12,
+      };
       const m0 = mesh(A, b, 0);
       // The vertex showing the image's top-left sits on the box's top-left; bottom-right on bottom-right.
       const at = (out: Float32Array, u: number, v: number) => {
@@ -207,7 +219,15 @@ describe('mesh', () => {
     const z: GenieBox = { x: 0, y: 0, w: 0, h: 0, r: 0 };
     const tiny: GenieBox = { x: 5, y: 5, w: 1e-9, h: 1e-9, r: 3 };
     const nan: GenieBox = { x: NaN, y: 0, w: NaN, h: 4, r: NaN };
-    for (const [a, b] of [[z, z], [A, z], [z, B], [tiny, tiny], [A, A], [A, { ...A, x: A.x + 1 }], [nan, B]] as const)
+    for (const [a, b] of [
+      [z, z],
+      [A, z],
+      [z, B],
+      [tiny, tiny],
+      [A, A],
+      [A, { ...A, x: A.x + 1 }],
+      [nan, B],
+    ] as const)
       for (const t of [-1, 0, 0.001, 0.5, 0.999, 1, 2, NaN]) {
         const { out, meta } = mesh(a, b, t);
         expect(out.every(Number.isFinite)).toBe(true);
