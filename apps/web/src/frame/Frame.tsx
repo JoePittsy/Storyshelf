@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { PillButton, Select, Tabs, TopBar } from '@joepittsy/ui';
@@ -9,6 +10,23 @@ import styles from './Frame.module.css';
 
 /** The signed-in app frame: header, routed content, and an empty bottom region the mini player will fill. */
 export function Frame() {
+  const frameRef = useRef<HTMLDivElement>(null);
+  // Publish the sticky bar's and the player's heights so pages can pin things clear of both.
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const bar = frame?.querySelector<HTMLElement>('header');
+    const player = frame?.querySelector<HTMLElement>('#mini-player-slot');
+    if (!frame || !bar || !player || typeof ResizeObserver === 'undefined') return;
+    const set = () => {
+      frame.style.setProperty('--bar-h', `${bar.offsetHeight}px`);
+      frame.style.setProperty('--player-h', `${player.offsetHeight}px`);
+    };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(bar);
+    ro.observe(player);
+    return () => ro.disconnect();
+  }, []);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -34,7 +52,7 @@ export function Frame() {
   );
 
   return (
-    <div className={styles.frame}>
+    <div className={styles.frame} ref={frameRef}>
       <TopBar
         className={styles.bar}
         start={<span className={styles.name}>Storyshelf</span>}
