@@ -1,4 +1,4 @@
-// STUB: tests-first. Behaviour is specified by session.test.ts. Do not edit the tests.
+import { AbsError, absFetch } from '../api/auth';
 import type { Chapter } from './chapters';
 import type { AudioTrack } from './timeline';
 
@@ -14,31 +14,90 @@ export interface PlaybackSession {
   displayAuthor: string;
 }
 
-export class UnsupportedFormatError extends Error {}
-
-/** POST /api/items/:id/play. deviceId persisted in localStorage key 'storyshelf.deviceId' (generated with crypto.randomUUID once; storage failures tolerated → in-memory id). clientName 'Storyshelf'. supportedMimeTypes passed in. playMethod !== 0 → throw UnsupportedFormatError. */
-export function openSession(_libraryItemId: string, _supportedMimeTypes: string[]): Promise<PlaybackSession> {
-  throw new Error('not implemented');
+export class UnsupportedFormatError extends Error {
+  constructor() {
+    super('Unsupported audio format');
+    this.name = 'UnsupportedFormatError';
+  }
 }
 
-/** POST /api/session/:id/sync. On 404, open a fresh session for the same item (same mime types) and sync that one; resolves with the session now active. Empty 200 body OK. */
-export function syncSession(
-  _s: PlaybackSession,
-  _p: { currentTime: number; timeListened: number; duration: number },
-  _supportedMimeTypes: string[],
+export interface Progress {
+  currentTime: number;
+  timeListened: number;
+  duration: number;
+}
+
+const DEVICE_KEY = 'storyshelf.deviceId';
+let memoryDeviceId: string | null = null;
+
+function deviceId(): string {
+  if (memoryDeviceId) return memoryDeviceId;
+  try {
+    const stored = localStorage.getItem(DEVICE_KEY);
+    if (stored) return (memoryDeviceId = stored);
+  } catch {
+    // Storage unavailable: fall through to an in-memory id.
+  }
+  memoryDeviceId = crypto.randomUUID();
+  try {
+    localStorage.setItem(DEVICE_KEY, memoryDeviceId);
+  } catch {
+    // Not persisted; the in-memory id still serves this page.
+  }
+  return memoryDeviceId;
+}
+
+const json = (body: unknown): RequestInit => ({
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
+/** POST /api/items/:id/play. playMethod !== 0 (not direct play) → UnsupportedFormatError, after closing that session. */
+export async function openSession(libraryItemId: string, supportedMimeTypes: string[]): Promise<PlaybackSession> {
+  const s = await absFetch<PlaybackSession>(
+    `/api/items/${libraryItemId}/play`,
+    json({
+      deviceInfo: { deviceId: deviceId(), clientName: 'Storyshelf' },
+      supportedMimeTypes,
+      mediaPlayer: 'html5',
+      forceDirectPlay: false,
+    }),
+  );
+  if (s.playMethod !== 0) {
+    await closeSession(s);
+    throw new UnsupportedFormatError();
+  }
+  return s;
+}
+
+/** POST /api/session/:id/sync. Only a 404 (server restarted) re-opens the session, once; resolves with the session now active. */
+export async function syncSession(
+  s: PlaybackSession,
+  p: Progress,
+  supportedMimeTypes: string[],
 ): Promise<PlaybackSession> {
-  throw new Error('not implemented');
+  const send = (id: string) => absFetch<void>(`/api/session/${id}/sync`, { ...json(p), keepalive: true });
+  try {
+    await send(s.id);
+    return s;
+  } catch (e) {
+    if (!(e instanceof AbsError && e.status === 404)) throw e;
+  }
+  const fresh = await openSession(s.libraryItemId, supportedMimeTypes);
+  await send(fresh.id);
+  return fresh;
 }
 
 /** POST /api/session/:id/close with keepalive: true. Never rejects (best effort). */
-export function closeSession(
-  _s: PlaybackSession,
-  _p?: { currentTime: number; timeListened: number; duration: number },
-): Promise<void> {
-  throw new Error('not implemented');
+export async function closeSession(s: PlaybackSession, p?: Progress): Promise<void> {
+  try {
+    await absFetch<void>(`/api/session/${s.id}/close`, { ...json(p ?? {}), keepalive: true });
+  } catch {
+    // Best effort.
+  }
 }
 
-/** `/public/session/${s.id}/track/${index}` */
-export function trackUrl(_s: PlaybackSession, _index: number): string {
-  throw new Error('not implemented');
+export function trackUrl(s: PlaybackSession, index: number): string {
+  return `/public/session/${s.id}/track/${index}`;
 }

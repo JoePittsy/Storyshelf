@@ -2,6 +2,7 @@ import { Outlet, useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { PillButton, Select, TopBar } from '@joepittsy/ui';
 import { logout } from '../api/auth';
+import { stop } from '../player/engine';
 import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
 import styles from './Frame.module.css';
 
@@ -32,7 +33,7 @@ export function Frame() {
         start={<span className={styles.name}>Storyshelf</span>}
         centre={picker}
         end={
-          <PillButton onClick={() => void logout().then(() => qc.setQueryData(['session'], null))}>Sign out</PillButton>
+          <PillButton onClick={() => void stop().then(logout).then(() => qc.setQueryData(['session'], null))}>Sign out</PillButton>
         }
       />
       <div className={styles.content}>

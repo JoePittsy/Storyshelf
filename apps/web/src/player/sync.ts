@@ -1,4 +1,3 @@
-// STUB: tests-first. Behaviour is specified by sync.test.ts. Do not edit the tests.
 export const SYNC_INTERVAL_S = 10;
 
 /** listened: real s since last sync; lastSynced: book time last sent */
@@ -7,33 +6,33 @@ export interface SyncClock {
   lastSynced: number;
 }
 
-export function startClock(_currentTime: number): SyncClock {
-  throw new Error('not implemented');
+export function startClock(currentTime: number): SyncClock {
+  return { listened: 0, lastSynced: currentTime };
 }
 
-export function tick(_c: SyncClock, _playingS: number): SyncClock {
-  throw new Error('not implemented');
+export function tick(c: SyncClock, playingS: number): SyncClock {
+  return { ...c, listened: c.listened + playingS };
 }
 
 /** listened >= SYNC_INTERVAL_S */
-export function dueWhilePlaying(_c: SyncClock): boolean {
-  throw new Error('not implemented');
+export function dueWhilePlaying(c: SyncClock): boolean {
+  return c.listened >= SYNC_INTERVAL_S;
 }
 
 /** On pause, seek-while-paused, hide or close: true if anything was listened or the position moved >= 1 s since lastSynced. */
-export function dueOnStop(_c: SyncClock, _currentTime: number): boolean {
-  throw new Error('not implemented');
+export function dueOnStop(c: SyncClock, currentTime: number): boolean {
+  return c.listened > 0 || Math.abs(currentTime - c.lastSynced) >= 1;
 }
 
-/** timeListened rounded to whole seconds is NOT required; send as-is */
+/** timeListened is sent as-is, unrounded. */
 export function payload(
-  _c: SyncClock,
-  _currentTime: number,
-  _duration: number,
+  c: SyncClock,
+  currentTime: number,
+  duration: number,
 ): { currentTime: number; timeListened: number; duration: number } {
-  throw new Error('not implemented');
+  return { currentTime, timeListened: c.listened, duration };
 }
 
-export function markSynced(_currentTime: number): SyncClock {
-  throw new Error('not implemented');
+export function markSynced(currentTime: number): SyncClock {
+  return { listened: 0, lastSynced: currentTime };
 }

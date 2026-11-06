@@ -1,4 +1,3 @@
-// STUB: tests-first. Behaviour is specified by timeline.test.ts. Do not edit the tests.
 export interface AudioTrack {
   index: number;
   startOffset: number;
@@ -7,21 +6,26 @@ export interface AudioTrack {
   mimeType: string;
 }
 
-export function totalDuration(_tracks: AudioTrack[]): number {
-  throw new Error('not implemented');
+export function totalDuration(tracks: AudioTrack[]): number {
+  return tracks.reduce((sum, t) => sum + t.duration, 0);
 }
 
 /** Which track plays book time t, and where in it. Clamps t to [0,total]. At an exact boundary, use the later track. t >= total → last track at its end. */
-export function locate(_tracks: AudioTrack[], _t: number): { track: AudioTrack; offset: number } {
-  throw new Error('not implemented');
+export function locate(tracks: AudioTrack[], t: number): { track: AudioTrack; offset: number } {
+  const last = tracks[tracks.length - 1];
+  if (!last) throw new Error('Book has no audio tracks');
+  if (t >= totalDuration(tracks)) return { track: last, offset: last.duration };
+  const time = Math.max(0, t);
+  const track = tracks.filter((x) => x.startOffset <= time).pop() ?? tracks[0] ?? last;
+  return { track, offset: time - track.startOffset };
 }
 
 /** Book time for a position inside a track. */
-export function toBookTime(_track: AudioTrack, _offset: number): number {
-  throw new Error('not implemented');
+export function toBookTime(track: AudioTrack, offset: number): number {
+  return track.startOffset + offset;
 }
 
 /** Clamp a seek target (e.g. currentTime ± skip) to [0,total]. */
-export function clampSeek(_t: number, _total: number): number {
-  throw new Error('not implemented');
+export function clampSeek(t: number, total: number): number {
+  return Math.min(Math.max(t, 0), Math.max(total, 0));
 }
