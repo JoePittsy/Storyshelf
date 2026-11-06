@@ -67,9 +67,23 @@ export function ImageTile({
           <Artwork src={imageUrl} fit={artFit} placeholderClassName={styles.ph} />
           {overlay}
         </span>
-        <span className={styles.title}>{title}</span>
-        {sub && <span className={styles.sub}>{sub}</span>}
-        {meta && <span className={styles.sub}>{meta}</span>}
+        {/* The lines are stacked blocks; read as one name, "Title" and "Author" would run together, so each line ends in a
+            hidden comma. */}
+        <span className={styles.title} title={title}>
+          {title}
+          {(sub || meta) && <span className={styles.sep}>,</span>}
+        </span>
+        {sub && (
+          <span className={styles.sub} title={sub}>
+            {sub}
+            {meta && <span className={styles.sep}>,</span>}
+          </span>
+        )}
+        {meta && (
+          <span className={styles.sub} title={meta}>
+            {meta}
+          </span>
+        )}
       </Main>
       {onAdd && (
         <AddButton variant="corner" className={styles.add} label={addLabel ?? `Add ${title}`} onClick={onAdd} />

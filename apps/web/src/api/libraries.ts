@@ -27,6 +27,8 @@ export interface LibraryItem {
     };
     tags?: string[];
     ebookFormat?: string;
+    /** Seconds; ABS's minified item carries it, and the in-progress list reads it. */
+    duration?: number;
   };
 }
 
@@ -46,6 +48,8 @@ export interface SearchResponse {
 
 export interface Progress {
   progress: number;
+  /** Seconds into the book. */
+  currentTime?: number;
   isFinished: boolean;
   startedAt?: number;
   finishedAt?: number | null;
@@ -86,7 +90,7 @@ export function itemsUrl(libraryId: string, sort: SortKey, page: number, filter?
 /** An author's photo, or undefined when they have none (the avatar then shows initials). ABS serves it without auth. */
 export function authorImageUrl(
   a: { id: string; imagePath?: string | null; updatedAt?: number },
-  width = 200,
+  width = 200
 ): string | undefined {
   return a.imagePath ? `/api/authors/${a.id}/image?width=${width}&format=webp&ts=${a.updatedAt ?? 0}` : undefined;
 }
@@ -109,6 +113,7 @@ export function progressByItem(list: MediaProgress[] = []): Map<string, Progress
     if (p.episodeId) continue;
     map.set(p.libraryItemId, {
       progress: p.progress,
+      currentTime: p.currentTime,
       isFinished: p.isFinished,
       startedAt: p.startedAt,
       finishedAt: p.finishedAt,
@@ -196,8 +201,7 @@ const toBase64 = (text: string): string => {
  * An ABS items filter: `group.` plus the base64 of the value, URL-encoded (ABS runs decodeURIComponent
  * before it decodes the base64). Series and authors filter by id, narrators by name.
  */
-export const absFilter = (group: string, value: string): string =>
-  `${group}.${encodeURIComponent(toBase64(value))}`;
+export const absFilter = (group: string, value: string): string => `${group}.${encodeURIComponent(toBase64(value))}`;
 
 /** The filters worth fetching for a search response: matched authors, narrators and series, capped. */
 export function searchFilters(res: SearchResponse): string[] {
@@ -275,4 +279,3 @@ export const useLibrarySearch = (libraryId: string | undefined, q: string) =>
       };
     },
   });
-

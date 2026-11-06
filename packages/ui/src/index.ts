@@ -18,6 +18,7 @@ export { PersonCard } from './components/PersonCard';
 export { PersonChip } from './components/PersonChip';
 export { PillButton } from './components/PillButton';
 export { ProgressBar } from './components/ProgressBar';
+export { ResumeHero } from './components/ResumeHero';
 export { SearchField } from './components/SearchField';
 export { SectionCard, SeeAll } from './components/SectionCard';
 export { Select } from './components/Select';

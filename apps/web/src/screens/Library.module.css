@@ -4,29 +4,45 @@
   flex-direction: column;
   gap: 1.4em;
 }
-.controls {
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* One row of tools: search, sort, then LibraryFilters' controls (its root is display: contents, so they join this
+   row). The "More filters" button takes the free space before it, so it sits at the far end, never alone. */
+.toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.8em;
 }
-.controls > :first-child {
+.toolbar > :first-child {
   flex: 1 1 14em;
-  max-width: 32em;
+  max-width: 28em;
 }
-.controls > :nth-child(2) {
-  flex: 0 1 14em;
+.toolbar > :nth-child(2) {
+  flex: 0 1 13em;
 }
-/* Phone: search takes the full row, sort sits under it. */
-@container (max-width: 30em) {
-  .controls > * {
+/* Phone: search takes the full row; sort and the Filters button share the next. */
+@container (max-width: 40em) {
+  .toolbar > :first-child {
     flex: 1 1 100%;
     max-width: none;
   }
+  .toolbar > :nth-child(2) {
+    flex: 1 1 0;
+  }
 }
 .heading {
-  margin: 0;
-  font-size: var(--fs-title-card);
+  margin: 0.4em 0 -0.4em;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  letter-spacing: -0.015em;
   overflow-wrap: anywhere;
 }
 /* Matching authors, narrators and series: a wrapping row of pills above the books. */
@@ -43,13 +59,10 @@
   max-width: 100%;
 }
 
-.count,
 .more {
   margin: 0;
   color: var(--text-3);
   font-size: var(--fs-label);
-}
-.more {
   text-align: center;
 }
 .moreButton {

@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react';
+import { Fragment, useId, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import styles from './SegmentedControl.module.css';
 
@@ -53,28 +53,30 @@ export function SegmentedControl<T extends string>({ label, value, onChange, opt
       onKeyDown={onKeyDown}
     >
       {options.map((o, i) => (
-        <button
-          key={o.value}
-          ref={(el) => {
-            refs.current[i] = el;
-          }}
-          type="button"
-          role="radio"
-          className={styles.seg}
-          aria-checked={o.value === value}
-          tabIndex={o.value === value ? 0 : -1}
-          disabled={o.disabled}
-          title={o.disabled ? o.reason : undefined}
-          aria-describedby={o.disabled && o.reason ? `${id}-${o.value}` : undefined}
-          onClick={() => onChange(o.value)}
-        >
-          {o.label}
+        <Fragment key={o.value}>
+          <button
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            type="button"
+            role="radio"
+            className={styles.seg}
+            aria-checked={o.value === value}
+            tabIndex={o.value === value ? 0 : -1}
+            disabled={o.disabled}
+            title={o.disabled ? o.reason : undefined}
+            aria-describedby={o.disabled && o.reason ? `${id}-${o.value}` : undefined}
+            onClick={() => onChange(o.value)}
+          >
+            {o.label}
+          </button>
+          {/* Outside the button, so the reason describes the option and never becomes part of its name. */}
           {o.disabled && o.reason && (
             <span id={`${id}-${o.value}`} className={styles.srOnly}>
               {o.reason}
             </span>
           )}
-        </button>
+        </Fragment>
       ))}
     </div>
   );

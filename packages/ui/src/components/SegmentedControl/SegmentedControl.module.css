@@ -21,6 +21,13 @@
     color var(--dur-fast) var(--ease-fast),
     background var(--dur-fast) var(--ease-fast);
 }
+/* Touch: a segment is a full 44px target; the group grows to hold it. */
+@media (pointer: coarse) {
+  .seg {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
 .seg:hover:not(:disabled, [aria-checked='true']) {
   color: var(--text);
   background: var(--row-hover);

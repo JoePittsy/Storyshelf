@@ -28,11 +28,18 @@ const DONE = book('3', 'Finished fantasy', ['Fantasy']);
 function mockAbs(items = [FANTASY, DONE]) {
   absFetch.mockImplementation((path: string) => {
     const u = new URL(path, 'http://x');
-    if (path === '/api/libraries') return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
+    if (path === '/api/libraries')
+      return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
     if (path === '/api/me')
       return Promise.resolve({ mediaProgress: [{ libraryItemId: '3', progress: 1, isFinished: true }] });
     if (u.pathname.endsWith('/filterdata'))
-      return Promise.resolve({ genres: ['Fantasy', 'Horror'], tags: [], languages: ['English'], publishers: [], publishedDecades: [] });
+      return Promise.resolve({
+        genres: ['Fantasy', 'Horror'],
+        tags: [],
+        languages: ['English'],
+        publishers: [],
+        publishedDecades: [],
+      });
     if (u.pathname.endsWith('/search'))
       return Promise.resolve({
         book: [FANTASY, HORROR, DONE].map((libraryItem) => ({ libraryItem })),
@@ -40,7 +47,8 @@ function mockAbs(items = [FANTASY, DONE]) {
         narrators: [{ name: 'Smith & Jones' }],
         series: [{ series: { id: 's1', name: 'The Sandman' } }],
       });
-    if (u.pathname.endsWith('/items')) return Promise.resolve({ results: items, total: items.length, limit: 48, page: 0 });
+    if (u.pathname.endsWith('/items'))
+      return Promise.resolve({ results: items, total: items.length, limit: 48, page: 0 });
     return Promise.reject(new Error(`unexpected ${path}`));
   });
 }
@@ -61,14 +69,20 @@ function renderAt(url: string) {
         </Routes>
         <Where />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
 const itemsCalls = () => absFetch.mock.calls.map((c) => c[0]).filter((p) => p.includes('/items?'));
 
 beforeEach(() => {
-  vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} });
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  );
 });
 afterEach(() => {
   cleanup();
@@ -109,15 +123,22 @@ describe('REQ-37 REQ-38 REQ-41 REQ-42 filters from the URL', () => {
     expect(screen.queryByRole('list', { name: 'Active filters' })).not.toBeInTheDocument();
   });
 
-  it('shows no result count while a filter is applied here, only for a lone server filter', async () => {
+  it('heads the grid with what it lists and how many: the server total for a lone server filter, what is loaded for a client one', async () => {
     mockAbs();
     renderAt('/?library=L1&genre=Fantasy');
-    expect(await screen.findByText('2 books')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Matching books · 2' })).toBeInTheDocument();
     cleanup();
     mockAbs();
     renderAt('/?library=L1&genre=Fantasy&progress=finished');
     await screen.findByText('Finished fantasy');
-    expect(screen.queryByText(/^\d+ books?$/)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Matching books · 1' })).toBeInTheDocument();
+  });
+
+  it('has a page heading, and an All books heading with the total when nothing is narrowed', async () => {
+    mockAbs();
+    renderAt('/?library=L1');
+    expect(await screen.findByRole('heading', { level: 2, name: 'All books · 2' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Books' })).toBeInTheDocument();
   });
 
   it('says so when nothing matches', async () => {
@@ -137,17 +158,15 @@ describe('narrator filter', () => {
     const f = new URL(itemsCalls()[0] ?? '', 'http://x').searchParams.get('filter') ?? '';
     expect(Buffer.from(decodeURIComponent(f.split('.')[1] ?? ''), 'base64').toString('utf8')).toBe('Zoë Wanamaker');
     expect(f).toMatch(/^narrators\./);
-    expect(screen.getByRole('heading', { name: 'Narrated by Zoë Wanamaker' })).toBeInTheDocument();
-    expect(screen.getByText('2 books')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Narrated by Zoë Wanamaker · 2' })).toBeInTheDocument();
   });
 
-  it('with Hide finished: narrator goes to ABS, progress is applied here, no count', async () => {
+  it('with Hide finished: narrator goes to ABS and progress is applied here', async () => {
     mockAbs();
     renderAt('/?library=L1&narrator=Jeff%20Hays&progress=hide-finished');
     await screen.findByText('Mistborn');
     expect(screen.queryByText('Finished fantasy')).not.toBeInTheDocument();
     expect(new URL(itemsCalls()[0] ?? '', 'http://x').searchParams.get('filter')).toMatch(/^narrators\./);
-    expect(screen.queryByText(/^\d+ books?$/)).not.toBeInTheDocument();
   });
 
   it('removing the chip clears the narrator, Clear all too, and nothing is remembered', async () => {
@@ -213,11 +232,16 @@ describe('REQ-32 search chips', () => {
     expect(author).toHaveAttribute('href', '/author/a1?library=L1');
     expect(screen.getByRole('link', { name: /Narrator:\s*Smith & Jones/ })).toHaveAttribute(
       'href',
-      '/?library=L1&narrator=Smith+%26+Jones',
+      '/?library=L1&narrator=Smith+%26+Jones'
     );
-    expect(screen.getByRole('link', { name: /Series:\s*The Sandman/ })).toHaveAttribute('href', '/series/s1?library=L1');
+    expect(screen.getByRole('link', { name: /Series:\s*The Sandman/ })).toHaveAttribute(
+      'href',
+      '/series/s1?library=L1'
+    );
     expect(await screen.findByText('Mistborn')).toBeInTheDocument();
-    expect(author.compareDocumentPosition(screen.getByText('Mistborn')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      author.compareDocumentPosition(screen.getByText('Mistborn')) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it('drops the search text when a chip is followed, and does not write it back', async () => {

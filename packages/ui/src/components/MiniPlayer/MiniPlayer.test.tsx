@@ -33,3 +33,18 @@ describe('MiniPlayer seeking', () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 });
+
+describe('MiniPlayer names and readout', () => {
+  it('names the open button with a separator between the verb and the title', () => {
+    cleanup();
+    render(<MiniPlayer {...base} title="The Velveteen Rabbit" onOpen={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Open player: The Velveteen Rabbit' })).toBeInTheDocument();
+  });
+
+  it('reads time left once, without a minus sign beside the word left', () => {
+    cleanup();
+    const { container } = render(<MiniPlayer {...base} onOpen={() => {}} />);
+    expect(container.textContent).toContain('50:00 left');
+    expect(container.textContent).not.toContain('−');
+  });
+});

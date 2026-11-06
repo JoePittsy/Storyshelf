@@ -1,29 +1,25 @@
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9em;
-}
-/* Phone: just the one button, full width. */
+/* No box of its own: the controls and the button join the toolbar's row in Library, and the active chips wrap
+   beneath them on a row of their own. */
+.root,
 .row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.8em;
+  display: contents;
 }
 .row > :not(.more) {
-  flex: 0 1 14em;
+  flex: 0 1 12em;
 }
+/* Phone: the button sits beside Sort. */
 .more {
-  flex: 1 1 100%;
+  flex: none;
+  min-height: 44px;
 }
-/* Wide: the selects and the button share a row, the button at the end. */
+/* Wide: the button takes the free space before it, so it ends the row. */
 @media (width >= 48em) {
   .more {
-    flex: none;
-    margin-left: auto;
+    margin-inline-start: auto;
   }
 }
 .chips {
+  flex: 1 1 100%;
   list-style: none;
   margin: 0;
   padding: 0;

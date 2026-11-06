@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -33,7 +33,8 @@ const PODCAST = book('p', 'A podcast', 'L1', { mediaType: 'podcast' });
 function serve(inProgress: object[]) {
   absFetch.mockImplementation((path: string) => {
     const u = new URL(path, 'http://x');
-    if (path === '/api/libraries') return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
+    if (path === '/api/libraries')
+      return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
     if (path === '/api/me')
       return Promise.resolve({
         mediaProgress: [
@@ -69,13 +70,19 @@ function renderAt(url: string, onPlay = vi.fn()) {
         </Routes>
         <Where />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
   return onPlay;
 }
 
 beforeEach(() => {
-  vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} });
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  );
 });
 afterEach(() => {
   cleanup();
@@ -86,35 +93,56 @@ afterEach(() => {
 
 const shelf = () => screen.queryByRole('heading', { name: 'Continue listening' });
 
-describe('REQ-54 Continue listening shelf', () => {
-  it('lists in-progress books of this library, most recently played first', async () => {
+const hero = () => screen.queryByRole('region', { name: 'Resume listening' });
+
+describe('REQ-54 Resume hero and Continue listening shelf', () => {
+  it('puts the most recently played book in the hero and the rest of this library in the shelf', async () => {
     serve([MYTHOS, HEROES, OTHER_LIBRARY, PODCAST, HIDDEN]);
     renderAt('/');
     const heading = await screen.findByRole('heading', { name: 'Continue listening' });
     const row = heading.parentElement?.nextElementSibling as HTMLElement;
     const titles = Array.from(row.querySelectorAll('a')).map((a) => a.textContent);
-    expect(titles[0]).toContain('Mythos');
-    expect(titles[1]).toContain('Heroes');
-    // Another library's book, a podcast and one hidden from Continue listening stay off the shelf.
-    expect(titles).toHaveLength(2);
+    expect(within(hero() as HTMLElement).getByRole('link', { name: 'Mythos' })).toBeInTheDocument();
+    // Another library's book, a podcast and one hidden from Continue listening stay off both.
+    expect(titles).toHaveLength(1);
+    expect(titles[0]).toContain('Heroes');
   });
 
-  it('resumes straight away from the play button, without opening the book', async () => {
+  it('resumes the hero book straight away, without opening it', async () => {
     serve([MYTHOS, HEROES]);
     const onPlay = renderAt('/');
-    await userEvent.click(await screen.findByRole('button', { name: 'Resume Mythos' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Resume: Mythos' }));
     expect(onPlay).toHaveBeenCalledExactlyOnceWith('m');
     expect(screen.getByTestId('where')).toHaveTextContent(/^\/(\?.*)?$/);
   });
 
-  it('opens the book from the tile itself', async () => {
+  it('resumes a shelf book from its tile play button', async () => {
+    serve([MYTHOS, HEROES]);
+    const onPlay = renderAt('/');
+    await userEvent.click(await screen.findByRole('button', { name: 'Resume Heroes' }));
+    expect(onPlay).toHaveBeenCalledExactlyOnceWith('h');
+  });
+
+  it('opens the book from the hero title', async () => {
     serve([MYTHOS]);
     const onPlay = renderAt('/');
-    const heading = await screen.findByRole('heading', { name: 'Continue listening' });
-    const tile = heading.parentElement?.nextElementSibling?.querySelector('a') as HTMLElement;
-    await userEvent.click(tile);
+    await userEvent.click(await screen.findByRole('link', { name: 'Mythos' }));
     expect(screen.getByTestId('where')).toHaveTextContent('/book/m');
     expect(onPlay).not.toHaveBeenCalled();
+  });
+
+  it('with one book in progress the hero has it and there is no shelf', async () => {
+    serve([MYTHOS]);
+    renderAt('/');
+    await screen.findByRole('region', { name: 'Resume listening' });
+    expect(shelf()).not.toBeInTheDocument();
+  });
+
+  it('has no hero when nothing is in progress: the library leads', async () => {
+    serve([]);
+    renderAt('/');
+    await screen.findByText('Mythos');
+    expect(hero()).not.toBeInTheDocument();
   });
 
   it('is hidden when nothing is in progress', async () => {
@@ -129,6 +157,7 @@ describe('REQ-54 Continue listening shelf', () => {
     renderAt('/?q=heroes');
     await screen.findByText('Heroes');
     expect(shelf()).not.toBeInTheDocument();
+    expect(hero()).not.toBeInTheDocument();
   });
 
   it('is hidden while a filter is on', async () => {
@@ -147,7 +176,7 @@ describe('REQ-54 Continue listening shelf', () => {
         ? new Promise((r) => {
             release = r;
           })
-        : (inner?.(path) as Promise<unknown>),
+        : (inner?.(path) as Promise<unknown>)
     );
     renderAt('/');
     // The books are loaded, but none is shown while the shelf's data is outstanding.
@@ -157,7 +186,7 @@ describe('REQ-54 Continue listening shelf', () => {
     release({ libraryItems: [MYTHOS] });
     // Then the shelf and the grid arrive together.
     expect(await screen.findByText('Heroes')).toBeInTheDocument();
-    expect(shelf()).toBeInTheDocument();
+    expect(hero()).toBeInTheDocument();
   });
 
   it('shows the grid with no shelf, in one go, when nothing is in progress', async () => {
@@ -170,7 +199,15 @@ describe('REQ-54 Continue listening shelf', () => {
   it('stays out of the way when ABS fails to list in-progress books', async () => {
     absFetch.mockImplementation((path: string) => {
       if (path.startsWith('/api/me/items-in-progress')) return Promise.reject(new auth.AbsError(500, 'boom'));
-      return Promise.resolve({ libraries: [], mediaProgress: [], results: [MYTHOS], total: 1, limit: 48, page: 0, genres: [] });
+      return Promise.resolve({
+        libraries: [],
+        mediaProgress: [],
+        results: [MYTHOS],
+        total: 1,
+        limit: 48,
+        page: 0,
+        genres: [],
+      });
     });
     renderAt('/');
     await waitFor(() => expect(absFetch).toHaveBeenCalled());

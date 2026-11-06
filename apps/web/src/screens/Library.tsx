@@ -31,8 +31,8 @@ import {
 import type { Filters } from '../api/filters';
 import { useInProgress } from '../api/history';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
-import { ContinueShelf } from '../components/ContinueShelf';
 import { LibraryFilters } from '../components/LibraryFilters';
+import { ResumeHome } from '../components/ResumeHome';
 import styles from './Library.module.css';
 
 const SORT_OPTIONS = SORTS.map((s) => ({ value: s.key, label: s.label }));
@@ -105,7 +105,7 @@ export function Library({ onPlay = noop }: Props) {
           else next.delete('q');
           return next;
         },
-        { replace: true },
+        { replace: true }
       );
     }, 300);
     return () => clearTimeout(t);
@@ -113,14 +113,11 @@ export function Library({ onPlay = noop }: Props) {
 
   const list: LibraryItem[] = useMemo(
     () => (searching ? (search.data?.books ?? []) : (items.data?.pages.flatMap((p) => p.results) ?? [])),
-    [searching, search.data, items.data],
+    [searching, search.data, items.data]
   );
   const tiles = useMemo(() => {
     const map = progress.data ?? new Map();
-    return mergeProgress(
-      localActive ? list.filter((i) => matchesFilters(i, local, map)) : list,
-      map,
-    );
+    return mergeProgress(localActive ? list.filter((i) => matchesFilters(i, local, map)) : list, map);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `local` is fully described by localKey
   }, [list, progress.data, localActive, localKey]);
 
@@ -157,9 +154,23 @@ export function Library({ onPlay = noop }: Props) {
   };
   const loadingMore = short && (isFetchingNextPage || pagesLoaded < budget);
 
+  // The grid's own heading: what it lists, and how many. The count is the server's total only while nothing is
+  // narrowed here; a client-side filter or a search counts what it found, and says nothing while more is still to load.
+  const counted = searching ? tiles.length : localActive ? (hasNextPage ? undefined : tiles.length) : total;
+  const heading = searching
+    ? 'Search results'
+    : filters.narrator
+      ? `Narrated by ${filters.narrator}`
+      : filtered
+        ? 'Matching books'
+        : 'All books';
+
   return (
     <main className={styles.page}>
-      <div className={styles.controls}>
+      <h1 className={styles.srOnly}>Books</h1>
+      {/* Not while searching or filtering: it would sit among narrowed results. */}
+      {showShelf && <ResumeHome libraryId={libraryId} onPlay={onPlay} />}
+      <div className={styles.toolbar}>
         <SearchField label="Search books" placeholder="Search title or author" value={text} onChange={setText} />
         {!searching && (
           <Select
@@ -173,37 +184,43 @@ export function Library({ onPlay = noop }: Props) {
                   next.set('sort', v);
                   return next;
                 },
-                { replace: true },
+                { replace: true }
               )
             }
           />
         )}
+        <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
       </div>
-      <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
-      {/* Not while searching or filtering: it would sit among narrowed results. */}
-      {showShelf && <ContinueShelf libraryId={libraryId} onPlay={onPlay} />}
-      {filters.narrator && <h2 className={styles.heading}>Narrated by {filters.narrator}</h2>}
-      {!searching && !loading && !failed && !localActive && total !== undefined && (
-        <p className={styles.count}>{total} {total === 1 ? 'book' : 'books'}</p>
+      {!loading && !failed && tiles.length > 0 && (
+        <h2 className={styles.heading}>
+          {heading}
+          {counted !== undefined && ` · ${counted}`}
+        </h2>
       )}
       {chips.length > 0 && (
         <ul className={styles.chips} aria-label="Matching authors, narrators and series">
           {chips.map((c) => (
             <li key={c.key}>
-              <Chip label={c.label} kind={c.kind} avatar={c.avatar} href={c.href} onOpen={() => void navigate(c.href)} />
+              <Chip
+                label={c.label}
+                kind={c.kind}
+                avatar={c.avatar}
+                href={c.href}
+                onOpen={() => void navigate(c.href)}
+              />
             </li>
           ))}
         </ul>
       )}
       {failed ? (
-        <EmptyState title="Can't load the library">
-          Check your connection and reload.
-        </EmptyState>
+        <EmptyState title="Can't load the library">Check your connection and reload.</EmptyState>
       ) : loading ? (
         <BookGridSkeleton />
       ) : tiles.length === 0 ? (
         loadingMore ? (
-          <p role="status" className={styles.more}>Loading more…</p>
+          <p role="status" className={styles.more}>
+            Loading more…
+          </p>
         ) : filtered && !searching && hasNextPage ? (
           <EmptyState
             title="No matches in the books loaded so far"
@@ -219,9 +236,7 @@ export function Library({ onPlay = noop }: Props) {
             Try removing one.
           </EmptyState>
         ) : searching ? (
-          <EmptyState title="No results">
-            Nothing matches “{q}”. Check the spelling or try a shorter search.
-          </EmptyState>
+          <EmptyState title="No results">Nothing matches “{q}”. Check the spelling or try a shorter search.</EmptyState>
         ) : (
           <EmptyState title="This library is empty">
             Add audiobooks on your server and they will appear here.
@@ -233,7 +248,11 @@ export function Library({ onPlay = noop }: Props) {
             tiles={tiles}
             onEndReached={searching || !hasNextPage || isFetchingNextPage || loadingMore ? undefined : loadMore}
           />
-          {loadingMore && <p role="status" className={styles.more}>Loading more…</p>}
+          {loadingMore && (
+            <p role="status" className={styles.more}>
+              Loading more…
+            </p>
+          )}
           {short && !loadingMore && !isFetchingNextPage && (
             <PillButton className={styles.moreButton} onClick={loadMore}>
               Load more

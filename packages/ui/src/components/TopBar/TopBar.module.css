@@ -18,6 +18,10 @@
   gap: 0.6em;
   flex: none;
 }
+/* With no centre slot there is no spare-width element to push the end across, so the end takes the free space itself. */
+.end {
+  margin-inline-start: auto;
+}
 .centre {
   flex: 1;
   min-width: 0;
