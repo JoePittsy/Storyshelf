@@ -57,6 +57,35 @@
   opacity: 0.45;
 }
 
+/* The hovered chapter, white and lifted out of the bar. A sibling of the track (which clips), the track's
+   height and centred on it, scaled up from its bottom edge so it rises. left/width swap instantly; only
+   transform and opacity animate. Never takes the pointer. */
+.segment {
+  position: absolute;
+  top: 50%;
+  height: 0.22em;
+  margin-top: -0.11em;
+  background: var(--on-art);
+  border-radius: var(--r-pill);
+  box-shadow: var(--art-shadow);
+  transform-origin: bottom;
+  transform: scaleY(2.2);
+  pointer-events: none;
+  /* Above the preview, whose wide shadow would otherwise grey it. */
+  z-index: 1;
+  animation: lift var(--dur-fast) var(--ease-fast);
+}
+@keyframes lift {
+  from {
+    opacity: 0;
+    transform: scaleY(1);
+  }
+}
+.slim .segment {
+  height: 0.25em;
+  margin-top: -0.125em;
+}
+
 /* Hover and touch preview: frosted, above the bar, its edge pinned to the bar ends so it stays on screen. */
 .preview {
   position: absolute;
@@ -103,6 +132,9 @@
   .track,
   .fill {
     transition: none;
+  }
+  .segment {
+    animation: none;
   }
   .seek:hover:not([aria-disabled='true']) .track,
   .slim:focus-visible .track {

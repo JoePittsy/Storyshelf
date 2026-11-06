@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { fmtTime } from '../../lib/fmtTime';
-import { markerAt, markerPercents, showTicks } from '../../lib/seekMarkers';
+import { markerAt, markerPercents, segmentAt, showTicks } from '../../lib/seekMarkers';
 import type { SeekMarker } from '../../lib/seekMarkers';
 import styles from './SeekBar.module.css';
 
@@ -96,6 +96,9 @@ export function SeekBar({
   const hoverMs = shown === null ? 0 : shown * duration;
   const hoverLabel = shown === null ? undefined : markerAt(markers, hoverMs)?.label;
 
+  // The chapter under the pointer, lifted out of the bar. Not on read-only bars (nothing to point at).
+  const seg = !readOnly && (markers?.length ?? 0) >= 2 && shown !== null ? segmentAt(markers, hoverMs, duration) : null;
+
   return (
     <div
       ref={root}
@@ -134,6 +137,14 @@ export function SeekBar({
           />
         ))}
       </div>
+      {seg && (
+        <span
+          key={seg.index}
+          className={styles.segment}
+          style={{ left: `${(seg.start / duration) * 100}%`, width: `${((seg.end - seg.start) / duration) * 100}%` }}
+          aria-hidden="true"
+        />
+      )}
       {shown !== null && (
         <span
           className={styles.preview}

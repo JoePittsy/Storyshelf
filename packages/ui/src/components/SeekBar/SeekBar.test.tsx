@@ -126,3 +126,25 @@ describe('SeekBar markers', () => {
     expect(screen.queryByText(/Chapter 2: Middle/)).toBeNull();
   });
 });
+
+describe('SeekBar chapter highlight', () => {
+  const markers = [
+    { at: 0, label: 'One' },
+    { at: 100000, label: 'Two' },
+  ];
+  const view = (props: object) => {
+    cleanup();
+    const { container } = render(<SeekBar position={0} duration={200000} onSeek={vi.fn()} {...props} />);
+    return container.querySelector<HTMLElement>('[class*="segment"]');
+  };
+
+  it('lifts the hovered chapter, marker to next marker, and only when it should', () => {
+    const s = view({ markers, previewAt: 150000 })!;
+    expect(s).toHaveAttribute('aria-hidden', 'true');
+    expect(s.style.left).toBe('50%');
+    expect(s.style.width).toBe('50%');
+    expect(view({ markers })).toBeNull();
+    expect(view({ markers: [markers[0]], previewAt: 50000 })).toBeNull();
+    expect(view({ markers, previewAt: 50000, readOnly: true })).toBeNull();
+  });
+});

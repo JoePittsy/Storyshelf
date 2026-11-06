@@ -26,3 +26,20 @@ export function markerAt(markers: SeekMarker[] | undefined, ms: number): SeekMar
   for (const m of markers ?? []) if (m.at <= ms && (!found || m.at >= found.at)) found = m;
   return found;
 }
+
+/** The chapter segment containing `ms`: from its marker to the next one (or `duration`). Null before the first marker or with none. */
+export function segmentAt(
+  markers: SeekMarker[] | undefined,
+  ms: number,
+  duration: number,
+): { start: number; end: number; index: number } | null {
+  const sorted = [...(markers ?? [])].sort((a, b) => a.at - b.at);
+  let index = -1;
+  sorted.forEach((m, i) => {
+    if (m.at <= ms) index = i;
+  });
+  if (index < 0) return null;
+  const start = sorted[index].at;
+  const end = sorted.slice(index + 1).find((m) => m.at > start)?.at ?? duration;
+  return { start, end, index };
+}

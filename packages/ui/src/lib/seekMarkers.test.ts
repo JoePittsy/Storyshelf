@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markerAt, markerPercents, showTicks } from './seekMarkers';
+import { markerAt, markerPercents, segmentAt, showTicks } from './seekMarkers';
 import type { SeekMarker } from './seekMarkers';
 
 const m = (at: number, label = `c${at}`): SeekMarker => ({ at, label });
@@ -49,5 +49,23 @@ describe('markerAt', () => {
   it('is undefined with an empty list', () => {
     expect(markerAt([], 500)).toBeUndefined();
     expect(markerAt(undefined, 500)).toBeUndefined();
+  });
+});
+
+describe('segmentAt', () => {
+  const list = [m(1000, 'one'), m(2000, 'two'), m(3000, 'three')];
+  it('is null before the first marker and with none', () => {
+    expect(segmentAt(list, 500, 4000)).toBeNull();
+    expect(segmentAt([], 500, 4000)).toBeNull();
+    expect(segmentAt(undefined, 500, 4000)).toBeNull();
+  });
+  it('runs from a marker to the next, the boundary belonging to the later one', () => {
+    expect(segmentAt(list, 1000, 4000)).toEqual({ start: 1000, end: 2000, index: 0 });
+    expect(segmentAt(list, 1999, 4000)).toEqual({ start: 1000, end: 2000, index: 0 });
+    expect(segmentAt(list, 2000, 4000)).toEqual({ start: 2000, end: 3000, index: 1 });
+  });
+  it('runs the last marker to the duration', () => {
+    expect(segmentAt(list, 3500, 4000)).toEqual({ start: 3000, end: 4000, index: 2 });
+    expect(segmentAt(list, 4000, 4000)).toEqual({ start: 3000, end: 4000, index: 2 });
   });
 });

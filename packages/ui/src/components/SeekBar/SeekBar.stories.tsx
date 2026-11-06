@@ -14,12 +14,14 @@ function Row({
   duration,
   markers,
   previewAt,
+  slim,
   onSeek,
 }: {
   position: number;
   duration: number;
   markers?: SeekMarker[];
   previewAt?: number;
+  slim?: boolean;
   onSeek: (ms: number) => void;
 }) {
   const [position, setPosition] = useState(initial);
@@ -31,6 +33,7 @@ function Row({
         duration={duration}
         markers={markers}
         previewAt={previewAt}
+        slim={slim}
         onSeek={(ms) => {
           setPosition(ms);
           onSeek(ms);
@@ -64,5 +67,7 @@ const chapters = (n: number): SeekMarker[] =>
 export const WithChapterTicks: Story = { args: { markers: chapters(12) } };
 /** The hover preview held open at 1:30, as it looks under a pointer or a dragging finger. */
 export const PreviewOpen: Story = { args: { markers: chapters(12), previewAt: 90000 } };
+/** The same, in the slim track the mini player uses: chapter 5 (1:30) white and lifted. */
+export const PreviewOpenSlim: Story = { args: { markers: chapters(12), previewAt: 90000, slim: true } };
 /** A long book: 64 chapters do not fit this bar at 10px each, so no ticks are drawn. */
 export const ManyChapterTicks: Story = { args: { markers: chapters(64) } };
