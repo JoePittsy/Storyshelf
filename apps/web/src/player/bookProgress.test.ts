@@ -5,7 +5,8 @@
  * (MediaProgress.applyProgressUpdate and User.createUpdateMediaProgressFromPayload), including the awkward parts that
  * were confirmed against the running server: un-finishing zeroes the place and ignores a place sent with it; moving a
  * finished book's place un-finishes it; a place in the last 10 seconds finishes it; DELETE takes the record's id;
- * `createdAt` is honoured only on create; `lastUpdate` overwrites the record's update time.
+ * `createdAt` is honoured only on create; `lastUpdate` overwrites the record's update time; a `progress` that matches the
+ * place (currentTime / duration) is ignored.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,6 +38,8 @@ let calls: { method: string; url: string; body?: Record<string, unknown> }[];
 
 const tick = () => (clock += 1000);
 
+const placeProgress = (r: Row) => (r.duration ? Math.max(0, Math.min(r.currentTime / r.duration, 1)) : 0);
+
 /** applyProgressUpdate, as ABS 2.37.2 has it (books only). */
 function apply(r: Row, p: Record<string, unknown>): void {
   const before = r.currentTime;
@@ -52,7 +55,11 @@ function apply(r: Row, p: Record<string, unknown>): void {
       delete p.finishedAt;
       delete p.currentTime;
     }
-  } else if (typeof p.progress === 'number') r.progress = Math.min(1, Math.max(0, p.progress));
+  } else if (typeof p.progress === 'number' && p.progress !== placeProgress(r)) {
+    // ABS compares with the place's share of the book (its `progress` getter), not the stored progress, so a PATCH of
+    // `progress` alone, matching the current place, changes nothing.
+    r.progress = Math.min(1, Math.max(0, p.progress));
+  }
   for (const k of ['currentTime', 'duration', 'isFinished', 'finishedAt', 'hideFromContinueListening'] as const)
     if (k in p) (r as unknown as Record<string, unknown>)[k] = p[k];
   const moved = r.currentTime !== before;
