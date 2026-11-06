@@ -393,3 +393,9 @@
     margin: 0.2em 0 0.3em;
   }
 }
+
+/* Up next, once the book has ended: full width under the title, on the phone sheet and beside the chapters alike. */
+.upNext {
+  flex: none;
+  width: 100%;
+}

@@ -35,6 +35,7 @@ import { BackLink } from '../components/BackLink';
 import { useCoverDock } from './useCoverDock';
 import { BookListening } from '../components/BookListening';
 import { BookBookmarks } from '../components/BookBookmarks';
+import { BookNextInSeries } from '../components/UpNext';
 import styles from './Book.module.css';
 
 interface Props {
@@ -197,6 +198,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       <div className={styles.body}>
         {/* Reading order is the visual order: the chapters straight after the hero, then about, listening and details. */}
         <div className={styles.main}>
+          <BookNextInSeries bookId={item.id} finished={now.isFinished} />
           {chapters.length > 0 && (
             <SectionCard title="Chapters">
               <ul className={styles.chapters}>

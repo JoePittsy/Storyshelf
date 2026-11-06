@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { MiniPlayer } from '@joepittsy/ui';
+import { MiniUpNext } from '../components/UpNext';
 import { usePlayer } from './engine';
 import { ModeAnnouncer } from './ModeAnnouncer';
 import { useModeTap, useProgress } from './progressMode';
@@ -24,29 +25,33 @@ export function MiniPlayerPortal() {
   return (
     <>
       {createPortal(
-        <MiniPlayer
-          art={p.item.coverUrl}
-          artFit="contain"
-          title={p.item.title}
-          subtitle={p.chapters[p.chapterIndex]?.title}
-          author={p.item.author}
-          position={Math.max(0, p.position - w.start) * 1000}
-          duration={(w.end - w.start) * 1000}
-          playing={p.status === 'playing'}
-          busy={p.status === 'loading'}
-          skipBackSeconds={p.skipBack}
-          skipForwardSeconds={p.skipForward}
-          onSkipBack={() => p.skip(-1)}
-          onSkipForward={() => p.skip(1)}
-          onTogglePlay={p.toggle}
-          onSeek={w.seekable ? (ms) => p.seek(ms / 1000 + w.start) : undefined}
-          onTap={onTap}
-          flash={flash}
-          markers={w.markers}
-          timeLabel={w.label}
-          onExpand={open}
-          onOpen={open}
-        />,
+        <>
+          {/* Above the bar, in the same portal so it stays above it. Only once a book has ended. */}
+          <MiniUpNext />
+          <MiniPlayer
+            art={p.item.coverUrl}
+            artFit="contain"
+            title={p.item.title}
+            subtitle={p.chapters[p.chapterIndex]?.title}
+            author={p.item.author}
+            position={Math.max(0, p.position - w.start) * 1000}
+            duration={(w.end - w.start) * 1000}
+            playing={p.status === 'playing'}
+            busy={p.status === 'loading'}
+            skipBackSeconds={p.skipBack}
+            skipForwardSeconds={p.skipForward}
+            onSkipBack={() => p.skip(-1)}
+            onSkipForward={() => p.skip(1)}
+            onTogglePlay={p.toggle}
+            onSeek={w.seekable ? (ms) => p.seek(ms / 1000 + w.start) : undefined}
+            onTap={onTap}
+            flash={flash}
+            markers={w.markers}
+            timeLabel={w.label}
+            onExpand={open}
+            onOpen={open}
+          />
+        </>,
         slot,
       )}
       {createPortal(<ModeAnnouncer text={flash} />, slot)}

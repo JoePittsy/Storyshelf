@@ -13,6 +13,8 @@ export interface Chapter {
 
 export interface BookItem {
   id: string;
+  /** ABS sends it; the series' books are looked up within it. */
+  libraryId?: string;
   updatedAt: number;
   /** Bytes on disk. */
   size?: number;

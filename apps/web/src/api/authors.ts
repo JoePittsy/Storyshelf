@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { AbsError, absFetch } from './auth';
 import { absFilter } from './libraries';
 import type { LibraryItem } from './libraries';
@@ -46,8 +46,8 @@ export const useSeries = (id: string) =>
   });
 
 /** Every book in a series (limit 0 is "no limit" to ABS). ABS only filters by series within a library. */
-export const useSeriesBooks = (libraryId: string | undefined, seriesId: string) =>
-  useQuery({
+export const seriesBooksQuery = (libraryId: string | undefined, seriesId: string) =>
+  queryOptions({
     queryKey: ['series-books', libraryId, seriesId],
     enabled: !!libraryId,
     queryFn: async () => {
@@ -55,6 +55,9 @@ export const useSeriesBooks = (libraryId: string | undefined, seriesId: string) 
       return (await absFetch<{ results: SeriesItem[] }>(`/api/libraries/${libraryId}/items?${qs.toString()}`)).results;
     },
   });
+
+export const useSeriesBooks = (libraryId: string | undefined, seriesId: string) =>
+  useQuery(seriesBooksQuery(libraryId, seriesId));
 
 /** Author name to id for a library, so a credit line can link people we only know by name. */
 export const useAuthorIds = (libraryId: string | undefined) =>

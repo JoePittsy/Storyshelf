@@ -37,6 +37,7 @@ import { useBookmarkHere } from '../player/useBookmarkHere';
 import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
 import { ShortcutList } from '../frame/ShortcutList';
+import { NowPlayingUpNext } from '../components/UpNext';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
 
@@ -236,6 +237,7 @@ export function NowPlaying() {
               {!!narrators?.length && <span className={styles.narrator}>Narrated by {narrators.join(', ')}</span>}
             </p>
           </header>
+          <NowPlayingUpNext className={styles.upNext} />
 
           <div className={styles.phoneControls} ref={controls}>
             <ProgressModeTabs className={styles.tabs} />
@@ -330,6 +332,7 @@ export function NowPlaying() {
               </p>
             )}
           </header>
+          <NowPlayingUpNext className={styles.upNext} />
 
           <div className={styles.controls}>
             <div className={styles.seek}>
