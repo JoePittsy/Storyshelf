@@ -257,6 +257,33 @@ describe('REQ-52 finished books', () => {
   });
 });
 
+describe('log rows', () => {
+  it('folds a pause and resume into one row with a time range, and names no device when there is only one', async () => {
+    const s = (id: string, at: string, over: object) => session(id, 'm', 'Mythos', at, { timeListening: 240, ...over });
+    serve({
+      sessions: page([
+        s('b', '2026-11-06T18:13:00Z', { startTime: 5000, currentTime: 8000, updatedAt: Date.parse('2026-11-06T18:21:00Z'), timeListening: 480 }),
+        s('a', '2026-11-06T18:05:00Z', { startTime: 3700, currentTime: 5000, updatedAt: Date.parse('2026-11-06T18:09:00Z') }),
+      ]),
+    });
+    renderAt('/history');
+    const rows = await screen.findAllByRole('link', { name: /Mythos/ });
+    expect(rows).toHaveLength(1);
+    await waitFor(() => expect(rows[0]).toHaveTextContent('Ch 2 → Ch 3'));
+    expect(rows[0]).toHaveTextContent('12 min');
+    expect(rows[0]).not.toHaveTextContent('iPhone');
+  });
+});
+
+describe('REQ-52 finished, empty', () => {
+  it('offers a way on to the library', async () => {
+    serve({ me: { mediaProgress: [] }, finished: { results: [], total: 0, limit: 48, page: 0 } });
+    renderAt('/history/finished');
+    await userEvent.click(await screen.findByRole('button', { name: 'Browse your library' }));
+    expect(screen.getByTestId('where')).toHaveTextContent('/?library=L1');
+  });
+});
+
 describe('REQ-53 stats', () => {
   it('totals this week with a Monday start, plus month, year and all time', async () => {
     serve();
@@ -270,7 +297,8 @@ describe('REQ-53 stats', () => {
   });
 
   it('draws the heatmap and ranks top books and authors by time listened', async () => {
-    serve();
+    // A listening history older than a fortnight earns the year-long map.
+    serve({ stats: { ...STATS, days: { ...STATS.days, '2026-01-05': 600 } } });
     renderAt('/history/stats');
     expect(await screen.findByRole('img', { name: 'Time listened each day over the last year' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Mon 2 Nov: 4h 00m' })).toBeInTheDocument();
@@ -281,6 +309,14 @@ describe('REQ-53 stats', () => {
     const authors = screen.getByRole('heading', { name: 'Top authors' }).closest('section') as HTMLElement;
     expect(within(authors).getByText('Stephen Fry')).toBeInTheDocument();
     expect(within(authors).getByText('3h 00m')).toBeInTheDocument();
+  });
+
+  it('starts a new listener with their last seven days, not a year of blank cells', async () => {
+    serve();
+    renderAt('/history/stats');
+    expect(await screen.findByRole('heading', { name: 'Your listening year starts here' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Time listened each day over the last year' })).not.toBeInTheDocument();
+    expect(screen.getByText('Mon 2 Nov')).toBeInTheDocument();
   });
 
   it('shows the nothing-yet state when nothing has been listened to', async () => {
@@ -295,10 +331,10 @@ describe('REQ-55 Your listening on a book page', () => {
     serve();
     renderAt('/book/m');
     const section = (await screen.findByRole('heading', { name: 'Your listening' })).closest('section') as HTMLElement;
-    const fact = async (label: string) => (await within(section).findByText(label)).closest('div') as HTMLElement;
-    expect(await fact('Started')).toHaveTextContent('1 Nov');
-    expect(await fact('Listened')).toHaveTextContent('2h 00m');
-    expect(await fact('Sessions')).toHaveTextContent('2');
+    // One line, with the sessions behind an expander.
+    expect(await within(section).findByText('Started 1 Nov · 2h 00m listened · 2 sessions')).toBeInTheDocument();
+    expect(within(section).queryByRole('list')).not.toBeInTheDocument();
+    await userEvent.click(within(section).getByRole('button', { name: 'Show sessions' }));
     const list = within(section).getByRole('list', { name: 'Sessions, newest first' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
     expect(list).toHaveTextContent('Today · 10:40');
@@ -310,6 +346,7 @@ describe('REQ-55 Your listening on a book page', () => {
     serve({ sessions: page(many) });
     renderAt('/book/m');
     const section = (await screen.findByRole('heading', { name: 'Your listening' })).closest('section') as HTMLElement;
+    await userEvent.click(await within(section).findByRole('button', { name: 'Show sessions' }));
     expect(await within(section).findAllByRole('listitem')).toHaveLength(5);
     await userEvent.click(within(section).getByRole('button', { name: 'Show all 9 sessions' }));
     expect(within(section).getAllByRole('listitem')).toHaveLength(9);

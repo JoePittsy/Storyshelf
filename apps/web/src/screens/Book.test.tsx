@@ -70,9 +70,9 @@ describe('Book screen', () => {
     const { onPlay } = renderBook();
     expect(await screen.findByRole('heading', { level: 1, name: 'The Hobbit' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Rob Inglis, open' }).length).toBeGreaterThan(0);
-    expect(screen.getByText('8h 57m left · Chapter 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Chapter 2 of 2')).toBeInTheDocument();
     expect(screen.getByText('There and back again.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Resume · 8h 57m left' }));
     expect(onPlay).toHaveBeenCalledWith(3730);
   });
 
@@ -142,5 +142,35 @@ describe('Book screen', () => {
       expect(await screen.findByText(new RegExp(`^${expected}`.replace(/[?+]/g, '\\$&')))).toBeInTheDocument();
     }
     expect(encodeURIComponent('Zoë Wanamaker')).toBe('Zo%C3%AB%20Wanamaker');
+  });
+
+  it('puts the chapters straight after the hero, before the description', async () => {
+    serve(item);
+    renderBook();
+    const chapters = await screen.findByRole('heading', { name: 'Chapters' });
+    const about = screen.getByRole('heading', { name: 'About this book' });
+    expect(chapters.compareDocumentPosition(about) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('drops a chapter number that repeats its position, and hides the number column from assistive tech', async () => {
+    serve({
+      ...item,
+      media: { ...item.media, chapters: [{ id: 0, start: 0, end: 3600, title: '01 - An Unexpected Party' }, { id: 1, start: 3600, end: 7200, title: '07 - Seven' }] },
+    });
+    renderBook();
+    const first = await screen.findByRole('button', { name: /An Unexpected Party/ });
+    expect(first).toHaveTextContent('An Unexpected Party');
+    expect(first).not.toHaveTextContent('01 -');
+    expect(first.querySelector('[aria-hidden="true"]')).toHaveTextContent('1');
+    // A number that is not its position is part of the name.
+    expect(screen.getByRole('button', { name: /07 - Seven/ })).toBeInTheDocument();
+  });
+
+  it('shows a description that is only a link as its source', async () => {
+    serve({ ...item, media: { ...item.media, metadata: { ...item.media.metadata, description: 'https://www.archive.org/details/hobbit' } } });
+    renderBook();
+    const link = await screen.findByRole('link', { name: 'archive.org' });
+    expect(link).toHaveAttribute('href', 'https://www.archive.org/details/hobbit');
+    expect(screen.queryByRole('heading', { name: 'About this book' })).not.toBeInTheDocument();
   });
 });

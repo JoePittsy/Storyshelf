@@ -1,4 +1,5 @@
 import type { Chapter } from '../api/items';
+import type { ListeningSession, SessionDevice } from '../api/history';
 import { fmtClock } from './bookHelpers';
 
 // Pure helpers for the listening history. Every date function takes an optional IANA time zone; left out, it is the
@@ -178,4 +179,100 @@ export function topAuthors(items: Record<string, StatsItem>, n: number) {
     .filter((a) => a.seconds > 0)
     .sort((a, b) => b.seconds - a.seconds)
     .slice(0, n);
+}
+
+/** Sessions of one book on one device closer together than this are one sitting. */
+export const MERGE_GAP_MS = 10 * 60 * 1000;
+
+/** One or more sessions of the same book and device, read as a single sitting. */
+export interface Sitting {
+  /** The id of the newest session. */
+  id: string;
+  libraryItemId: string | null;
+  displayTitle: string;
+  deviceInfo?: SessionDevice | null;
+  /** Epoch ms of the first session's start, and of the last one's end. */
+  startedAt: number;
+  endedAt: number;
+  /** Book seconds where the sitting began and ended. */
+  startTime: number;
+  currentTime: number;
+  /** Seconds heard, summed. */
+  timeListening: number;
+  /** How many sessions it folds together. */
+  count: number;
+}
+
+const endOf = (s: ListeningSession) => Math.max(s.updatedAt, s.startedAt);
+
+/**
+ * Folds the log (newest first) into sittings: a session joins the one just after it when it is the same book on the
+ * same device and ended within ten minutes of that one starting. A pause and a resume, or a dropped connection, is one
+ * row, not three. Only neighbours merge, so the order of the log is kept.
+ */
+export function mergeSessions(sessions: ListeningSession[], gapMs = MERGE_GAP_MS): Sitting[] {
+  const out: Sitting[] = [];
+  const devices: string[] = [];
+  for (const s of sessions) {
+    const device = deviceLabel(s.deviceInfo);
+    const last = out[out.length - 1];
+    if (
+      last &&
+      s.libraryItemId !== null &&
+      last.libraryItemId === s.libraryItemId &&
+      devices[devices.length - 1] === device &&
+      last.startedAt - endOf(s) <= gapMs
+    ) {
+      // `s` is older than the sitting so far: it moves the start back and adds its time.
+      last.startedAt = Math.min(last.startedAt, s.startedAt);
+      last.startTime = s.startTime;
+      last.timeListening += s.timeListening;
+      last.count += 1;
+      continue;
+    }
+    out.push({
+      id: s.id,
+      libraryItemId: s.libraryItemId,
+      displayTitle: s.displayTitle,
+      deviceInfo: s.deviceInfo,
+      startedAt: s.startedAt,
+      endedAt: endOf(s),
+      startTime: s.startTime,
+      currentTime: s.currentTime,
+      timeListening: s.timeListening,
+      count: 1,
+    });
+    devices.push(device);
+  }
+  return out;
+}
+
+/** "18:13–18:21", or just "18:13" when it ended in the same minute. */
+export function fmtTimeRange(startMs: number, endMs: number, tz?: string): string {
+  const a = fmtTimeOfDay(startMs, tz);
+  const b = fmtTimeOfDay(endMs, tz);
+  return a === b ? a : `${a}–${b}`;
+}
+
+/** True when the sessions come from at most one device, so naming it on every row would only repeat it. */
+export function fromOneDevice(sessions: { deviceInfo?: SessionDevice | null }[]): boolean {
+  return new Set(sessions.map((s) => deviceLabel(s.deviceInfo))).size <= 1;
+}
+
+/** The last `n` days, today first: the days map has no entry for a day with no listening, so it is 0. */
+export function recentDays(days: Record<string, number>, todayKey: string, n: number) {
+  return Array.from({ length: n }, (_, i) => {
+    const key = addDays(todayKey, -i);
+    return { key, seconds: days[key] ?? 0 };
+  });
+}
+
+/** Days since the first day with any listening, today counting as 1; 0 with no listening at all. */
+export function daysOfHistory(days: Record<string, number>, todayKey: string): number {
+  const first = Object.entries(days)
+    .filter(([, v]) => v > 0)
+    .map(([k]) => k)
+    .sort()[0];
+  if (!first) return 0;
+  return Math.round((Date.parse(`${todayKey}T12:00:00Z`) - Date.parse(`${first}T12:00:00Z`)) / 86_400_000) + 1;
 }

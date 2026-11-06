@@ -5,6 +5,7 @@ import {
   BarList,
   EmptyState,
   Heatmap,
+  PillButton,
   RAMP,
   SectionCard,
   StatGrid,
@@ -15,6 +16,7 @@ import {
 import type { BarListRow, HeatRow } from '@joepittsy/ui';
 import { useChapters, useFinished, useListeningLog, useListeningStats } from '../api/history';
 import type { ListeningSession } from '../api/history';
+import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { coverUrl, mergeProgress, pickLibrary, storedLibrary, useLibraries, useProgress } from '../api/libraries';
 import { withLibrary } from '../api/people';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
@@ -23,14 +25,18 @@ import {
   chapterRange,
   dayKey,
   dayLabel,
+  daysOfHistory,
   deviceLabel,
   fmtDate,
   fmtListened,
-  fmtTimeOfDay,
+  fmtTimeRange,
+  fromOneDevice,
   groupByDay,
   heatGrid,
   heatLevel,
+  mergeSessions,
   periodTotals,
+  recentDays,
   topAuthors,
   topBooks,
 } from './historyHelpers';
@@ -51,6 +57,7 @@ export function History() {
   const libs = useLibraries();
   const library = libs.data ? pickLibrary(libs.data, params.get('library'), storedLibrary()) : undefined;
   const current = SECTIONS.find((s) => s.path === pathname.replace(/\/$/, '')) ?? SECTIONS[0];
+  useDocumentTitle(current.key === 'log' ? 'History' : `${current.label} · History`);
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>History</h1>
@@ -87,7 +94,10 @@ function SessionList({ sessions }: { sessions: ListeningSession[] }) {
   const now = useNow();
   const ids = useMemo(() => [...new Set(sessions.flatMap((s) => (s.libraryItemId ? [s.libraryItemId] : [])))], [sessions]);
   const chapters = useChapters(ids);
-  const days = useMemo(() => groupByDay(sessions, (s) => s.startedAt), [sessions]);
+  // A pause and a resume is one sitting; and a device named on every row says nothing when there is only one.
+  const sittings = useMemo(() => mergeSessions(sessions), [sessions]);
+  const oneDevice = useMemo(() => fromOneDevice(sessions), [sessions]);
+  const days = useMemo(() => groupByDay(sittings, (s) => s.startedAt), [sittings]);
 
   return (
     <div className={styles.days}>
@@ -107,10 +117,10 @@ function SessionList({ sessions }: { sessions: ListeningSession[] }) {
                   title={s.displayTitle}
                   imageUrl={s.libraryItemId ? coverUrl({ id: s.libraryItemId, updatedAt: 0 }) : undefined}
                   artFit="contain"
-                  when={fmtTimeOfDay(s.startedAt)}
+                  when={fmtTimeRange(s.startedAt, s.endedAt)}
                   // Hold the line back until the chapters arrive, so it doesn't flip from a time range to chapters.
                   detail={info?.state === 'pending' ? undefined : chapterRange(info?.chapters ?? [], s.startTime, s.currentTime)}
-                  note={deviceLabel(s.deviceInfo) || undefined}
+                  note={oneDevice ? undefined : deviceLabel(s.deviceInfo) || undefined}
                   trailing={fmtListened(s.timeListening)}
                   href={open}
                   onOpen={open ? () => void navigate(open) : undefined}
@@ -178,6 +188,7 @@ export function HistoryFinished() {
   const [params] = useSearchParams();
   const libs = useLibraries();
   const library = libs.data ? pickLibrary(libs.data, params.get('library'), storedLibrary()) : undefined;
+  const navigate = useNavigate();
   const finished = useFinished(library);
   const progress = useProgress();
   const now = useNow();
@@ -196,7 +207,18 @@ export function HistoryFinished() {
     return <LoadFailed error={finished.error ?? libs.error} noun="finished books" onRetry={() => void (libs.isError ? libs.refetch() : finished.refetch())} />;
   if (libs.isPending || (!!library && finished.isPending)) return <BookGridSkeleton />;
   if (tiles.length === 0)
-    return <EmptyState title="No finished books yet">Books you finish will be listed here, newest first.</EmptyState>;
+    return (
+      <EmptyState
+        title="No finished books yet"
+        action={
+          <PillButton variant="primary" onClick={() => void navigate(withLibrary('/', library))}>
+            Browse your library
+          </PillButton>
+        }
+      >
+        Books you finish will be listed here, newest first.
+      </EmptyState>
+    );
   return (
     <BookGrid
       tiles={tiles}
@@ -207,6 +229,9 @@ export function HistoryFinished() {
 
 const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
 const TOP = 8;
+/** Under this many days of listening a year-long map is a blank page with a few cells lit. */
+const YOUNG_DAYS = 14;
+const NAME_MAX = 'clamp(9em, 45cqw, 26em)';
 
 export function HistoryStats() {
   const stats = useListeningStats();
@@ -231,10 +256,17 @@ export function HistoryStats() {
       grid,
       max,
       rows,
+      young: daysOfHistory(days, today) < YOUNG_DAYS,
+      recent: recentDays(days, today, 7).map((d) => ({
+        key: d.key,
+        name: dayLabel(d.key, now),
+        value: d.seconds,
+        label: d.seconds ? fmtListened(d.seconds) : 'Nothing',
+      })),
       books: bars(topBooks(items, TOP).map((b) => ({ key: b.id, name: b.title, seconds: b.seconds }))),
       authors: bars(topAuthors(items, TOP).map((a) => ({ key: a.name, name: a.name, seconds: a.seconds }))),
     };
-  }, [stats.data, today]);
+  }, [stats.data, today, now]);
 
   if (stats.isError) return <LoadFailed error={stats.error} noun="listening stats" onRetry={() => void stats.refetch()} />;
   if (!view) return <div className={`skeleton ${styles.loading}`} role="status" aria-label="Loading" />;
@@ -258,30 +290,36 @@ export function HistoryStats() {
           { label: 'All time', value: fmtListened(view.allTime) },
         ]}
       />
-      <SectionCard title="Every day" sub="Time listened over the last year. Weeks start on Monday.">
-        <Heatmap
-          columns={view.grid.columns}
-          rows={view.rows}
-          minCell="1em"
-          cellHeight="1.1em"
-          startAtEnd
-          ariaLabel="Time listened each day over the last year"
-          cellLabel={describe}
-          renderTip={(r, c) => (
-            <>
-              <TipTitle>{dayLabel(cell(r, c)?.key ?? today, now)}</TipTitle>
-              <TipRow name="Listened" value={cell(r, c)?.seconds ? fmtListened(cell(r, c)?.seconds ?? 0) : 'Nothing'} />
-            </>
-          )}
-          legend={{ lo: 'Less', hi: `More (${fmtListened(view.max)} in a day)`, empty: 'nothing' }}
-        />
-      </SectionCard>
+      {view.young ? (
+        <SectionCard title="Your listening year starts here" sub="The map of the whole year fills in as you listen. Until then, these are your last seven days.">
+          <BarList rows={view.recent} />
+        </SectionCard>
+      ) : (
+        <SectionCard title="Every day" sub="Time listened over the last year. Weeks start on Monday.">
+          <Heatmap
+            columns={view.grid.columns}
+            rows={view.rows}
+            minCell="1em"
+            cellHeight="1.1em"
+            startAtEnd
+            ariaLabel="Time listened each day over the last year"
+            cellLabel={describe}
+            renderTip={(r, c) => (
+              <>
+                <TipTitle>{dayLabel(cell(r, c)?.key ?? today, now)}</TipTitle>
+                <TipRow name="Listened" value={cell(r, c)?.seconds ? fmtListened(cell(r, c)?.seconds ?? 0) : 'Nothing'} />
+              </>
+            )}
+            legend={{ lo: 'Less', hi: `More (${fmtListened(view.max)} in a day)`, empty: 'nothing' }}
+          />
+        </SectionCard>
+      )}
       <div className={styles.pair}>
         <SectionCard title="Top books" sub="By time listened">
-          <BarList rows={view.books} ranked nameMax="clamp(8em, 28cqw, 16em)" />
+          <BarList rows={view.books} ranked nameMax={NAME_MAX} />
         </SectionCard>
         <SectionCard title="Top authors" sub="By time listened">
-          <BarList rows={view.authors} ranked nameMax="clamp(8em, 28cqw, 16em)" />
+          <BarList rows={view.authors} ranked nameMax={NAME_MAX} />
         </SectionCard>
       </div>
     </div>

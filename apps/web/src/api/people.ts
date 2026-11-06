@@ -36,6 +36,9 @@ export const LIBRARY_TABS = [
   { key: 'series', label: 'Series', path: '/series' },
 ] as const;
 
+/** The top-level destinations, as one row of real links: the library's tabs, then History. */
+export const NAV_TABS = [...LIBRARY_TABS, { key: 'history', label: 'History', path: '/history' }] as const;
+
 /** A path that keeps the selected library. */
 export const withLibrary = (path: string, libraryId: string | undefined): string =>
   libraryId ? `${path}?library=${encodeURIComponent(libraryId)}` : path;

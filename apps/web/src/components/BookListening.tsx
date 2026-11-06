@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { ActivityRow, EmptyState, PillButton, SectionCard, StatGrid } from '@joepittsy/ui';
-import type { Stat } from '@joepittsy/ui';
+import { useId, useState } from 'react';
+import { ActivityRow, EmptyState, PillButton, SectionCard } from '@joepittsy/ui';
 import type { BookItem } from '../api/items';
 import { useItemSessions, useListeningStats } from '../api/history';
 import {
@@ -11,6 +10,7 @@ import {
   fmtDate,
   fmtListened,
   fmtTimeOfDay,
+  fromOneDevice,
 } from '../screens/historyHelpers';
 import { useNow } from '../screens/useNow';
 import styles from './BookListening.module.css';
@@ -18,12 +18,17 @@ import styles from './BookListening.module.css';
 /** Sessions shown before "Show all". */
 export const LATEST_SESSIONS = 5;
 
-/** "Your listening" on a book page: when it was started and finished, time listened, and the latest sessions. */
+/**
+ * "Your listening" on a book page, as one line: when it was started (and finished), time listened and how many
+ * sessions. The sessions themselves are behind an expander, since most visits only want to get on with the book.
+ */
 export function BookListening({ item }: { item: BookItem }) {
   const now = useNow();
   const sessions = useItemSessions(item.id);
   const stats = useListeningStats();
+  const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
+  const listId = useId();
 
   const p = item.userMediaProgress;
   const list = sessions.data?.sessions ?? [];
@@ -34,19 +39,29 @@ export function BookListening({ item }: { item: BookItem }) {
   if (sessions.isError && !p?.startedAt) return null;
   if (sessions.isPending || (total === 0 && !p?.startedAt)) return null;
 
-  const facts: Stat[] = [
-    ...(p?.startedAt ? [{ label: 'Started', value: fmtDate(p.startedAt, now) }] : []),
-    ...(p?.isFinished && p.finishedAt ? [{ label: 'Finished', value: fmtDate(p.finishedAt, now) }] : []),
-    ...(listened > 0 ? [{ label: 'Listened', value: fmtListened(listened) }] : []),
-    ...(total > 0 ? [{ label: 'Sessions', value: String(total) }] : []),
-  ];
+  const summary = [
+    p?.startedAt ? `Started ${fmtDate(p.startedAt, now)}` : null,
+    p?.isFinished && p.finishedAt ? `Finished ${fmtDate(p.finishedAt, now)}` : null,
+    listened > 0 ? `${fmtListened(listened)} listened` : null,
+    total > 0 ? `${total} ${total === 1 ? 'session' : 'sessions'}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const shown = all ? list : list.slice(0, LATEST_SESSIONS);
+  const oneDevice = fromOneDevice(list);
 
   return (
     <SectionCard title="Your listening" className={styles.section}>
-      {facts.length > 0 && <StatGrid items={facts} />}
-      {list.length > 0 && (
-        <>
+      <div className={styles.summary}>
+        <p className={styles.line}>{summary}</p>
+        {list.length > 0 && (
+          <PillButton aria-expanded={open} aria-controls={listId} onClick={() => setOpen(!open)}>
+            {open ? 'Hide sessions' : 'Show sessions'}
+          </PillButton>
+        )}
+      </div>
+      {list.length > 0 && open && (
+        <div id={listId}>
           <ul className={styles.list} aria-label="Sessions, newest first">
             {shown.map((s) => (
               <ActivityRow
@@ -54,7 +69,7 @@ export function BookListening({ item }: { item: BookItem }) {
                 showArt={false}
                 title={`${dayLabel(dayKey(s.startedAt), now)} · ${fmtTimeOfDay(s.startedAt)}`}
                 detail={chapterRange(item.media.chapters, s.startTime, s.currentTime)}
-                note={deviceLabel(s.deviceInfo) || undefined}
+                note={oneDevice ? undefined : deviceLabel(s.deviceInfo) || undefined}
                 trailing={fmtListened(s.timeListening)}
               />
             ))}
@@ -64,7 +79,7 @@ export function BookListening({ item }: { item: BookItem }) {
               {all ? 'Show fewer' : `Show all ${list.length} sessions`}
             </PillButton>
           )}
-        </>
+        </div>
       )}
       {list.length === 0 && total === 0 && (
         <EmptyState title="No sessions recorded">Sessions appear here once you listen in Storyshelf or another app.</EmptyState>

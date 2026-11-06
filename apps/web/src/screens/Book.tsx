@@ -20,6 +20,8 @@ import { narratorPath } from '../api/libraries';
 import {
   bookDetails,
   bookProgress,
+  chapterTitle,
+  descriptionSource,
   fmtClock,
   fmtLong,
   playFrom,
@@ -28,6 +30,8 @@ import {
 } from './bookHelpers';
 import { usePanelColor } from '../frame/usePanelColor';
 import { usePlayer } from '../player/engine';
+import { useUndoableJump } from '../player/useUndoableJump';
+import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { BackLink } from '../components/BackLink';
 import { useCoverDock } from './useCoverDock';
 import { BookListening } from '../components/BookListening';
@@ -54,10 +58,17 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const cover = item ? coverUrl(item.id, item.updatedAt) : null;
   const wash = usePanelColor(cover);
   useCoverDock(pageEl, coverEl);
-  const description = useMemo(
-    () => (item?.media.metadata.description ? sanitiseDescription(item.media.metadata.description) : ''),
-    [item]
-  );
+  const description = useMemo(() => {
+    const raw = item?.media.metadata.description;
+    // A description that is only a link reads as a source, not as a wall of address.
+    return raw && !descriptionSource(raw) ? sanitiseDescription(raw) : '';
+  }, [item]);
+  const source = useMemo(() => {
+    const raw = item?.media.metadata.description;
+    return raw ? descriptionSource(raw) : null;
+  }, [item]);
+  const jump = useUndoableJump(onChapter);
+  useDocumentTitle(item?.media.metadata.title);
 
   if (isPending)
     return (
@@ -101,13 +112,18 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const resume = now.live ? { currentTime: now.currentTime, isFinished: now.isFinished } : p;
   // While this book is the one playing, the primary action pauses it rather than offering a no-op "Resume".
   const playingHere = player.item?.id === item.id && player.status === 'playing';
-  const label = playingHere ? 'Pause' : playLabel(resume);
+  // The action says what it will do and how much book is left, so one tap is enough to decide.
+  const left = duration > 0 && !now.isFinished && started ? `${fmtLong(duration - now.currentTime)} left` : '';
+  const label = playingHere ? 'Pause' : [playLabel(resume), left].filter(Boolean).join(' · ');
+  // The player already holds a place in this book: jumping from it needs a way back.
+  const loaded = player.item?.id === item.id && player.status !== 'idle';
 
   const status = now.isFinished
     ? 'Finished'
     : started
       ? [
-          `${fmtLong(duration - now.currentTime)} left`,
+          // The button carries the time left, except while it reads Pause.
+          (playingHere || chapterIdx < 0) && `${fmtLong(duration - now.currentTime)} left`,
           chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`,
         ]
           .filter(Boolean)
@@ -180,6 +196,45 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       </HeroBand>
 
       <div className={styles.body}>
+        {/* Reading order is the visual order: the chapters straight after the hero, then about, listening and details. */}
+        <div className={styles.main}>
+          {chapters.length > 0 && (
+            <SectionCard title="Chapters">
+              <ul className={styles.chapters}>
+                {chapters.map((c, i) => (
+                  <ListRow
+                    key={c.id}
+                    // The number is a column of its own: hidden from assistive tech so a name isn't read as "101 - …".
+                    lead={<span aria-hidden="true">{i + 1}</span>}
+                    title={chapterTitle(c.title, i)}
+                    aside={fmtClock(c.start)}
+                    trailing={fmtClock(c.end - c.start, false)}
+                    current={i === chapterIdx}
+                    onClick={() => jump(c.start, `Chapter ${i + 1}`, loaded ? now.currentTime : null)}
+                  />
+                ))}
+              </ul>
+            </SectionCard>
+          )}
+
+          {description && (
+            <SectionCard title="About this book">
+              <ExpandableText>
+                <div dangerouslySetInnerHTML={{ __html: description }} />
+              </ExpandableText>
+            </SectionCard>
+          )}
+          {source && (
+            <p className={styles.source}>
+              Source:{' '}
+              <a href={source.href} target="_blank" rel="noopener noreferrer">
+                {source.host}
+              </a>
+            </p>
+          )}
+
+          <BookListening item={item} />
+        </div>
         {details.length > 0 && (
           <SectionCard className={styles.side} title="Details">
             {/* Wide only. The slot's height grows with the dock progress; the frame inside is always full size. */}
@@ -191,35 +246,6 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
             <DetailList items={details} />
           </SectionCard>
         )}
-        <div className={styles.main}>
-          {description && (
-            <SectionCard title="About this book">
-              <ExpandableText>
-                <div dangerouslySetInnerHTML={{ __html: description }} />
-              </ExpandableText>
-            </SectionCard>
-          )}
-
-          <BookListening item={item} />
-
-          {chapters.length > 0 && (
-            <SectionCard title="Chapters">
-              <ul className={styles.chapters}>
-                {chapters.map((c, i) => (
-                  <ListRow
-                    key={c.id}
-                    lead={i + 1}
-                    title={c.title}
-                    aside={fmtClock(c.start)}
-                    trailing={fmtClock(c.end - c.start, false)}
-                    current={i === chapterIdx}
-                    onClick={() => onChapter(c.start)}
-                  />
-                ))}
-              </ul>
-            </SectionCard>
-          )}
-        </div>
       </div>
     </main>
   );

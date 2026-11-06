@@ -11,3 +11,16 @@
 .more {
   align-self: flex-start;
 }
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em 1em;
+}
+.line {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}

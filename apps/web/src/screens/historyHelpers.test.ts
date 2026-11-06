@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import type { ListeningSession } from '../api/history';
 import {
   addDays,
   chapterRange,
   dayKey,
   dayLabel,
+  daysOfHistory,
+  fromOneDevice,
+  fmtTimeRange,
+  mergeSessions,
+  recentDays,
   deviceLabel,
   fmtDate,
   fmtListened,
@@ -240,5 +246,91 @@ describe('REQ-53 top books and authors', () => {
   it('copes with no items', () => {
     expect(topBooks({}, 5)).toEqual([]);
     expect(topAuthors({}, 5)).toEqual([]);
+  });
+});
+
+describe('mergeSessions', () => {
+  const MIN = 60_000;
+  const T0 = Date.UTC(2026, 10, 6, 18, 0);
+  const phone = { model: 'iPhone', clientName: 'Storyshelf' };
+  const mk = (id: string, over: Partial<ListeningSession>): ListeningSession => ({
+    id,
+    libraryItemId: 'li_1',
+    mediaType: 'book',
+    displayTitle: 'Peter Rabbit',
+    displayAuthor: null,
+    timeListening: 120,
+    startTime: 0,
+    currentTime: 120,
+    startedAt: T0,
+    updatedAt: T0 + 2 * MIN,
+    deviceInfo: phone,
+    ...over,
+  });
+
+  it('folds neighbours of the same book and device within ten minutes into one sitting', () => {
+    // Newest first, as the log arrives: 18:13, then 18:05, then 18:00.
+    const log = [
+      mk('c', { startedAt: T0 + 13 * MIN, updatedAt: T0 + 21 * MIN, startTime: 300, currentTime: 700, timeListening: 480 }),
+      mk('b', { startedAt: T0 + 5 * MIN, updatedAt: T0 + 9 * MIN, startTime: 120, currentTime: 300, timeListening: 200 }),
+      mk('a', { startedAt: T0, updatedAt: T0 + 2 * MIN, startTime: 0, currentTime: 120, timeListening: 120 }),
+    ];
+    const [one, ...rest] = mergeSessions(log);
+    expect(rest).toEqual([]);
+    expect(one).toMatchObject({
+      id: 'c',
+      startedAt: T0,
+      endedAt: T0 + 21 * MIN,
+      startTime: 0,
+      currentTime: 700,
+      timeListening: 800,
+      count: 3,
+    });
+  });
+
+  it('keeps sessions apart across a longer gap, another book or another device', () => {
+    const gap = [mk('b', { startedAt: T0 + 30 * MIN, updatedAt: T0 + 32 * MIN }), mk('a', {})];
+    expect(mergeSessions(gap)).toHaveLength(2);
+    const book = [mk('b', { startedAt: T0 + 3 * MIN, libraryItemId: 'li_2' }), mk('a', {})];
+    expect(mergeSessions(book)).toHaveLength(2);
+    const device = [mk('b', { startedAt: T0 + 3 * MIN, deviceInfo: { model: 'Pixel' } }), mk('a', {})];
+    expect(mergeSessions(device)).toHaveLength(2);
+  });
+
+  it('never merges sessions whose book ABS lost, and keeps the log order', () => {
+    const lost = [mk('b', { libraryItemId: null, startedAt: T0 + 3 * MIN }), mk('a', { libraryItemId: null })];
+    expect(mergeSessions(lost).map((s) => s.id)).toEqual(['b', 'a']);
+    expect(mergeSessions([])).toEqual([]);
+  });
+});
+
+describe('fmtTimeRange', () => {
+  it('shows start to end, or one time within a minute', () => {
+    const t = Date.UTC(2026, 10, 6, 18, 13);
+    expect(fmtTimeRange(t, t + 8 * 60_000, 'UTC')).toBe('18:13–18:21');
+    expect(fmtTimeRange(t, t + 20_000, 'UTC')).toBe('18:13');
+  });
+});
+
+describe('fromOneDevice', () => {
+  it('is true for none, one or a repeated device, false for two', () => {
+    expect(fromOneDevice([])).toBe(true);
+    expect(fromOneDevice([{ deviceInfo: { model: 'iPhone' } }, { deviceInfo: { model: 'iPhone' } }])).toBe(true);
+    expect(fromOneDevice([{ deviceInfo: { model: 'iPhone' } }, { deviceInfo: { model: 'Pixel' } }])).toBe(false);
+  });
+});
+
+describe('recentDays and daysOfHistory', () => {
+  it('lists the last days today first, filling gaps with 0', () => {
+    expect(recentDays({ '2026-11-06': 300, '2026-11-04': 60 }, '2026-11-06', 3)).toEqual([
+      { key: '2026-11-06', seconds: 300 },
+      { key: '2026-11-05', seconds: 0 },
+      { key: '2026-11-04', seconds: 60 },
+    ]);
+  });
+  it('counts days since the first listening', () => {
+    expect(daysOfHistory({}, '2026-11-06')).toBe(0);
+    expect(daysOfHistory({ '2026-11-06': 60 }, '2026-11-06')).toBe(1);
+    expect(daysOfHistory({ '2026-10-24': 60, '2026-11-06': 0 }, '2026-11-06')).toBe(14);
   });
 });

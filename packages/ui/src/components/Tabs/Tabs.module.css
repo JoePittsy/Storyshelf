@@ -46,3 +46,13 @@
     transition: none;
   }
 }
+
+/* Five destinations must fit a 375px phone without a sideways scroll hiding the last one. */
+@media (width <= 30em) {
+  .list {
+    gap: 0;
+  }
+  .tab {
+    padding-inline: 0.6em;
+  }
+}

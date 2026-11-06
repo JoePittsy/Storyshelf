@@ -101,21 +101,21 @@
 /* Wide: time, art, title and detail, device, duration, in columns that line up down the day. */
 @container (min-width: 40em) {
   .row {
-    grid-template-columns: 4.5em auto minmax(0, 1fr) 11em 5.5em;
+    grid-template-columns: var(--when-col, 4.5em) auto minmax(0, 1fr) var(--note-col, 11em) 5.5em;
     grid-template-areas: 'when art text note trailing';
     column-gap: 1.1em;
     padding: 0.55em 0.8em;
   }
   .noArt {
-    grid-template-columns: 4.5em minmax(0, 1fr) 11em 5.5em;
+    grid-template-columns: var(--when-col, 4.5em) minmax(0, 1fr) var(--note-col, 11em) 5.5em;
     grid-template-areas: 'when text note trailing';
   }
   .noWhen {
-    grid-template-columns: auto minmax(0, 1fr) 11em 5.5em;
+    grid-template-columns: auto minmax(0, 1fr) var(--note-col, 11em) 5.5em;
     grid-template-areas: 'art text note trailing';
   }
   .noArt.noWhen {
-    grid-template-columns: minmax(0, 1fr) 11em 5.5em;
+    grid-template-columns: minmax(0, 1fr) var(--note-col, 11em) 5.5em;
     grid-template-areas: 'text note trailing';
   }
   .when {
@@ -127,4 +127,9 @@
   .action {
     transition: none;
   }
+}
+
+/* No note on this row: the wide layout gives its column back to the title. */
+.noNote {
+  --note-col: 0px;
 }

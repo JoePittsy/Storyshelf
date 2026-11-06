@@ -11,3 +11,12 @@
   color: var(--text);
   text-decoration: underline;
 }
+/* A finger needs 44px: grow the target, and pull the margin in by what the padding adds. */
+@media (pointer: coarse) {
+  .back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 0.4em;
+  }
+}

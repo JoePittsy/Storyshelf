@@ -1,0 +1,63 @@
+.root {
+  position: relative;
+}
+/* The 44px target is the button; the avatar inside is a smaller circle. */
+.trigger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.trigger:hover .avatar {
+  filter: brightness(1.15);
+}
+.avatar {
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 50%;
+}
+.panel {
+  position: absolute;
+  top: calc(100% + 0.3em);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  min-width: 14em;
+  padding: 0.5em;
+  border-radius: var(--r-card);
+  background: var(--bg-1);
+  box-shadow: var(--float-shadow);
+}
+.who {
+  margin: 0;
+  padding: 0.5em 0.7em;
+  font-size: var(--fs-label);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+.who strong {
+  color: var(--text);
+}
+.item {
+  min-height: 44px;
+  padding: 0.5em 0.7em;
+  border: none;
+  border-radius: var(--r-input);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.item:hover {
+  background: var(--row-hover);
+}

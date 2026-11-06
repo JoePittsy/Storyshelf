@@ -21,7 +21,8 @@
 }
 .value {
   margin: 0;
-  font-size: var(--fs-title);
+  /* Below the section headings (--fs-title) at every width: a figure supports the page, it does not outrank it. */
+  font-size: var(--fs-title-dialog);
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--text);
@@ -36,8 +37,5 @@
 @container (min-width: 40em) {
   .stat {
     padding: 1.2em 1.5em;
-  }
-  .value {
-    font-size: var(--fs-title-feature);
   }
 }

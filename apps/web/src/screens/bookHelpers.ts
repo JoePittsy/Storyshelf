@@ -177,3 +177,30 @@ export function bookProgress(item: BookItem, player: LiveSource): BookProgress {
     live: false,
   };
 }
+
+/**
+ * A chapter's name without a leading "04 - " or "4. " when that number is just its place in the list: the list already
+ * shows the number, so the name would be read out twice. A different number is part of the name and stays.
+ */
+export function chapterTitle(title: string, index: number): string {
+  const m = /^\s*0*(\d+)\s*(?:[-–—.:)]\s+|[-–—]\s*)(.+)$/.exec(title);
+  if (m && Number(m[1]) === index + 1 && m[2]!.trim()) return m[2]!.trim();
+  return title;
+}
+
+/**
+ * When a description is nothing but a link (a common metadata-provider habit), the link and a short name for it,
+ * "archive.org" rather than the address. Null for real prose, or a URL with words around it.
+ */
+export function descriptionSource(html: string): { href: string; host: string } | null {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = DOMPurify.sanitize(html);
+  const text = (tpl.content.textContent ?? '').trim();
+  if (!/^https?:\/\/\S+$/i.test(text)) return null;
+  try {
+    const u = new URL(text);
+    return { href: u.href, host: u.hostname.replace(/^www\./, '') };
+  } catch {
+    return null;
+  }
+}

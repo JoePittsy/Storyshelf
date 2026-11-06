@@ -44,7 +44,7 @@ export function ActivityRow({ title, detail, note, when, trailing, imageUrl, art
       {trailing != null && <span className={styles.trailing}>{trailing}</span>}
     </>
   );
-  const cls = [styles.row, !showArt && styles.noArt, when == null && styles.noWhen].filter(Boolean).join(' ');
+  const cls = [styles.row, !showArt && styles.noArt, when == null && styles.noWhen, note == null && styles.noNote].filter(Boolean).join(' ');
   const click = (e: MouseEvent) => {
     if (!onOpen || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();

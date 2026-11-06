@@ -67,6 +67,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  /* A sitting is a range of times, "18:13–18:21", wider than a single time. */
+  --when-col: 7em;
 }
 /* Only beside the log: below the list it would sit at the end of an endless scroll. Stats has the same figures. */
 .aside {

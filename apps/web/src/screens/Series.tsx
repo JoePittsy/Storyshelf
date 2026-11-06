@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { Artwork, ExpandableText, HeroBand, PeopleLinks, PillButton } from '@joepittsy/ui';
 import { useAuthorIds, useSeries, useSeriesBooks } from '../api/authors';
 import { coverUrl, mergeProgress, useProgress } from '../api/libraries';
+import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { usePanelColor } from '../frame/usePanelColor';
 import { BackLink } from '../components/BackLink';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
@@ -18,6 +19,7 @@ export function Series() {
   const series = useSeries(id);
   const libraryId = series.data?.libraryId;
   const items = useSeriesBooks(libraryId, id);
+  useDocumentTitle(series.data?.name);
   const progress = useProgress();
   const authorIds = useAuthorIds(libraryId);
 

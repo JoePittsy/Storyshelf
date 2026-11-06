@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { ExpandableText, HeroBand, TitleButton, UserAvatar } from '@joepittsy/ui';
 import { useAuthor } from '../api/authors';
 import { authorImageUrl, mergeProgress, useProgress } from '../api/libraries';
+import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { BackLink } from '../components/BackLink';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import type { BookTile } from '../components/BookGrid';
@@ -19,6 +20,7 @@ export function Author() {
   const author = useAuthor(id);
   const progress = useProgress();
   const { data } = author;
+  useDocumentTitle(data?.name);
 
   const bio = useMemo(() => (data?.description ? sanitiseDescription(data.description) : ''), [data]);
   const { sections, other } = useMemo(() => groupAuthorBooks(data?.series, data?.libraryItems), [data]);
