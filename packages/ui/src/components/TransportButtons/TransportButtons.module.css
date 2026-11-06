@@ -1,0 +1,58 @@
+.transport {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  flex-shrink: 0;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-body);
+  padding: 0.45em 0.55em;
+  border-radius: var(--r-row);
+  line-height: 1;
+  flex-shrink: 0;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast),
+    transform var(--dur-fast) var(--ease-fast);
+}
+.btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Play-pause: the room inverted, as a circle. */
+.play {
+  width: 2.6em;
+  height: 2.6em;
+  padding: 0;
+  border-radius: var(--r-round);
+  background: var(--text);
+  color: var(--bg);
+}
+.play:hover:not(:disabled) {
+  background: var(--text);
+  color: var(--bg);
+  transform: scale(1.07);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+  .play:hover:not(:disabled) {
+    transform: none;
+  }
+}

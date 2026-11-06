@@ -1,0 +1,79 @@
+.container {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+/* A floating surface (frosted navy), with a small status dot instead of a coloured slab. */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  padding: 9px 16px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: var(--fs-px);
+  font-weight: 500;
+  max-width: 340px;
+  color: var(--text);
+  background: var(--material-bg);
+  -webkit-backdrop-filter: var(--material-filter);
+  backdrop-filter: var(--material-filter);
+  box-shadow: var(--float-shadow);
+  animation: toastIn var(--dur) var(--ease);
+  pointer-events: auto;
+}
+.toast::before {
+  content: '';
+  flex: none;
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: var(--r-round);
+  background: var(--dot, var(--text-3));
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.error {
+  --dot: rgb(var(--danger));
+}
+.success {
+  --dot: rgb(var(--success));
+}
+.info {
+  --dot: var(--text-3);
+}
+
+.action {
+  flex: none;
+  margin-left: 0.5em;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

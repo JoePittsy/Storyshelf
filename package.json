@@ -1,0 +1,33 @@
+{
+  "name": "storyshelf",
+  "private": true,
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm lint:eslint && pnpm lint:css && pnpm lint:design",
+    "lint:fix": "eslint . --fix",
+    "lint:eslint": "eslint .",
+    "lint:css": "stylelint \"{packages,apps}/*/src/**/*.css\" --allow-empty-input",
+    "lint:design": "npx -y -p @google/design.md@0.4.0 designmd lint packages/ui/DESIGN.md",
+    "format": "prettier --write \"**/*.{ts,tsx,json,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,css}\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "prettier": "^3.9.10",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-declaration-strict-value": "^1.12.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}

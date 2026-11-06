@@ -1,0 +1,51 @@
+import { AddButton } from '../AddButton';
+import { Artwork } from '../Artwork';
+import styles from './ImageTile.module.css';
+
+interface Props {
+  title: string;
+  sub?: string | null;
+  /** A third muted line, e.g. when it was played. */
+  meta?: string | null;
+  imageUrl?: string | null;
+  /** Circles for people; squares for everything else. */
+  circular?: boolean;
+  /** md: roomy shelf tile. sm: compact tile for three-up groups. */
+  size?: 'md' | 'sm';
+  onOpen: () => void;
+  /** Hover prefetch. */
+  onHover?: () => void;
+  /** Adds a + on the art's top-right corner, revealed on hover or focus. It never opens the tile. */
+  onAdd?: () => void;
+  addLabel?: string;
+}
+
+/** Artwork over a caption. The tile rises 2px on hover or focus and its art picks up the lifted shadow. */
+export function ImageTile({
+  title,
+  sub,
+  meta,
+  imageUrl,
+  circular,
+  size = 'md',
+  onOpen,
+  onHover,
+  onAdd,
+  addLabel,
+}: Props) {
+  return (
+    <div className={`${styles.tile} ${size === 'sm' ? styles.sm : styles.md}`} onMouseEnter={onHover}>
+      <button type="button" className={styles.main} onClick={onOpen}>
+        <span className={`${styles.art} ${circular ? styles.round : ''}`} aria-hidden="true">
+          <Artwork src={imageUrl} placeholderClassName={styles.ph} />
+        </span>
+        <span className={styles.title}>{title}</span>
+        {sub && <span className={styles.sub}>{sub}</span>}
+        {meta && <span className={styles.sub}>{meta}</span>}
+      </button>
+      {onAdd && (
+        <AddButton variant="corner" className={styles.add} label={addLabel ?? `Add ${title}`} onClick={onAdd} />
+      )}
+    </div>
+  );
+}

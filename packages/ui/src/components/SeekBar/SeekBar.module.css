@@ -1,0 +1,52 @@
+/* The bar is a tall hit area around a thin track, so it is easy to grab; the track grows with
+   transform (not height) on hover. Sized in em: inside a .page-scale root. */
+.seek {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 1.2em;
+  min-width: 0;
+  cursor: pointer;
+}
+.seek[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.5;
+}
+.track {
+  width: 100%;
+  height: 0.22em;
+  background: var(--track);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  transition: transform var(--dur-fast) var(--ease-fast);
+}
+.seek:hover:not([aria-disabled='true']) .track {
+  transform: scaleY(1.7);
+}
+.fill {
+  width: 100%;
+  height: 100%;
+  background: var(--on-art);
+  border-radius: var(--r-pill);
+  transform-origin: left center;
+  transition: transform 1s linear;
+}
+
+.time {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  min-width: 2.6em;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .fill {
+    transition: none;
+  }
+  .seek:hover:not([aria-disabled='true']) .track {
+    transform: none;
+  }
+}

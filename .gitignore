@@ -1,0 +1,9 @@
+node_modules
+dist
+storybook-static
+coverage
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
