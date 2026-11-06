@@ -154,12 +154,13 @@
    never takes the pointer. */
 .flash {
   position: absolute;
-  bottom: 100%;
+  /* Anchored to the track (the middle of the hit area), not the top of the taller touch hit area, so it sits in the
+     gap above the bar rather than over the text above it. Opaque, in case it ever does overlap for its second. */
+  bottom: 50%;
   left: 50%;
-  margin-bottom: 0.6em;
-  padding: 0.4em 0.8em;
-  background: var(--material-bg);
-  backdrop-filter: var(--material-filter);
+  margin-bottom: 0.45em;
+  padding: 0.25em 0.75em;
+  background: var(--bg-1);
   border: 1px solid var(--separator);
   border-radius: var(--r-pill);
   box-shadow: var(--float-shadow);
