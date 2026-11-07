@@ -109,3 +109,41 @@
     gap: 1.6em;
   }
 }
+
+/* Year in review, under the stats: its own heading row with the year picker, then the same band rhythm. */
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4em;
+  margin-top: 1.6em;
+}
+.reviewHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8em 1.4em;
+}
+.reviewTitle {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.yearPicker {
+  min-width: 7em;
+}
+.chart {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.note {
+  margin: 0;
+  font-size: var(--fs-prose);
+  color: var(--text-2);
+}
+.strong {
+  color: var(--text);
+  font-weight: 600;
+}

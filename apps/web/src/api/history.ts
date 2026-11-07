@@ -35,6 +35,12 @@ export interface ListeningSession {
   startedAt: number;
   updatedAt: number;
   deviceInfo?: SessionDevice | null;
+  /** The book's details as they were when the session opened. Missing from very old sessions. */
+  mediaMetadata?: {
+    title?: string | null;
+    authors?: { id?: string; name?: string | null }[] | null;
+    narrators?: (string | null)[] | null;
+  } | null;
 }
 
 interface SessionsPage {
@@ -67,6 +73,51 @@ export const useListeningLog = () =>
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => clean(await absFetch<SessionsPage>(sessionsUrl(pageParam))),
     getNextPageParam: nextPage,
+  });
+
+/** Big pages for the year in review: it reads every session back to the year's start. */
+const YEAR_PAGE = 500;
+
+/**
+ * Every session that could touch `year`. ABS sorts by last update, newest first, so the pages stop at the first one
+ * that reaches back before the year began (local time). A past year reads through the years after it to get there.
+ */
+export const useYearSessions = (year: number) =>
+  useQuery({
+    queryKey: ['year-sessions', year],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const from = new Date(year, 0, 1).getTime();
+      const all: ListeningSession[] = [];
+      for (let page = 0; ; page++) {
+        const p = clean(await absFetch<SessionsPage>(sessionsUrl(page, YEAR_PAGE)));
+        all.push(...p.sessions);
+        const oldest = p.sessions[p.sessions.length - 1];
+        if (page + 1 >= p.numPages || p.sessions.length === 0 || (oldest && oldest.updatedAt < from)) break;
+      }
+      return all;
+    },
+  });
+
+/**
+ * GET /api/me/stats/year/:year (ABS 2.26 and later; checked on 2.37.2). Only the finished books are used: the rest is
+ * counted from the sessions, which give more (every month, every book's time, every narrator). Its year runs on the
+ * server's clock.
+ */
+export interface YearStats {
+  totalListeningTime: number;
+  numBooksListened: number;
+  numBooksFinished: number;
+  longestAudiobookFinished: { id: string; title: string; duration: number; finishedAt: number } | null;
+  /** Library item ids, up to five, in no particular order. */
+  finishedBooksWithCovers: string[];
+}
+
+export const useYearStats = (year: number) =>
+  useQuery({
+    queryKey: ['year-stats', year],
+    staleTime: 5 * 60_000,
+    queryFn: () => absFetch<YearStats>(`/api/me/stats/year/${year}`),
   });
 
 /** One book's sessions. The route is paged like the log; 100 covers a book's whole history in practice. */

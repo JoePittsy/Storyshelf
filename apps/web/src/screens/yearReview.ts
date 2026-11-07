@@ -92,7 +92,8 @@ export function monthShares(startedAt: number, endedAt: number, seconds: number,
     t = next;
   }
   const total = spans.reduce((a, s) => a + s.ms, 0);
-  if (total <= 0) return [{ year: spans[0]!.year, month: spans[0]!.month, seconds }];
+  const [first] = spans;
+  if (total <= 0 && first) return [{ year: first.year, month: first.month, seconds }];
   return spans.filter((s) => s.ms > 0).map((s) => ({ year: s.year, month: s.month, seconds: (seconds * s.ms) / total }));
 }
 

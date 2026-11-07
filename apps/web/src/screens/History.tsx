@@ -42,6 +42,7 @@ import {
   topBooks,
 } from './historyHelpers';
 import { useNow } from './useNow';
+import { YearInReview } from './YearInReview';
 import styles from './History.module.css';
 
 const SECTIONS = [
@@ -317,6 +318,7 @@ export function HistoryStats() {
           <BarList rows={view.authors} ranked nameMax={NAME_MAX} />
         </SectionCard>
       </div>
+      <YearInReview days={stats.data?.days ?? {}} />
     </div>
   );
 }
