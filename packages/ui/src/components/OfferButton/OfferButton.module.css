@@ -27,6 +27,19 @@
   color: var(--text-2);
 }
 
+/* The short words only on a narrow screen. Hidden with display, so only the shown words name the button. */
+.short {
+  display: none;
+}
+@media (width < 22em) {
+  .long {
+    display: none;
+  }
+  .short {
+    display: inline;
+  }
+}
+
 /* Opaque, like the mini player it sits on, with a hairline on top. Its content sits in the app's column. */
 .bar {
   --edge: max(var(--gutter, 0.8em), calc((100% - var(--content-max, 100%)) / 2));

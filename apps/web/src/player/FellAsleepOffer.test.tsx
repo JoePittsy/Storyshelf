@@ -26,7 +26,7 @@ describe('FellAsleepOffer', () => {
   it('offers to go back to where the timer began, and goes there through the undoable jump, once', async () => {
     rememberFellAsleep({ itemId: 'b1', target: 2470, chapter: null, stoppedAt: 4000 });
     render(<FellAsleepOffer variant="inline" />);
-    await userEvent.click(screen.getByRole('button', { name: 'Go back to where the timer began, 41:10' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Go back to where the timer began, 41:10/ }));
     expect(jumpTo).toHaveBeenCalledWith(2470, 'where the timer began');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
@@ -34,7 +34,7 @@ describe('FellAsleepOffer', () => {
   it('names the chapter when it offers the start of the chapter the timer stopped in', async () => {
     rememberFellAsleep({ itemId: 'b1', target: 3725, chapter: 11, stoppedAt: 4000 });
     render(<FellAsleepOffer variant="bar" />);
-    await userEvent.click(screen.getByRole('button', { name: 'Go back to the start of Chapter 12, 1:02:05' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Go back to the start of Chapter 12, 1:02:05/ }));
     expect(jumpTo).toHaveBeenCalledWith(3725, 'Chapter 12');
   });
 

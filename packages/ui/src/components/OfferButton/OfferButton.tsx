@@ -4,6 +4,8 @@ import styles from './OfferButton.module.css';
 interface Props {
   /** What one tap does, in a sentence: "Go back to where the timer began, 41:10". */
   label: string;
+  /** Said instead of `label` on a narrow screen (under 22em wide), where the whole sentence would take two lines. */
+  shortLabel?: string;
   onClick: () => void;
   /** A glyph before the words, for what the offer is about. */
   icon?: 'moon';
@@ -19,7 +21,7 @@ interface Props {
  * A small, one-tap offer the app makes in passing, such as going back to where a sleep timer began. Quiet: the ghost
  * pill's tint, label weight, and words that wrap rather than truncate. The app decides when it shows and goes.
  */
-export function OfferButton({ label, onClick, icon, variant = 'inline', className }: Props) {
+export function OfferButton({ label, shortLabel, onClick, icon, variant = 'inline', className }: Props) {
   const button = (
     <button
       type="button"
@@ -27,7 +29,14 @@ export function OfferButton({ label, onClick, icon, variant = 'inline', classNam
       onClick={onClick}
     >
       {icon === 'moon' && <Moon className={styles.icon} size="1.1em" aria-hidden="true" />}
-      <span>{label}</span>
+      {shortLabel ? (
+        <>
+          <span className={styles.long}>{label}</span>
+          <span className={styles.short}>{shortLabel}</span>
+        </>
+      ) : (
+        <span>{label}</span>
+      )}
     </button>
   );
   if (variant === 'inline') return button;
