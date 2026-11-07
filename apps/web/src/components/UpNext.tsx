@@ -1,9 +1,12 @@
 import { useLocation, useNavigate } from 'react-router';
-import { Artwork, UpNextCard, useDominantColor } from '@joepittsy/ui';
-import { coverUrl } from '../api/libraries';
+import { Artwork, FinishedCard, UpNextCard, useDominantColor } from '@joepittsy/ui';
+import { coverUrl, useProgress } from '../api/libraries';
 import { usePlayer } from '../player/engine';
 import { dismissUpNext, useUpNextDismissed } from '../player/upNextDismissed';
+import { useNow } from '../screens/useNow';
+import { finishedLine } from './finishedLine';
 import { useNextInSeries, type UpNext } from './useNextInSeries';
+import styles from './UpNext.module.css';
 
 interface CardProps {
   next: UpNext;
@@ -48,19 +51,61 @@ function useEndedBook(): string | undefined {
   return useUpNextDismissed(id) ? undefined : id;
 }
 
-/** Now Playing: once the book has played to its end (never mid-book), the next one in its series. Closing it sticks for that book. */
-export function NowPlayingUpNext({ className }: { className?: string }) {
-  const ended = useEndedBook();
-  const next = useNextInSeries(ended);
-  if (!ended || !next) return null;
+/**
+ * The end of a book with nothing after it: "Finished", its length and the days it took (only what ABS's progress can
+ * vouch for), back to the library, or listen again from the start. The book's own cover colour washes it.
+ */
+function EndCard({ id, className }: { id: string; className?: string }) {
+  const navigate = useNavigate();
+  const player = usePlayer();
+  const now = useNow();
+  const startedAt = useProgress().data?.get(id)?.startedAt;
+  const wash = useDominantColor(player.item?.coverUrl ?? null);
   return (
-    <NextCard
-      next={next}
-      variant="card"
-      caption={next.caption}
-      onDismiss={() => dismissUpNext(ended)}
+    <FinishedCard
+      detail={finishedLine(player.duration, startedAt, now)}
+      action={{ label: 'Back to library', onClick: () => void navigate('/') }}
+      secondary={{ label: 'Listen again', onClick: () => void player.play(id, 0) }}
+      wash={wash}
       className={className}
     />
+  );
+}
+
+/**
+ * Now Playing, once the book has played to its end (never mid-book): the next one in its series (Up next), or, when
+ * there is none, Finished. Nothing shows until the series is known, so Finished never flashes up before Up next. Closing
+ * Up next sticks for that book, and does not bring Finished in its place. The ended flag lives only as long as the
+ * visit, and a reload doesn't put a finished book back in the player, so neither card comes back after a reload.
+ *
+ * The end is said once to a screen reader, through a status that is always rendered (a live region added with its
+ * words in is often not read): "Finished: <book>.", and what is up next when there is something.
+ */
+export function NowPlayingEnd({ className }: { className?: string }) {
+  const p = usePlayer();
+  const ended = p.ended ? p.item : null;
+  const dismissed = useUpNextDismissed(ended?.id);
+  const next = useNextInSeries(ended?.id);
+  const said =
+    ended && next !== undefined
+      ? `Finished: ${ended.title}.${next ? ` Up next: ${next.book.item.media.metadata.title}.` : ''}`
+      : '';
+  return (
+    <>
+      <p className={styles.sr} role="status">
+        {said}
+      </p>
+      {ended && next && !dismissed && (
+        <NextCard
+          next={next}
+          variant="card"
+          caption={next.caption}
+          onDismiss={() => dismissUpNext(ended.id)}
+          className={className}
+        />
+      )}
+      {ended && next === null && <EndCard id={ended.id} className={className} />}
+    </>
   );
 }
 

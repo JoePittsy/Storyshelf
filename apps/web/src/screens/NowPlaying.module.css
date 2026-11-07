@@ -420,6 +420,22 @@
   .sheet:has(.offer) .phoneArt {
     min-height: 3.5em;
   }
+  /* Up next or Finished is taller than the offer: the cover gives up all the room it must (it goes altogether on the
+     smallest phones, see below), and the title keeps to one line, so the controls and the tray still fit. */
+  .sheet:has(.upNext) .phoneArt {
+    min-height: 0;
+  }
+  .sheet:has(.upNext) .phoneTitle {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}
+/* A cover squeezed below a thumbnail (Up next's own art is 3.4em) would be a smudge, not a picture: leave the space
+   empty instead. */
+@container (height < 3em) {
+  .cover {
+    display: none;
+  }
 }
 /* A cover squeezed to a thumbnail has no room for the percentage pill, which would hide most of it. The progress bar
    below says the same thing. */

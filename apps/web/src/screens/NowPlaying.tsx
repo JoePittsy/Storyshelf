@@ -39,7 +39,7 @@ import { useBookmarkHere } from '../player/useBookmarkHere';
 import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
 import { ShortcutList } from '../frame/ShortcutList';
-import { NowPlayingUpNext } from '../components/UpNext';
+import { NowPlayingEnd } from '../components/UpNext';
 import { AirPlayControl } from '../player/AirPlayControl';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
@@ -251,7 +251,7 @@ export function NowPlaying() {
               {!!narrators?.length && <span className={styles.narrator}>Narrated by {narrators.join(', ')}</span>}
             </p>
           </header>
-          <NowPlayingUpNext className={styles.upNext} />
+          <NowPlayingEnd className={styles.upNext} />
           <PlayerOffer variant="inline" className={styles.offer} />
 
           <div className={styles.phoneControls} ref={controls}>
@@ -351,7 +351,7 @@ export function NowPlaying() {
               </p>
             )}
           </header>
-          <NowPlayingUpNext className={styles.upNext} />
+          <NowPlayingEnd className={styles.upNext} />
           <PlayerOffer variant="inline" className={styles.offer} />
 
           <div className={styles.controls}>
