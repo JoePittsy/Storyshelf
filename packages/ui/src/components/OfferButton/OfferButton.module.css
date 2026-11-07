@@ -1,0 +1,43 @@
+/* The ghost pill's tint, with room for a sentence: it wraps instead of truncating. */
+.offer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 0.5em 1.1em 0.5em 0.9em;
+  border: none;
+  border-radius: var(--r-pill);
+  background: rgba(var(--tint), 0.12);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-fast);
+}
+.offer:hover {
+  background: rgba(var(--tint), 0.22);
+}
+.icon {
+  flex: none;
+  color: var(--text-2);
+}
+
+/* Opaque, like the mini player it sits on, with a hairline on top. Its content sits in the app's column. */
+.bar {
+  --edge: max(var(--gutter, 0.8em), calc((100% - var(--content-max, 100%)) / 2));
+
+  padding: 0.5em max(var(--edge), env(safe-area-inset-right)) 0.5em max(var(--edge), env(safe-area-inset-left));
+  background: var(--bg-1);
+  box-shadow: 0 -1px 0 var(--separator);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offer {
+    transition: none;
+  }
+}
