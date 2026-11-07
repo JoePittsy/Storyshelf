@@ -1,5 +1,5 @@
-/* No box of its own: the controls and the button join the toolbar's row in Library, and the active chips wrap
-   beneath them on a row of their own. */
+/* No box of its own: the controls and the button join the filters row under the grid's heading in Library (on a phone,
+   the row beside Sort), and the active chips wrap beneath them on a row of their own. */
 .root,
 .row {
   display: contents;

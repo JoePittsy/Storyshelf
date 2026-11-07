@@ -151,7 +151,10 @@ export function Library({ onPlay = noop }: Props) {
   const showShelf = !searching && !filtered && !!libraryId;
   const shelfPending = showShelf && (inProgress.isPending || progress.isPending);
   const loading =
-    libs.isPending || (!!libraryId && (active.isPending || !lists.settled)) || (!!local.progress && progress.isPending) || shelfPending;
+    libs.isPending ||
+    (!!libraryId && (active.isPending || !lists.settled)) ||
+    (!!local.progress && progress.isPending) ||
+    shelfPending;
   const failed = libs.isError || active.isError;
 
   const chips = searching ? (search.data?.chips ?? []) : [];
@@ -192,19 +195,35 @@ export function Library({ onPlay = noop }: Props) {
       {/* Not while searching or filtering: it would sit among narrowed results. Mounted once the section tabs are
           settled, so they never push it down. */}
       {showShelf && lists.settled && <ResumeHome libraryId={libraryId} onPlay={onPlay} />}
-      <div className={styles.toolbar}>
-        <SearchField label="Search books" placeholder="Search title or author" value={text} onChange={setText} />
-        {!searching && (
-          <Select label="Sort by" value={choiceOf(sort).value} options={SORT_OPTIONS} onChange={changeSort} />
-        )}
-        <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
-      </div>
-      {!loading && !failed && tiles.length > 0 && (
+      {/* The grid's head: its heading, then the search box ("/" lands here), sort and filters as the grid's own
+          controls. Wide, search and sort sit level with the heading and the filters take a row beneath; on a phone
+          they stack under it. The heading is there while the books load, so the controls never jump under a finger;
+          the count joins it once there is something to count. */}
+      <div className={styles.head}>
         <h2 className={styles.heading}>
           {heading}
-          {counted !== undefined && ` · ${counted}`}
+          {!loading && !failed && tiles.length > 0 && counted !== undefined && ` · ${counted}`}
         </h2>
-      )}
+        <SearchField
+          className={styles.search}
+          label="Search books"
+          placeholder="Search title or author"
+          value={text}
+          onChange={setText}
+        />
+        {!searching && (
+          <Select
+            className={styles.sort}
+            label="Sort by"
+            value={choiceOf(sort).value}
+            options={SORT_OPTIONS}
+            onChange={changeSort}
+          />
+        )}
+        <div className={styles.filters}>
+          <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
+        </div>
+      </div>
       {chips.length > 0 && (
         <ul className={styles.chips} aria-label="Matching authors, narrators and series">
           {chips.map((c) => (

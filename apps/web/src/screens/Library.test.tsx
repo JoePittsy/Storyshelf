@@ -141,6 +141,17 @@ describe('REQ-37 REQ-38 REQ-41 REQ-42 filters from the URL', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Library' })).toBeInTheDocument();
   });
 
+  // The search box answers "/", so it reads as the grid's own control: beside the grid's heading, not above the shelves.
+  it('puts the search box and sort with the grid heading, which is there while the books load', async () => {
+    mockAbs();
+    renderAt('/?library=L1');
+    const heading = screen.getByRole('heading', { level: 2, name: 'All books' });
+    const head = heading.parentElement;
+    expect(head).toContainElement(screen.getByRole('searchbox', { name: 'Search books' }));
+    expect(head).toContainElement(screen.getByLabelText('Sort by'));
+    expect(await screen.findByRole('heading', { level: 2, name: 'All books · 2' })).toBe(heading);
+  });
+
   it('says so when nothing matches', async () => {
     mockAbs([FANTASY]);
     renderAt('/?library=L1&genre=Fantasy&progress=finished');
