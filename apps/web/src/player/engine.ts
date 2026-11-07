@@ -24,7 +24,10 @@ import {
   type Progress,
 } from './session';
 import { clampRate, loadSettings, saveSettings } from './settings';
-import { sleepAtChapterEnd, sleepInMinutes, tickSleep, type SleepTimer } from './sleep';
+import { bookSpeed, forgetBookSpeeds, putBackBookSpeeds, rememberBookSpeed } from './bookSpeeds';
+import { fellAsleepPlace, forgetFellAsleep, rememberFellAsleep } from './fellAsleep';
+import { rewindSeconds, rewindTarget } from './rewind';
+import { fadeLevel, sleepAtChapterEnd, sleepInMinutes, sleepRemainingMs, tickSleep, type SleepTimer } from './sleep';
 import { dueOnStop, dueWhilePlaying, markSynced, payload, startClock, tick } from './sync';
 import { clampSeek, locate, toBookTime, totalDuration, type AudioTrack } from './timeline';
 
@@ -47,9 +50,14 @@ export interface PlayerState {
   chapters: Chapter[];
   /** -1 when there are no chapters or the position is in a gap. */
   chapterIndex: number;
+  /** The speed playing now: the book's own (see bookSpeeds), or the default. */
   rate: number;
+  /** The default speed, from Settings: for books that have no speed of their own. */
+  defaultRate: number;
   skipBack: number;
   skipForward: number;
+  /** Go back a little when playback resumes after a pause (see rewind). */
+  rewindOnResume: boolean;
   sleep: SleepTimer | null;
   /** Book seconds at the moment the sleep timer was set or changed: where the sleep progress window starts. */
   sleepFrom: number;
@@ -67,6 +75,12 @@ const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
 const MSG_NETWORK = "Couldn't reach the server. Check your connection and try again.";
 const MSG_OTHER = "Couldn't start this book. Try again in a moment.";
 
+/** The settings part of the state, as stored. */
+function settingsState(): Pick<PlayerState, 'rate' | 'defaultRate' | 'skipBack' | 'skipForward' | 'rewindOnResume'> {
+  const s = loadSettings();
+  return { ...s, defaultRate: s.rate };
+}
+
 const initial = (): PlayerState => ({
   status: 'idle',
   item: null,
@@ -74,7 +88,7 @@ const initial = (): PlayerState => ({
   duration: 0,
   chapters: [],
   chapterIndex: -1,
-  ...loadSettings(),
+  ...settingsState(),
   sleep: null,
   sleepFrom: 0,
   error: null,
@@ -111,6 +125,10 @@ let restoredAt = 0; // ms: when the server last heard of the place the snapshot 
 let moveTimer: ReturnType<typeof setTimeout> | undefined;
 let syncChain: Promise<void> = Promise.resolve();
 let mimes: string[] | null = null;
+// Date.now() when the listener (or the sleep timer) paused the book. A move or a play clears it. See `rewindOnResume`.
+let pausedAt: number | null = null;
+// The listener's own volume while the sleep timer fades it out; null when not fading.
+let fadeFrom: number | null = null;
 
 const getMimes = (a: HTMLAudioElement) => (mimes ??= supportedMimeTypes(a));
 const coverFor = (id: string) => absUrl(`/api/items/${id}/cover?width=512&format=jpeg`);
@@ -297,6 +315,7 @@ function act(intent: Intent, why: string): void {
   if (todo !== 'play') return;
   if (session && track) {
     // iOS may have dropped the stream while paused and locked: start over now, inside this handler.
+    if (rewindOnResume()) return;
     if ((a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) && reloadAndPlay('no source')) return;
     startPlay(a, why);
   } else if (lastRequest) void play(lastRequest.itemId, lastRequest.from);
@@ -315,6 +334,9 @@ function load(tr: AudioTrack, offset: number, autoplay: boolean): void {
 }
 
 function seekBook(t: number): void {
+  // A move made while paused chooses where to start: no rewind on top of it. And the "fell asleep" offer has had its moment.
+  pausedAt = null;
+  forgetFellAsleep();
   if (!session && state.restored) {
     // Nothing is loaded: move the place Play will start from.
     const r = restoredSeek(t, state.duration, state.chapters);
@@ -357,13 +379,68 @@ function accountPlayingTime(): number {
   return dt;
 }
 
+/**
+ * Rewinds a little when the book has been paused a while (see rewind.ts), before it plays again, so the first sync
+ * after resuming already carries the new place. It isn't a jump: nothing goes in the history or the undo log. Once per
+ * pause. True when the rewind crossed into another file and has already started that playing.
+ */
+function rewindOnResume(): boolean {
+  const since = pausedAt;
+  pausedAt = null;
+  if (since === null || !state.rewindOnResume || !session || !track || !audio) return false;
+  const from = position();
+  const to = rewindTarget(from, rewindSeconds(Date.now() - since), state.chapters);
+  if (to === from) return false;
+  note('rewind on resume', { from: Math.round(from), to: Math.round(to) });
+  set({ position: to, chapterIndex: chapterIndexAt(state.chapters, to) });
+  const { track: tr, offset } = locate(session.audioTracks, to);
+  if (tr.index !== track.index) {
+    load(tr, offset, true);
+    return true;
+  }
+  audio.currentTime = offset;
+  mediaPosition();
+  return false;
+}
+
+/**
+ * Sets the volume to `level` (0..1) of the listener's own, for the sleep timer's fade; 1 puts it back.
+ *
+ * This is `audio.volume`, not Web Audio: routing the element through an AudioContext can stop playback in the
+ * background on iOS. iOS Safari treats `volume` as read-only (the hardware buttons own it): there the setter does
+ * nothing and reads still give 1, so the fade is silently skipped and the timer pauses at full volume, as before.
+ */
+function fadeTo(level: number): void {
+  if (!audio) return;
+  if (level >= 1) return restoreVolume();
+  fadeFrom ??= audio.volume;
+  audio.volume = Math.min(1, Math.max(0, fadeFrom * level));
+}
+
+/** Ends a sleep fade: the volume goes back to what the listener had. */
+function restoreVolume(): void {
+  if (fadeFrom === null || !audio) return;
+  audio.volume = fadeFrom;
+  fadeFrom = null;
+}
+
+/** The sleep timer is pausing the book at `stoppedAt`: offer back the place the listener was last surely awake. */
+function rememberWhereAsleep(stoppedAt: number): void {
+  const place = state.item && fellAsleepPlace(state.sleepFrom, state.chapters, stoppedAt);
+  if (state.item && place) rememberFellAsleep({ itemId: state.item.id, ...place, stoppedAt });
+}
+
 function onTimeUpdate(): void {
   if (!session || state.status !== 'playing') return;
   const dt = accountPlayingTime();
   if (state.sleep) {
-    const r = tickSleep(state.sleep, dt, position());
+    const pos = position();
+    const r = tickSleep(state.sleep, dt, pos);
     set({ sleep: r.expired ? null : r.timer });
-    if (r.expired) getAudio().pause(); // the pause handler syncs
+    if (r.expired) {
+      rememberWhereAsleep(pos);
+      getAudio().pause(); // the pause handler syncs, and puts the volume back
+    } else fadeTo(fadeLevel(sleepRemainingMs(r.timer, pos, state.rate)));
   }
   refresh();
   if (dueWhilePlaying(clock)) void doSync();
@@ -394,6 +471,8 @@ function getAudio(): HTMLAudioElement {
   a.addEventListener('playing', () => {
     note('audio playing');
     if (!session) return;
+    pausedAt = null;
+    forgetFellAsleep();
     ownChange = false;
     recovering = false;
     awaitingPlaying = null;
@@ -414,6 +493,8 @@ function getAudio(): HTMLAudioElement {
     note(ownChange ? 'audio pause (ours, ignored)' : 'audio pause');
     if (!session || a.ended) return;
     if (ownChange) return; // our own src change: not the listener pausing
+    restoreVolume();
+    pausedAt = Date.now();
     awaitingPlaying = null;
     accountPlayingTime();
     set({ status: 'paused' });
@@ -432,6 +513,7 @@ function getAudio(): HTMLAudioElement {
     const next = tracks[tracks.findIndex((t) => t.index === track?.index) + 1];
     // iOS needs src and play() inside this handler, on the same element, to carry on through a lock or background.
     if (next) return load(next, 0, true);
+    restoreVolume();
     set({ status: 'paused', position: totalDuration(tracks), ended: true });
     updatePlaybackState('paused');
     const id = session.libraryItemId;
@@ -504,7 +586,9 @@ function detach(): { s: PlaybackSession; p: Progress } | null {
   session = null;
   track = null;
   lastMs = null;
+  pausedAt = null;
   getAudio().pause();
+  restoreVolume();
   return { s, p };
 }
 
@@ -518,12 +602,18 @@ export async function play(itemId: string, from?: number): Promise<void> {
   lastRequest = { itemId, from };
   if (session?.libraryItemId === itemId && track) {
     if (from !== undefined) seekBook(from);
-    if (a.paused) startPlay(a, 'play()');
+    if (a.paused && !rewindOnResume()) startPlay(a, 'play()');
     return;
   }
   // Everything up to the first await runs inside the click.
   // A restored book starts from the server's place unless the listener moved it here since (see `chooseStart`).
   const local = state.restored && state.item?.id === itemId ? movedHere : null;
+  // An unmoved restored book was last heard of at `restoredAt` (ABS `lastUpdate`): that is how long it has been paused,
+  // if the server still has the same place. With no time to go on, it starts exactly where it was.
+  const pausedSince =
+    state.restored && state.item?.id === itemId && local === null && from === undefined && restoredAt > 0
+      ? { position: state.position, at: restoredAt }
+      : null;
   clearTimeout(moveTimer);
   moveTimer = undefined;
   movedHere = null;
@@ -544,7 +634,9 @@ export async function play(itemId: string, from?: number): Promise<void> {
   }
   if (mine !== token) return void closeSession(s);
   session = s;
-  const startAt = chooseStart(from, local, s.currentTime);
+  let startAt = chooseStart(from, local, s.currentTime);
+  if (pausedSince && state.rewindOnResume && Math.abs(s.currentTime - pausedSince.position) < 1)
+    startAt = rewindTarget(startAt, rewindSeconds(Date.now() - pausedSince.at), s.chapters);
   clock = startClock(startAt);
   const item: PlayerItem = { id: itemId, title: s.displayTitle, author: s.displayAuthor, coverUrl: coverFor(itemId) };
   const start = clampSeek(startAt, totalDuration(s.audioTracks));
@@ -556,6 +648,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
     position: start,
     chapterIndex: chapterIndexAt(s.chapters, start),
     sleep: null,
+    rate: rateFor(itemId),
   });
   setMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
   load(tr, offset, true);
@@ -571,7 +664,7 @@ export function restore(r: Restorable, chapters: Chapter[]): void {
   lastRequest = { itemId: r.id }; // no `from`: Play starts from the server's place, or from a move made here
   movedHere = null;
   restoredAt = r.updatedAt;
-  set(patch);
+  set({ ...patch, rate: rateFor(r.id) });
   setMetadata(patch.item, chapters[patch.chapterIndex]?.title ?? '');
 }
 
@@ -608,21 +701,64 @@ export function nextChapter(): void {
   if (t !== null) seekBook(t);
 }
 
-export function setRate(rate: number): void {
-  const r = clampRate(rate);
+/** The speed a book plays at: its own, or the default. */
+const rateFor = (id: string): number => bookSpeed(id) ?? state.defaultRate;
+
+function applyRate(r: number): void {
   const a = getAudio();
   a.defaultPlaybackRate = a.playbackRate = r;
   set({ rate: r });
-  saveSettings({ rate: r, skipBack: state.skipBack, skipForward: state.skipForward });
   mediaPosition();
+}
+
+function persist(): void {
+  saveSettings({
+    rate: state.defaultRate,
+    skipBack: state.skipBack,
+    skipForward: state.skipForward,
+    rewindOnResume: state.rewindOnResume,
+  });
+}
+
+/** The player's speed control: the book in the player keeps this speed (with no book, it sets the default). */
+export function setRate(rate: number): void {
+  const r = clampRate(rate);
+  applyRate(r);
+  if (state.item) return rememberBookSpeed(state.item.id, r, state.defaultRate);
+  set({ defaultRate: r });
+  persist();
+}
+
+/** Settings' default speed, for books with no speed of their own. The book in the player follows it if it has none. */
+export function setDefaultRate(rate: number): void {
+  const r = clampRate(rate);
+  set({ defaultRate: r });
+  persist();
+  if (!state.item || bookSpeed(state.item.id) === undefined) applyRate(r);
+}
+
+/** Every book back on the default speed. Returns an Undo. */
+export function resetBookSpeeds(): () => void {
+  const was = forgetBookSpeeds();
+  if (state.item) applyRate(state.defaultRate);
+  return () => {
+    putBackBookSpeeds(was);
+    if (state.item) applyRate(rateFor(state.item.id));
+  };
 }
 
 export function setSkip(back: number, forward: number): void {
   set({ skipBack: back, skipForward: forward });
-  saveSettings({ rate: state.rate, skipBack: back, skipForward: forward });
+  persist();
+}
+
+export function setRewindOnResume(on: boolean): void {
+  set({ rewindOnResume: on });
+  persist();
 }
 
 export function setSleep(choice: SleepChoice): void {
+  restoreVolume(); // changed or turned off mid-fade: the next tick fades again if it should
   if (choice === 'off') return set({ sleep: null });
   set({
     sleep: choice === 'chapter' ? sleepAtChapterEnd(state.chapters, position()) : sleepInMinutes(choice.minutes),
@@ -641,7 +777,8 @@ export async function stop(): Promise<void> {
   lastRequest = null;
   movedHere = null;
   clearTimeout(moveTimer);
-  set({ ...initial(), rate: state.rate, skipBack: state.skipBack, skipForward: state.skipForward });
+  const { defaultRate, skipBack, skipForward, rewindOnResume } = state;
+  set({ ...initial(), rate: defaultRate, defaultRate, skipBack, skipForward, rewindOnResume });
   updateMetadata(null, '');
   updatePlaybackState('none');
   if (old) {
@@ -711,7 +848,21 @@ const mediaActions = {
   },
 };
 
-const actions = { play, toggle, seek, skip, previousChapter, nextChapter, setRate, setSkip, setSleep, stop };
+const actions = {
+  play,
+  toggle,
+  seek,
+  skip,
+  previousChapter,
+  nextChapter,
+  setRate,
+  setDefaultRate,
+  resetBookSpeeds,
+  setSkip,
+  setRewindOnResume,
+  setSleep,
+  stop,
+};
 
 export function usePlayer(): PlayerState & typeof actions {
   const s = useSyncExternalStore(subscribe, () => state);
