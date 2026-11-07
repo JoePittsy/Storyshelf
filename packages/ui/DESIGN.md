@@ -299,7 +299,7 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **Chip (Chip):** a pill link to a person, series or page. Tint Chip fill, an optional round avatar and a muted count after the name; hover steps to the row-hover tint.
 - **Filter chip (FilterChip):** an applied filter. A full pill in the selected tonal fill (tint 0.16) with the label and a round remove button at the trailing edge; the button's name is "Remove filter: {label}".
 - **Person link (PersonLink):** a person as a link. A tonal card (1em radius, no border) with a 3em round avatar, the name and a muted caption; hover steps to the raised surface. It fills its container, so a grid decides single column or cards.
-- **Tabs (Tabs):** navigation links under the top bar. Secondary label colour; the current tab is full label colour with a 2px underline and `aria-current="page"`. A hairline runs beneath, and the row scrolls sideways when it can't fit.
+- **Tabs (Tabs):** navigation links under the top bar. Secondary label colour; the current tab is full label colour with a 2px underline and `aria-current="page"`. A hairline runs beneath, and the row scrolls sideways when it can't fit, under an edge fade. A `separated` destination (Settings) sits after a short divider, pinned outside the scrolling part, so the narrowest phone never scrolls it out of reach.
 - **Avatar (UserAvatar):** a round photo, or the person's initial on a per-name gradient (also when the photo fails to load). It is decorative: the name always sits beside it. Without a class it is a 2em circle; a caller's class sets its own size.
 
 ### Cards / Containers
