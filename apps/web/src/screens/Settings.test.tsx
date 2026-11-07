@@ -134,4 +134,21 @@ describe('Settings', () => {
     expect(screen.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
     expect(screen.getByText('Play or pause')).toBeInTheDocument();
   });
+
+  // An iPhone has no keyboard to press them on. An iPad with a trackpad (a fine pointer, hover) still lists them.
+  it('leaves the keyboard shortcuts out on a touch-only device', () => {
+    const touchOnly = (query: string) => ({
+      matches: query.includes('hover: none'),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
+    vi.stubGlobal('matchMedia', touchOnly);
+    try {
+      renderSettings();
+      expect(screen.queryByRole('heading', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Playback' })).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
