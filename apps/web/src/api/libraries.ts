@@ -61,12 +61,23 @@ export interface Progress {
 
 export const PAGE_SIZE = 48;
 
-/** Sort options, keyed by ABS's own sort key. */
+/**
+ * The fields the library can be sorted by, keyed by ABS's own sort key (ABS 2.37 `libraryItemsBookFilters.getOrder`),
+ * each with its usual direction. The choices offered, both ways where that makes sense, are in `sort.ts`.
+ *
+ * Not offered: `size` (a storage concern; ABS is where the library is managed), `progress.createdAt` and
+ * `progress.finishedAt` (History lists what was finished), and `random` (ABS shuffles each page on its own, so a
+ * library of more than one page would repeat and miss books). ABS has no per-request "ignore The/A/An": `title` uses
+ * its server-wide "Ignore prefixes when sorting" setting.
+ */
 export const SORTS = [
   { key: 'addedAt', label: 'Recently added', desc: true },
   { key: 'media.metadata.title', label: 'Title', desc: false },
   { key: 'media.metadata.authorNameLF', label: 'Author', desc: false },
   { key: 'progress', label: 'Recently listened', desc: true },
+  { key: 'media.metadata.authorName', label: 'Author first name', desc: false },
+  { key: 'media.metadata.publishedYear', label: 'Published', desc: true },
+  { key: 'media.duration', label: 'Length', desc: false },
 ] as const;
 
 export type SortKey = (typeof SORTS)[number]['key'];
@@ -77,13 +88,16 @@ export function parseSort(value: string | null): SortKey {
   return SORTS.find((s) => s.key === value)?.key ?? DEFAULT_SORT;
 }
 
-export function itemsUrl(libraryId: string, sort: SortKey, page: number, filter?: string): string {
-  const desc = SORTS.find((s) => s.key === sort)?.desc ? 1 : 0;
+/** A field's usual direction: newest, A–Z or shortest first. */
+export const usualDesc = (sort: SortKey): boolean => SORTS.find((s) => s.key === sort)?.desc ?? false;
+
+/** One page of a library's books. `desc` defaults to the field's usual direction. */
+export function itemsUrl(libraryId: string, sort: SortKey, page: number, filter?: string, desc = usualDesc(sort)): string {
   const qs = new URLSearchParams({
     limit: String(PAGE_SIZE),
     page: String(page),
     sort,
-    desc: String(desc),
+    desc: desc ? '1' : '0',
     minified: '1',
   });
   if (filter) qs.set('filter', filter);
@@ -193,13 +207,13 @@ export const withProgressStamp = (url: string): string =>
 export const dependsOnProgress = (sort: SortKey, filter?: string): boolean =>
   sort === 'progress' || !!filter?.startsWith('progress.');
 
-export const useLibraryItems = (libraryId: string | undefined, sort: SortKey, filter?: string) =>
+export const useLibraryItems = (libraryId: string | undefined, sort: SortKey, filter?: string, desc = usualDesc(sort)) =>
   useInfiniteQuery({
-    queryKey: ['items', libraryId, sort, filter ?? ''],
+    queryKey: ['items', libraryId, sort, filter ?? '', desc],
     enabled: !!libraryId,
     initialPageParam: 0,
     queryFn: ({ pageParam }) => {
-      const url = itemsUrl(libraryId ?? '', sort, pageParam, filter);
+      const url = itemsUrl(libraryId ?? '', sort, pageParam, filter, desc);
       return absFetch<ItemsPage>(dependsOnProgress(sort, filter) ? withProgressStamp(url) : url);
     },
     getNextPageParam: (last) => ((last.page + 1) * last.limit < last.total ? last.page + 1 : undefined),
