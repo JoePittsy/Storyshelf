@@ -24,10 +24,12 @@ const CHAPTERS: Chapter[] = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 describe('REQ-20: sleepInMinutes', () => {
-  it('REQ-20: 30 minutes becomes a minutes timer of 1,800,000 ms', () => {
+  it('REQ-20: 30 minutes becomes a minutes timer of 1,800,000 ms that remembers its length', () => {
+    // The length is kept so the sleep list can tick the row that was chosen while it counts down.
     expect(sleepInMinutes(30), 'Expected a minutes timer holding 30 * 60 * 1000 ms').toEqual({
       kind: 'minutes',
       remainingMs: 1_800_000,
+      minutes: 30,
     });
   });
 
@@ -35,6 +37,7 @@ describe('REQ-20: sleepInMinutes', () => {
     expect(sleepInMinutes(0.5), 'Expected half a minute to be 30,000 ms').toEqual({
       kind: 'minutes',
       remainingMs: 30_000,
+      minutes: 0.5,
     });
   });
 });
@@ -80,6 +83,7 @@ describe('REQ-20: tickSleep with a minutes timer', () => {
     expect(timer, 'Expected 1,799,000 ms remaining after feeding 1000 ms').toEqual({
       kind: 'minutes',
       remainingMs: 1_799_000,
+      minutes: 30,
     });
     expect(expired, 'Expected the timer not to have expired yet').toBe(false);
   });
@@ -89,6 +93,7 @@ describe('REQ-20: tickSleep with a minutes timer', () => {
     expect(timer, 'Expected no change when no playing time has passed (for example while paused)').toEqual({
       kind: 'minutes',
       remainingMs: 1_800_000,
+      minutes: 30,
     });
     expect(expired, 'Expected no expiry without playing time').toBe(false);
   });
@@ -104,6 +109,7 @@ describe('REQ-20: tickSleep with a minutes timer', () => {
     expect(state.timer, 'Expected 60,000 - 40,000 = 20,000 ms remaining').toEqual({
       kind: 'minutes',
       remainingMs: 20_000,
+      minutes: 1,
     });
     expect(state.expired, 'Expected not expired with 20 s left').toBe(false);
   });
@@ -145,7 +151,9 @@ describe('REQ-20: tickSleep with an end-of-chapter timer', () => {
   });
 
   it('REQ-20: ignores playing ms, so a long tick mid-chapter does not expire it', () => {
-    expect(tickSleep(timer, 10_000_000, 1850).expired, 'Expected a chapter timer to depend only on book time').toBe(false);
+    expect(tickSleep(timer, 10_000_000, 1850).expired, 'Expected a chapter timer to depend only on book time').toBe(
+      false
+    );
   });
 
   it('REQ-20: returns the timer unchanged', () => {

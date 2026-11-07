@@ -48,3 +48,13 @@ export const Open: Story = {
     await expect(within(canvasElement).getByRole('button', { name: 'Off' })).toBeVisible();
   },
 };
+/** The list open with an end-of-chapter timer running: the bedtime choice leads the list, and is ticked. */
+export const OpenWithChoice: Story = {
+  args: { value: { kind: 'chapter' } },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /sleep timer/i }));
+    const row = within(canvasElement).getByRole('button', { name: 'End of chapter', pressed: true });
+    await expect(row).toBeVisible();
+    await expect(row.querySelector('svg')).not.toBeNull();
+  },
+};
