@@ -45,8 +45,10 @@
 .select:hover:not(:disabled) {
   border-color: var(--border-2);
 }
+/* One focus mark: the global ring drawn over the stroke rather than 2px outside it, so focus never reads as a double
+   outline. */
 .select:focus-visible {
-  border-color: var(--text-2);
+  outline-offset: -1px;
 }
 .select:disabled {
   opacity: 0.4;
