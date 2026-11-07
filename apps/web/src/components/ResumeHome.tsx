@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Artwork, ResumeHero, useDominantColor } from '@joepittsy/ui';
+import { Artwork, MoreMenu, ResumeHero, useDominantColor } from '@joepittsy/ui';
 import { useChapters, useInProgress } from '../api/history';
 import { coverUrl, useProgress } from '../api/libraries';
 import type { Tile } from '../api/libraries';
 import { usePlayer } from '../player/engine';
+import { useProgressActions } from '../player/useProgressActions';
 import { useContinueSeries } from '../api/continueSeries';
 import { ContinueShelf } from './ContinueShelf';
 import { continueSeriesTiles } from './continueSeries';
+import { removeMenu } from './removeMenu';
 import { continueBooks, resumeStatus, splitResume } from './resume';
 import styles from './ResumeHome.module.css';
 
@@ -17,8 +19,15 @@ interface Props {
   onPlay: (itemId: string) => void;
 }
 
+interface HeroProps {
+  tile: Tile;
+  onPlay: (itemId: string) => void;
+  onRemove: (itemId: string) => void;
+  busy: boolean;
+}
+
 /** The book to carry on with, from the book's own data, or from the player's live position when it has the book loaded. */
-function Hero({ tile, onPlay }: { tile: Tile; onPlay: (itemId: string) => void }) {
+function Hero({ tile, onPlay, onRemove, busy: removing }: HeroProps) {
   const navigate = useNavigate();
   const player = usePlayer();
   const progress = useProgress();
@@ -34,6 +43,7 @@ function Hero({ tile, onPlay }: { tile: Tile; onPlay: (itemId: string) => void }
   const playing = here && player.status === 'playing';
   const busy = player.item?.id === item.id && player.status === 'loading';
   const title = item.media.metadata.title;
+  const menu = removeMenu(item.id, title, onRemove, removing);
 
   return (
     <ResumeHero
@@ -54,6 +64,7 @@ function Hero({ tile, onPlay }: { tile: Tile; onPlay: (itemId: string) => void }
       busy={busy}
       onAction={() => (playing ? player.toggle() : onPlay(item.id))}
       wash={wash}
+      menu={<MoreMenu label={menu.label} items={menu.items} busy={menu.busy} />}
     />
   );
 }
@@ -67,6 +78,10 @@ export function ResumeHome({ libraryId, onPlay }: Props) {
   const progress = useProgress();
   const continueSeries = useContinueSeries(libraryId);
   const playerItem = usePlayer().item?.id;
+  // Remove from Continue listening, with Undo. Once the server has the book hidden, it drops out of `tiles`, so the
+  // next book becomes the hero.
+  const { run, busy } = useProgressActions();
+  const remove = (itemId: string) => void run(itemId, 'hide');
   const tiles = useMemo(
     () => continueBooks(inProgress.data, progress.data ?? new Map(), libraryId),
     [inProgress.data, progress.data, libraryId]
@@ -87,8 +102,8 @@ export function ResumeHome({ libraryId, onPlay }: Props) {
   if (!hero && seriesTiles.length === 0) return null;
   return (
     <div className={styles.home}>
-      {hero && <Hero tile={hero} onPlay={onPlay} />}
-      <ContinueShelf tiles={rest} onPlay={onPlay} />
+      {hero && <Hero key={hero.item.id} tile={hero} onPlay={onPlay} onRemove={remove} busy={busy} />}
+      <ContinueShelf tiles={rest} onPlay={onPlay} onRemove={remove} busy={busy} />
       <ContinueShelf tiles={seriesTiles} onPlay={onPlay} title="Continue series" playVerb="Start" />
     </div>
   );

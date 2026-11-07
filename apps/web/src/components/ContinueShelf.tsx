@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router';
 import { Carousel, ImageTile, ProgressBar } from '@joepittsy/ui';
 import { coverUrl } from '../api/libraries';
 import type { Tile } from '../api/libraries';
+import { removeMenu } from './removeMenu';
 import styles from './ContinueShelf.module.css';
 
 interface Props {
@@ -13,13 +14,24 @@ interface Props {
   title?: string;
   /** What the tile's play button does, for its name: "Resume The Hobbit". */
   playVerb?: string;
+  /** Gives each tile a menu with Remove from Continue listening, which calls this. */
+  onRemove?: (itemId: string) => void;
+  /** A removal (or its Undo) is still running. */
+  busy?: boolean;
 }
 
 /**
  * "Continue listening": the unfinished books after the one the resume hero is showing. Also the Continue series shelf,
  * with its own title and verb. Renders nothing when there are none.
  */
-export function ContinueShelf({ tiles, onPlay, title = 'Continue listening', playVerb = 'Resume' }: Props) {
+export function ContinueShelf({
+  tiles,
+  onPlay,
+  title = 'Continue listening',
+  playVerb = 'Resume',
+  onRemove,
+  busy,
+}: Props) {
   const navigate = useNavigate();
   if (tiles.length === 0) return null;
 
@@ -39,6 +51,7 @@ export function ContinueShelf({ tiles, onPlay, title = 'Continue listening', pla
             overlay={
               <ProgressBar variant="overlay" value={p} label={`Progress through ${item.media.metadata.title}`} />
             }
+            menu={onRemove && removeMenu(item.id, item.media.metadata.title, onRemove, busy)}
           />
         </div>
       ))}

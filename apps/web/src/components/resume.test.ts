@@ -47,6 +47,19 @@ describe('splitResume', () => {
   it('with one book leaves the shelf empty', () => {
     expect(splitResume(continueBooks([item('a')], map, 'L1')).rest).toEqual([]);
   });
+  it('once the hero is removed from Continue listening, the next book takes its place and leaves the shelf', () => {
+    const c = item('c');
+    const before = splitResume(continueBooks([item('a'), item('b'), c], map, 'L1'));
+    expect([before.hero?.item.id, before.rest.map((t) => t.item.id)]).toEqual(['a', ['b', 'c']]);
+    const hidden = new Map(map).set('a', { ...map.get('a')!, hidden: true });
+    const after = splitResume(continueBooks([item('a'), item('b'), c], hidden, 'L1'));
+    expect([after.hero?.item.id, after.rest.map((t) => t.item.id)]).toEqual(['b', ['c']]);
+  });
+  it('removing a shelf book keeps the hero', () => {
+    const hidden = new Map(map).set('b', { ...map.get('b')!, hidden: true });
+    const after = splitResume(continueBooks([item('a'), item('b'), item('c')], hidden, 'L1'));
+    expect([after.hero?.item.id, after.rest.map((t) => t.item.id)]).toEqual(['a', ['c']]);
+  });
 });
 
 describe('resumeStatus', () => {
