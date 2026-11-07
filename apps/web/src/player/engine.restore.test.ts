@@ -77,7 +77,13 @@ describe('restoring the last book', () => {
   it('shows the book paused at its place, and opens no session', () => {
     engine.restore(book, chapters);
     expect(sessionApi.openSession).not.toHaveBeenCalled();
-    expect(snapshot()).toMatchObject({ status: 'paused', restored: true, position: 450, chapterIndex: 1, item: { id: 'li_1' } });
+    expect(snapshot()).toMatchObject({
+      status: 'paused',
+      restored: true,
+      position: 450,
+      chapterIndex: 1,
+      item: { id: 'li_1' },
+    });
   });
 
   it('does nothing once a book is in the player', () => {
@@ -103,7 +109,9 @@ describe('restoring the last book', () => {
     engine.toggle();
     // play() ran synchronously up to its first await: loading, and not restored any more.
     expect(snapshot()).toMatchObject({ status: 'loading', restored: false });
-    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_1', expect.any(Array)), { timeout: 5_000 });
+    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_1', expect.any(Array)), {
+      timeout: 5_000,
+    });
     await vi.waitFor(() => expect(snapshot().position).toBe(320), { timeout: 5_000 });
   });
 
@@ -156,6 +164,8 @@ describe('restoring the last book', () => {
     engine.restore(book, chapters);
     void engine.play('li_2');
     expect(snapshot().restored).toBe(false);
-    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_2', expect.any(Array)), { timeout: 5_000 });
+    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_2', expect.any(Array)), {
+      timeout: 5_000,
+    });
   });
 });
