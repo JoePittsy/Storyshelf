@@ -43,6 +43,7 @@ export interface BookItem {
     isFinished: boolean;
     startedAt?: number;
     finishedAt?: number | null;
+    hideFromContinueListening?: boolean;
   } | null;
 }
 

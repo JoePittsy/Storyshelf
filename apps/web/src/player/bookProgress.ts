@@ -9,6 +9,10 @@
 //  - A `currentTime` change on a finished book un-finishes it (unless it lands in the last 10 seconds), so a finished
 //    book's place has to be set before it is finished again, never after.
 //  - DELETE /api/me/progress/:id takes the progress record's own id, not the library item's (that is a 404).
+//  - GET /api/me/progress/:id/remove-from-continue-listening also takes the record's own id (the library item's is a
+//    404; POST is a 404 too). It sets `hideFromContinueListening`, keeps the place, stamps `lastUpdate` and answers with
+//    the whole user. The flag clears itself when the place next moves; PATCH { hideFromContinueListening } sets it either
+//    way, which is how an Undo shows the book again.
 //  - A PATCH that creates the record honours `createdAt` (so `startedAt` comes back) and `finishedAt`; on an existing
 //    record `createdAt` is ignored. Any PATCH can carry `lastUpdate`, which ABS writes over `updatedAt` after saving.
 import { AbsError, absFetch } from '../api/auth';
@@ -66,6 +70,10 @@ export const setFinished = (libraryItemId: string, isFinished: boolean): Promise
 /** Deletes a progress record, by the record's own id. */
 export const removeProgress = (progressId: string): Promise<void> =>
   absFetch<void>(path(progressId), { method: 'DELETE' });
+
+/** Takes the book off Continue listening, by the progress record's own id. Its place is kept. */
+export const hideFromContinueListening = (progressId: string): Promise<void> =>
+  absFetch<unknown>(`${path(progressId)}/remove-from-continue-listening`).then(() => undefined);
 
 /** The place, without letting ABS finish the book because the place is near its end. */
 const placeOf = (s: ProgressSnapshot): ProgressPatch => ({

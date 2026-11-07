@@ -16,18 +16,20 @@ const DONE: Record<ProgressAction, string> = {
   finish: 'Marked as finished',
   unfinish: 'Marked as not finished',
   reset: 'Progress reset',
+  hide: 'Removed from Continue listening',
 };
 const FAILED: Record<ProgressAction, string> = {
   finish: "Couldn't mark this book as finished. Check your connection and try again.",
   unfinish: "Couldn't mark this book as not finished. Check your connection and try again.",
   reset: "Couldn't reset this book's progress. Check your connection and try again.",
+  hide: "Couldn't remove this book from Continue listening. Check your connection and try again.",
 };
 
 /** These change the listener's place, so Undo stays long enough to reach for (as a chapter jump's does). */
 export const UNDO_MS = 12000;
 
 /**
- * Mark a book finished or not finished, or reset its progress, each with an Undo toast that puts back exactly what was
+ * Mark a book finished or not finished, reset its progress, or remove it from Continue listening, each with an Undo toast that puts back exactly what was
  * there. Undo rather than a confirm: nothing is lost that one tap can't restore. `busy` while a change or an Undo runs.
  */
 export function useProgressActions() {

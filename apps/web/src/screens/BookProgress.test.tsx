@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// The Book screen's progress actions: Mark as finished / not finished and Reset progress, behind More, each with Undo.
+// The Book screen's progress actions: Mark as finished / not finished, Remove from Continue listening and Reset progress,
+// behind More, each with Undo.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -105,8 +106,14 @@ describe('Book screen progress actions', () => {
     expect(await menuItems()).toEqual(['Mark as finished']);
   });
 
-  it('a started book offers Mark as finished and Reset progress', async () => {
+  it('a started book offers Mark as finished, Remove from Continue listening and Reset progress', async () => {
     serve(record);
+    renderBook();
+    expect(await menuItems()).toEqual(['Mark as finished', 'Remove from Continue listening', 'Reset progress']);
+  });
+
+  it('a started book already off Continue listening does not offer to remove it again', async () => {
+    serve({ ...record, hideFromContinueListening: true });
     renderBook();
     expect(await menuItems()).toEqual(['Mark as finished', 'Reset progress']);
   });
@@ -163,6 +170,26 @@ describe('Book screen progress actions', () => {
       },
       { lastUpdate: 2000, markAsFinishedTimeRemaining: 0 },
     ]);
+  });
+
+  it('Remove from Continue listening hides the progress record, and Undo shows it again with its update time', async () => {
+    serve(record);
+    renderBook();
+    await menuItems();
+    await choose('Remove from Continue listening');
+    expect(await screen.findByText('Removed from Continue listening')).toBeInTheDocument();
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toContain(
+      'GET /api/me/progress/mp_1/remove-from-continue-listening'
+    );
+    expect(writes()).toEqual([]);
+
+    serve({ ...record, hideFromContinueListening: true, lastUpdate: 4000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() =>
+      expect(writes()).toEqual([
+        'PATCH /api/me/progress/li_1 {"currentTime":3730,"duration":36000,"progress":0.1,"markAsFinishedTimeRemaining":0,"hideFromContinueListening":false,"lastUpdate":2000}',
+      ])
+    );
   });
 
   it('says so when the server cannot be reached, with no Undo', async () => {

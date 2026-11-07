@@ -1,7 +1,15 @@
-import { getProgress, removeProgress, restoreProgress, setFinished, type ProgressSnapshot } from './bookProgress';
+import {
+  getProgress,
+  hideFromContinueListening,
+  removeProgress,
+  restoreProgress,
+  setFinished,
+  type ProgressSnapshot,
+} from './bookProgress';
 import { release, restore, type Released } from './engine';
 
-export type ProgressAction = 'finish' | 'unfinish' | 'reset';
+/** `hide`: remove from Continue listening, keeping the place. */
+export type ProgressAction = 'finish' | 'unfinish' | 'reset' | 'hide';
 
 /** A change made to a book's progress, with everything its Undo needs. */
 export interface ProgressChange {
@@ -28,9 +36,10 @@ function serial<T>(work: () => Promise<T>): Promise<T> {
 let latest = 0;
 
 /**
- * Marks a book finished or not finished, or resets it. If the book is in the player it comes out first (its last place
- * saved, the session closed), so nothing the player sends can undo the change and a later Play starts from the server's
- * new place. The snapshot for Undo is read after that, so it includes the place the player last saved. Starting a change
+ * Marks a book finished or not finished, resets it, or removes it from Continue listening. If the book is in the player
+ * it comes out first (its last place saved, the session closed), so nothing the player sends can undo the change (a
+ * sync that moves the place would put a removed book back on Continue listening) and a later Play starts from the
+ * server's new place. The snapshot for Undo is read after that, so it includes the place the player last saved. Starting a change
  * retires the Undo of every earlier one.
  */
 export function changeProgress(itemId: string, action: ProgressAction): Promise<ProgressChange> {
@@ -40,6 +49,8 @@ export function changeProgress(itemId: string, action: ProgressAction): Promise<
     const prev = await getProgress(itemId);
     if (action === 'reset') {
       if (prev) await removeProgress(prev.id);
+    } else if (action === 'hide') {
+      if (prev && !prev.hideFromContinueListening) await hideFromContinueListening(prev.id);
     } else await setFinished(itemId, action === 'finish');
     return { action, itemId, prev, held, seq };
   });

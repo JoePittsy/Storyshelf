@@ -195,7 +195,12 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
           <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playLabel(resume) === 'Resume' ? undefined : 0))}>
             {label}
           </PillButton>
-          <BookProgressMenu itemId={item.id} isFinished={now.isFinished} hasProgress={started || now.isFinished} />
+          <BookProgressMenu
+            itemId={item.id}
+            isFinished={now.isFinished}
+            hasProgress={started || now.isFinished}
+            canHide={started && !p?.hideFromContinueListening}
+          />
         </div>
       </HeroBand>
 

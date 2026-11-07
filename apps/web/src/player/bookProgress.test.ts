@@ -6,14 +6,22 @@
  * were confirmed against the running server: un-finishing zeroes the place and ignores a place sent with it; moving a
  * finished book's place un-finishes it; a place in the last 10 seconds finishes it; DELETE takes the record's id;
  * `createdAt` is honoured only on create; `lastUpdate` overwrites the record's update time; a `progress` that matches the
- * place (currentTime / duration) is ignored.
+ * place (currentTime / duration) is ignored; GET .../remove-from-continue-listening takes the record's id, not the library
+ * item's (that is a 404), and stamps the record's update time as it hides it.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/auth', async (orig) => ({ ...(await orig<typeof import('../api/auth')>()), absFetch: vi.fn() }));
 
 import * as auth from '../api/auth';
-import { getProgress, removeProgress, restoreProgress, setFinished, type ProgressSnapshot } from './bookProgress';
+import {
+  getProgress,
+  hideFromContinueListening,
+  removeProgress,
+  restoreProgress,
+  setFinished,
+  type ProgressSnapshot,
+} from './bookProgress';
 
 const absFetch = vi.mocked(auth.absFetch);
 const ITEM = 'li_1';
@@ -128,6 +136,12 @@ beforeEach(() => {
       else row = create({ ...body });
       return Promise.resolve(undefined);
     }
+    if (method === 'GET' && url.endsWith('/remove-from-continue-listening')) {
+      if (!row || url !== `/api/me/progress/${row.id}/remove-from-continue-listening`) return notFound();
+      row.hideFromContinueListening = true;
+      row.updatedAt = clock;
+      return Promise.resolve({ id: 'user', mediaProgress: [json(row)] });
+    }
     if (method === 'DELETE') {
       if (!row || url !== `/api/me/progress/${row.id}`) return notFound();
       row = null;
@@ -196,6 +210,19 @@ describe('resetting', () => {
   });
 });
 
+describe('removing from Continue listening', () => {
+  it('GETs the remove route by the progress record id, keeping the place', async () => {
+    listenTo(300);
+    const p = await getProgress(ITEM);
+    await hideFromContinueListening(p!.id);
+    expect(calls[calls.length - 1]).toMatchObject({
+      method: 'GET',
+      url: '/api/me/progress/mp_1/remove-from-continue-listening',
+    });
+    expect(state()).toMatchObject({ hideFromContinueListening: true, currentTime: 300, isFinished: false });
+  });
+});
+
 describe('Undo restores the exact previous state', () => {
   const cases: [string, () => void, () => Promise<void>][] = [
     ['mark finished, part way through', () => listenTo(300), () => setFinished(ITEM, true)],
@@ -212,6 +239,11 @@ describe('Undo restores the exact previous state', () => {
       () => setFinished(ITEM, false),
     ],
     ['mark not finished, finished at the end', () => listenTo(999), () => setFinished(ITEM, false)],
+    [
+      'remove from Continue listening, part way through',
+      () => listenTo(300),
+      async () => hideFromContinueListening((await getProgress(ITEM))!.id),
+    ],
     ['reset, part way through', () => listenTo(300), async () => removeProgress((await getProgress(ITEM))!.id)],
     [
       'reset, finished',

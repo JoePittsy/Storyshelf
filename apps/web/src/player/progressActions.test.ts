@@ -41,6 +41,7 @@ vi.mock('./bookProgress', () => ({
   }),
   setFinished: vi.fn(async (_id: string, f: boolean) => void order.push(`finished ${f}`)),
   removeProgress: vi.fn(async (id: string) => void order.push(`delete ${id}`)),
+  hideFromContinueListening: vi.fn(async (id: string) => void order.push(`hide ${id}`)),
   restoreProgress: vi.fn(
     async (_id: string, p: ProgressSnapshot | null) => void order.push(`put back ${p?.currentTime ?? 'none'}`)
   ),
@@ -78,6 +79,24 @@ describe('changing progress by hand', () => {
     expect(order).toEqual(['release li_1', 'get']);
   });
 
+  it('remove from Continue listening hides the record the snapshot names, after the player lets go of the book', async () => {
+    // Out of the player, or its next sync would move the place and ABS would show the book again.
+    inPlayer = held;
+    const change = await changeProgress('li_1', 'hide');
+    expect(order).toEqual(['release li_1', 'get', 'hide mp_1']);
+    expect(change).toMatchObject({ action: 'hide', itemId: 'li_1', prev, held });
+  });
+
+  it('remove from Continue listening does nothing more when there is no record, or it is hidden already', async () => {
+    progress = null;
+    await changeProgress('li_1', 'hide');
+    expect(order).toEqual(['release li_1', 'get']);
+    order.length = 0;
+    progress = { ...prev, hideFromContinueListening: true };
+    await changeProgress('li_1', 'hide');
+    expect(order).toEqual(['release li_1', 'get']);
+  });
+
   it('a failure on the server is passed on, after the player has let go', async () => {
     const { setFinished } = await import('./bookProgress');
     vi.mocked(setFinished).mockRejectedValueOnce(new Error('offline'));
@@ -97,6 +116,14 @@ describe('Undo', () => {
       expect.objectContaining({ position: 250, updatedAt: 20, title: 'The Book' }),
       held.chapters
     );
+  });
+
+  it('puts a removed book back on Continue listening, and back in the player', async () => {
+    inPlayer = held;
+    const change = await changeProgress('li_1', 'hide');
+    order.length = 0;
+    expect(await undoProgressChange(change)).toBe(true);
+    expect(order).toEqual(['release li_1', 'put back 250', 'restore li_1 at 250']);
   });
 
   it("leaves the player alone when the change didn't take the book out of it", async () => {
