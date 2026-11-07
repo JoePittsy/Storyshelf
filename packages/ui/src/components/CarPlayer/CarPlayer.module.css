@@ -1,0 +1,245 @@
+/*
+ * Car mode. Everything follows the smaller side of the viewport (vmin), so a phone in either orientation and a desktop
+ * window all get targets they can hit without looking: 64px at the least, Play 112px and up, and a clear gap between
+ * any two. Text is white on the navy ground for the most contrast the palette has.
+ */
+.car {
+  --car-gap: clamp(16px, 4vmin, 40px);
+  --car-target: clamp(64px, 15vmin, 104px);
+  --car-play: clamp(112px, 30vmin, 200px);
+  /* Between neighbouring targets: wider than the layout gap, so a thumb that misses lands on nothing. */
+  --car-space: calc(var(--car-gap) * 1.5);
+
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'top'
+    'info'
+    'controls';
+  gap: var(--car-gap);
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: calc(var(--car-gap) + env(safe-area-inset-top)) calc(var(--car-gap) + env(safe-area-inset-right))
+    calc(var(--car-gap) + env(safe-area-inset-bottom)) calc(var(--car-gap) + env(safe-area-inset-left));
+  font-family: var(--font-sans);
+  font-size: var(--fs-car);
+  color: var(--on-art);
+  background: var(--bg);
+}
+
+.top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--car-space);
+}
+
+.info {
+  grid-area: info;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--car-gap) * 0.6);
+  min-width: 0;
+}
+.chapter {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.4em;
+  margin: 0;
+}
+.clock {
+  font-size: var(--fs-glyph-lg);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.of {
+  font-size: var(--fs-title-dialog);
+  font-weight: 600;
+  color: var(--on-art-2);
+}
+.track {
+  height: 0.75em;
+  border-radius: var(--r-pill);
+  background: var(--track);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--on-art);
+}
+
+.controls {
+  grid-area: controls;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--car-space);
+}
+.chapters {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--car-space);
+  width: 100%;
+}
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--car-space);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: var(--car-target);
+  min-height: var(--car-target);
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: rgba(var(--tint), 0.16);
+  color: var(--on-art);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--dur-fast) var(--ease-fast),
+    transform var(--dur-fast) var(--ease-fast);
+}
+.btn:hover:not(:disabled) {
+  background: rgba(var(--tint), 0.26);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.btn:focus-visible {
+  outline-width: 3px;
+  outline-offset: 4px;
+}
+.icon {
+  width: calc(var(--car-target) * 0.42);
+  height: calc(var(--car-target) * 0.42);
+  stroke-width: 2.2;
+}
+
+.close {
+  width: var(--car-target);
+  height: var(--car-target);
+}
+.undo {
+  gap: 0.4em;
+  min-height: var(--car-target);
+  padding: 0 1.1em 0 0.9em;
+  border-radius: var(--r-pill);
+  background: rgba(var(--tint), 0.28);
+  font-size: var(--fs-title-dialog);
+  font-weight: 700;
+}
+.undo .icon {
+  width: 1.2em;
+  height: 1.2em;
+}
+.undoText {
+  white-space: nowrap;
+}
+
+/* The chapter buttons share the row: wide pills, one at each edge, the furthest apart they can be. */
+.wide {
+  flex: 1 1 0;
+  max-width: calc(var(--car-target) * 2.4);
+  height: var(--car-target);
+  border-radius: var(--r-pill);
+}
+
+.skip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--car-target);
+  height: var(--car-target);
+}
+.ring {
+  grid-area: 1 / 1;
+  width: 70%;
+  height: 70%;
+}
+.seconds {
+  grid-area: 1 / 1;
+  padding-top: 0.1em;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.play {
+  width: var(--car-play);
+  height: var(--car-play);
+  background: var(--on-art);
+  color: var(--bg);
+}
+.play:hover:not(:disabled) {
+  background: var(--on-art);
+}
+.glyph {
+  width: 36%;
+  height: 36%;
+}
+/* The triangle's weight sits left of its box: nudge it to look centred. */
+.playGlyph {
+  margin-left: 6%;
+}
+
+/* Landscape (a phone on its side, or a desktop window): the words on the left, the controls on the right. */
+@media (orientation: landscape) {
+  .car {
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'top top'
+      'info controls';
+    column-gap: calc(var(--car-gap) * 2);
+    max-width: 1400px;
+  }
+  .info {
+    align-self: center;
+  }
+  .controls {
+    align-self: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}

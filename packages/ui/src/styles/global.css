@@ -123,6 +123,8 @@
   --fs-glyph-lg: 4em; /* empty-art glyph on a playlist, rank numerals */
   --fs-icon: 18px; /* icon-button glyphs (carousel arrows) */
   --fs-icon-sm: 16px; /* icon glyphs inside the player bar */
+  /* Car mode's base: everything in the car player is sized in em from it, and follows the viewport's smaller side. */
+  --fs-car: clamp(17px, 4vmin, 28px);
   --card-size: clamp(140px, 16vw, 320px);
 
   /* Motion: one pair for state changes that need a little room, one for hover and focus feedback. */

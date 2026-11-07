@@ -1,0 +1,110 @@
+/* Sized in em: inside a .page-scale root. One series, so one colour (series 1) and no legend: the title names it. */
+.frame {
+  container-type: inline-size;
+  position: relative;
+  min-width: 0;
+  margin: 0;
+}
+.plot {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 2px;
+  height: 9em;
+  /* Room above the tallest column for its label. */
+  padding-top: 1.8em;
+  /* The baseline: a hairline one step off the surface. */
+  border-bottom: 1px solid var(--separator);
+}
+.slot {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.3em;
+  min-width: 0;
+  height: 100%;
+}
+.slot:hover .bar {
+  filter: brightness(1.25);
+}
+.bar {
+  display: block;
+  flex: none;
+  width: min(100%, 1.6em);
+  /* A sliver is still visible. */
+  min-height: 2px;
+  border-radius: var(--r-xs) var(--r-xs) 0 0;
+  background: var(--series-1);
+}
+.cap {
+  flex: none;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.axis {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 2px;
+  padding-top: 0.4em;
+}
+.tick {
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.short {
+  display: none;
+}
+@container (width < 30em) {
+  .long {
+    display: none;
+  }
+  .short {
+    display: inline;
+  }
+}
+
+.details {
+  margin-top: 0.6em;
+}
+.summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--fs-label);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.summary:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+.table {
+  width: 100%;
+  max-width: 24em;
+  border-collapse: collapse;
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+}
+.table th,
+.table td {
+  padding: 0.35em 0.6em 0.35em 0;
+  text-align: left;
+  border-bottom: 1px solid var(--separator);
+}
+.table thead th {
+  color: var(--text-3);
+  font-weight: 600;
+}
+.table tbody th {
+  color: var(--text-2);
+  font-weight: 500;
+}
+.table td {
+  color: var(--text);
+  text-align: right;
+}
