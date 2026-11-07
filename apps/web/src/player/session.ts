@@ -31,7 +31,8 @@ export interface Progress {
 const DEVICE_KEY = 'storyshelf.deviceId';
 let memoryDeviceId: string | null = null;
 
-function deviceId(): string {
+/** This browser's device id, sent with every session it opens (ABS keeps it in the session's `deviceInfo`). */
+export function ourDeviceId(): string {
   if (memoryDeviceId) return memoryDeviceId;
   try {
     const stored = localStorage.getItem(DEVICE_KEY);
@@ -59,7 +60,7 @@ export async function openSession(libraryItemId: string, supportedMimeTypes: str
   const s = await absFetch<PlaybackSession>(
     `/api/items/${libraryItemId}/play`,
     json({
-      deviceInfo: { deviceId: deviceId(), clientName: 'Storyshelf' },
+      deviceInfo: { deviceId: ourDeviceId(), clientName: 'Storyshelf' },
       supportedMimeTypes,
       mediaPlayer: 'html5',
       forceDirectPlay: false,

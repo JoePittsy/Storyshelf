@@ -6,6 +6,8 @@ import { AbsError } from '../api/auth';
 import { absUrl } from '../api/server';
 import { attachAirPlay } from './airplay';
 import { diag } from './diag';
+import { newerElsewhere, SAME_PLACE_S, whoWrote, type ServerPlace, type Writer } from './handoff';
+import { recentSessions, serverPlace } from './handoffServer';
 import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
 import { supportedMimeTypes } from './mime';
@@ -17,6 +19,7 @@ import {
   UnsupportedFormatError,
   closeSession,
   openSession,
+  ourDeviceId,
   saveProgress,
   syncSession,
   trackUrl,
@@ -33,6 +36,23 @@ import { clampSeek, locate, toBookTime, totalDuration, type AudioTrack } from '.
 
 export type Status = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 export type SleepChoice = 'off' | 'chapter' | { minutes: number };
+
+/** A newer place for the loaded book, written by another device while this player sat paused (see handoff.ts). */
+export interface Handoff {
+  itemId: string;
+  /** Book seconds: the server's place. */
+  position: number;
+  /** ms since the epoch: when the server got it. */
+  lastUpdate: number;
+  device: Writer;
+}
+
+/** What the player tells the screen about a hand-off it acted on without being asked (see `onHandoffNotice`). */
+export type HandoffNotice =
+  /** Play was pressed with a newer place elsewhere: the player took it. `from` is the place it left, for an Undo. */
+  | { kind: 'adopted'; itemId: string; from: number; to: number; device: Writer }
+  /** Another device moved the book while this one was playing. This one carried on; `at` is the other's place. */
+  | { kind: 'conflict'; itemId: string; at: number; device: Writer };
 
 export interface PlayerItem {
   id: string;
@@ -69,6 +89,8 @@ export interface PlayerState {
   restored: boolean;
   /** The book played to the end of its last file and stopped there. Cleared when it plays again, is moved, or another book starts. */
   ended: boolean;
+  /** A newer place another device wrote while this book sat paused: offered, never jumped to. Play takes it; a move dismisses it. */
+  handoff: Handoff | null;
 }
 
 const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
@@ -94,6 +116,7 @@ const initial = (): PlayerState => ({
   error: null,
   restored: false,
   ended: false,
+  handoff: null,
 });
 
 let state = initial();
@@ -129,6 +152,23 @@ let mimes: string[] | null = null;
 let pausedAt: number | null = null;
 // The listener's own volume while the sleep timer fades it out; null when not fading.
 let fadeFrom: number | null = null;
+// Book seconds a file just pointed at will seek to once its metadata is in. Until then the element's clock reads 0 (a
+// new src resets it), so `position()` gives this instead: a sync or a close in that moment sends the real place.
+let pendingAt: number | null = null;
+
+// Device hand-off (see handoff.ts). What the server last took from this player, and when it was sent, so a check can
+// tell another device's write from this player's own.
+let lastSent = 0;
+let lastWriteAt = 0;
+// Whether the place held here may be sent without asking the server first. A pause makes it false: from then until the
+// listener chooses a place (Play, a move, taking the offer), another device may have moved on, and sending this place
+// would lose theirs. Every write of the place goes through `doSync` or `detach`, which honour it.
+let verified = true;
+let checking: Promise<CheckResult> | null = null;
+// Bumped by every move the listener makes, and by every book opened: a check that began before one is out of date.
+let placeEpoch = 0;
+// Date.now() when the last "another device was also playing" notice went out.
+let conflictAt = -Infinity;
 
 const getMimes = (a: HTMLAudioElement) => (mimes ??= supportedMimeTypes(a));
 const coverFor = (id: string) => absUrl(`/api/items/${id}/cover?width=512&format=jpeg`);
@@ -161,7 +201,8 @@ function setMetadata(item: PlayerItem | null, chapterTitle: string): void {
 }
 
 /** Book seconds, from the element. */
-const position = (): number => (session && track && audio ? toBookTime(track, audio.currentTime) : state.position);
+const position = (): number =>
+  session && track && audio ? (pendingAt ?? toBookTime(track, audio.currentTime)) : state.position;
 
 function silentWav(): string {
   const n = 800; // 0.1 s of 8-bit mono silence at 8 kHz
@@ -201,8 +242,26 @@ function mediaPosition(): void {
   if (session) updatePositionState(position(), session.duration, state.rate);
 }
 
-/** Send progress now. Serialised, so a slow sync can't be overtaken; a failed one keeps its listened time for the next. */
+/**
+ * Send progress now, unless the place may be stale: after a pause nothing is sent until the server has been asked
+ * whether another device has moved on (`verify`). If one has, a paused book offers that place and sends nothing; a
+ * book that has just been played takes it, and sends that.
+ */
 function doSync(): Promise<void> {
+  if (!session || !audio) return Promise.resolve();
+  if (verified) return send();
+  // One sync waits for the answer; any that come due meanwhile are that one (it sends the place as it is then).
+  held ??= verify()
+    .then((r) => (verified || r === 'clear' || r === 'failed' ? send() : undefined))
+    .finally(() => {
+      held = null;
+    });
+  return held;
+}
+let held: Promise<void> | null = null;
+
+/** Send progress now. Serialised, so a slow sync can't be overtaken; a failed one keeps its listened time for the next. */
+function send(): Promise<void> {
   const cur = session;
   if (!cur || !audio) return Promise.resolve();
   const p: Progress = payload(clock, position(), cur.duration);
@@ -211,8 +270,13 @@ function doSync(): Promise<void> {
     if (!session || session.libraryItemId !== cur.libraryItemId) return;
     try {
       const before = session.id;
+      const sentAt = Date.now();
       const active = await syncSession(session, p, mimes ?? []);
-      if (session && session.libraryItemId === active.libraryItemId) session = active;
+      if (session && session.libraryItemId === active.libraryItemId) {
+        session = active;
+        lastSent = p.currentTime;
+        lastWriteAt = sentAt;
+      }
       // Stopped while the server was re-opening a lost session: that new session is nobody's, so close it.
       else if (active.id !== before) void closeSession(active);
       diag.log('sync ok', { status: 200, reopened: active.id !== before, at: Math.round(p.currentTime) });
@@ -314,6 +378,7 @@ function act(intent: Intent, why: string): void {
   if (todo === 'pause') return a.pause();
   if (todo !== 'play') return;
   if (session && track) {
+    takeNewerOnPlay();
     // iOS may have dropped the stream while paused and locked: start over now, inside this handler.
     if (rewindOnResume()) return;
     if ((a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) && reloadAndPlay('no source')) return;
@@ -328,6 +393,7 @@ function load(tr: AudioTrack, offset: number, autoplay: boolean): void {
   track = tr;
   ownChange = true;
   pendingOffset = offset;
+  pendingAt = tr.startOffset + offset;
   a.src = trackUrl(session, tr.index);
   a.defaultPlaybackRate = a.playbackRate = state.rate; // loading a new src resets the rate to the default
   if (autoplay) startPlay(a, 'load');
@@ -337,6 +403,10 @@ function seekBook(t: number): void {
   // A move made while paused chooses where to start: no rewind on top of it. And the "fell asleep" offer has had its moment.
   pausedAt = null;
   forgetFellAsleep();
+  // The listener has chosen a place: it may be sent, and a newer place on offer has had its moment too.
+  placeEpoch++;
+  verified = true;
+  dismissHandoff(t);
   if (!session && state.restored) {
     // Nothing is loaded: move the place Play will start from.
     const r = restoredSeek(t, state.duration, state.chapters);
@@ -351,7 +421,7 @@ function seekBook(t: number): void {
   const target = clampSeek(t, totalDuration(session.audioTracks));
   const { track: tr, offset } = locate(session.audioTracks, target);
   if (tr.index === track?.index) audio.currentTime = offset;
-  else load(tr, offset, state.status === 'playing');
+  else load(tr, offset, state.status === 'playing' || !audio.paused); // !paused: Play is pressed, not yet playing
   set({ position: target, chapterIndex: chapterIndexAt(state.chapters, target), ended: false });
   if (state.status !== 'playing') void syncIfDue();
   mediaPosition();
@@ -464,6 +534,7 @@ function getAudio(): HTMLAudioElement {
   a.addEventListener('loadedmetadata', () => {
     if (pendingOffset > 0) a.currentTime = pendingOffset;
     pendingOffset = 0;
+    pendingAt = null;
   });
   a.addEventListener('play', () => {
     if (session) updatePlaybackState('playing');
@@ -472,6 +543,7 @@ function getAudio(): HTMLAudioElement {
     note('audio playing');
     if (!session) return;
     pausedAt = null;
+    pendingAt = null; // playing comes after the metadata: the element's clock is right by now
     forgetFellAsleep();
     ownChange = false;
     recovering = false;
@@ -501,6 +573,8 @@ function getAudio(): HTMLAudioElement {
     updatePlaybackState('paused');
     refresh();
     void syncIfDue().then(emitSaved);
+    // That sync carries the place just played. From here until the listener chooses a place, it isn't sent unchecked.
+    verified = false;
     mediaPosition();
   });
   a.addEventListener('timeupdate', onTimeUpdate);
@@ -579,12 +653,15 @@ if (typeof document !== 'undefined') {
 }
 
 /** Stop using the current session: remember where it was, then silence the element. */
-function detach(): { s: PlaybackSession; p: Progress } | null {
+function detach(): { s: PlaybackSession; p: Progress | undefined } | null {
   const s = session;
   if (!s) return null;
-  const p = payload(clock, position(), s.duration);
+  // Paused, and the place unchecked since: the close leaves the server's place alone (the pause sync already sent this
+  // one), in case another device has moved on.
+  const p = verified ? payload(clock, position(), s.duration) : undefined;
   session = null;
   track = null;
+  pendingAt = null;
   lastMs = null;
   pausedAt = null;
   getAudio().pause();
@@ -602,7 +679,10 @@ export async function play(itemId: string, from?: number): Promise<void> {
   lastRequest = { itemId, from };
   if (session?.libraryItemId === itemId && track) {
     if (from !== undefined) seekBook(from);
-    if (a.paused && !rewindOnResume()) startPlay(a, 'play()');
+    if (a.paused) {
+      takeNewerOnPlay();
+      if (!rewindOnResume()) startPlay(a, 'play()');
+    }
     return;
   }
   // Everything up to the first await runs inside the click.
@@ -620,7 +700,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
   const old = detach();
   unlock(a);
   const mine = ++token;
-  set({ status: 'loading', error: null, restored: false, ended: false });
+  set({ status: 'loading', error: null, restored: false, ended: false, handoff: null });
   if (old) {
     await closeSession(old.s, old.p);
     emitSaved();
@@ -634,6 +714,12 @@ export async function play(itemId: string, from?: number): Promise<void> {
   }
   if (mine !== token) return void closeSession(s);
   session = s;
+  // The server holds the session's place, and whatever this starts from is chosen: nothing to check yet.
+  lastSent = s.currentTime;
+  lastWriteAt = Date.now();
+  verified = true;
+  placeEpoch++;
+  conflictAt = -Infinity;
   let startAt = chooseStart(from, local, s.currentTime);
   if (pausedSince && state.rewindOnResume && Math.abs(s.currentTime - pausedSince.position) < 1)
     startAt = rewindTarget(startAt, rewindSeconds(Date.now() - pausedSince.at), s.chapters);
@@ -787,6 +873,144 @@ export async function stop(): Promise<void> {
     await closeSession(old.s, old.p);
     emitSaved();
   }
+}
+
+// ---- Device hand-off ----------------------------------------------------------------------------------------------
+
+type CheckResult = 'clear' | 'offered' | 'adopted' | 'conflict' | 'failed' | 'stale';
+
+/** A check that hasn't heard back by then has failed: it must never hold a playing book's syncs back for long. */
+const CHECK_TIMEOUT_MS = 8000;
+/** After saying another device was also playing, say it again only after this long. */
+const CONFLICT_QUIET_MS = 15 * 60_000;
+
+const noticeListeners = new Set<(n: HandoffNotice) => void>();
+/** Calls back when the player took a newer place on Play, or carried on over another device's. Returns the unsubscribe. */
+export function onHandoffNotice(cb: (n: HandoffNotice) => void): () => void {
+  noticeListeners.add(cb);
+  return () => void noticeListeners.delete(cb);
+}
+const notify = (n: HandoffNotice) => noticeListeners.forEach((cb) => cb(n));
+
+function within<T>(p: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error('timed out')), ms)));
+  return Promise.race([p, late]).finally(() => clearTimeout(timer));
+}
+
+/** The element is playing, or about to: Play has been pressed and `playing` hasn't come yet. */
+const playingHere = (): boolean => state.status === 'playing' || (!!audio && !audio.paused);
+
+/** One check at a time: callers that come while one is out share its answer. */
+function verify(): Promise<CheckResult> {
+  checking ??= check().finally(() => {
+    checking = null;
+  });
+  return checking;
+}
+
+/** Who wrote the server's newer place, from the book's latest sessions. Best effort: unknown on any failure. */
+async function writerOf(itemId: string, lastUpdate: number): Promise<Writer> {
+  try {
+    return whoWrote(await within(recentSessions(itemId), CHECK_TIMEOUT_MS), lastUpdate, ourDeviceId());
+  } catch {
+    return { name: null, sameBrowser: false };
+  }
+}
+
+/**
+ * Asks the server for the loaded book's place and acts on a newer one written elsewhere (see `newerElsewhere`):
+ * - paused: it is offered (`handoff`), and nothing is sent;
+ * - Play has been pressed since the pause (`verified` false): the player takes it, and says so for an Undo;
+ * - playing on (`verified`): a conflict. This player carries on and wins at its next sync; a notice says another device
+ *   was playing too, and their place goes in this visit's History.
+ * Nothing newer while playing makes the place safe to send. A move made, or another book opened, while the question was
+ * out makes the answer stale: it is dropped.
+ */
+async function check(): Promise<CheckResult> {
+  const item = state.item;
+  if (!session || !item || session.libraryItemId !== item.id) return 'stale';
+  const epoch = placeEpoch;
+  const still = () => placeEpoch === epoch && session?.libraryItemId === item.id;
+  let server: ServerPlace | null;
+  try {
+    server = await within(serverPlace(item.id), CHECK_TIMEOUT_MS);
+  } catch (e) {
+    diag.log('handoff check failed', errInfo(e));
+    if (!still()) return 'stale';
+    // No way to tell. Play was pressed here, so this place goes on being sent, as it always did.
+    if (playingHere()) verified = true;
+    return 'failed';
+  }
+  if (!still()) return 'stale';
+  if (!newerElsewhere(server, { position: position(), lastSent, lastWriteAt })) {
+    if (state.handoff) set({ handoff: null });
+    if (playingHere()) verified = true;
+    return 'clear';
+  }
+  const place = server as ServerPlace;
+  const device = await writerOf(item.id, place.lastUpdate);
+  if (!still()) return 'stale';
+  const h: Handoff = { itemId: item.id, position: place.currentTime, lastUpdate: place.lastUpdate, device };
+  diag.log('handoff', { at: Math.round(h.position), here: Math.round(position()), playing: playingHere(), verified });
+  if (playingHere()) {
+    if (verified) {
+      conflict(h);
+      return 'conflict';
+    }
+    adopt(h);
+    return 'adopted';
+  }
+  if (state.status !== 'paused') return 'stale';
+  const cur = state.handoff;
+  if (!cur || cur.position !== h.position || cur.lastUpdate !== h.lastUpdate || cur.device.name !== h.device.name)
+    set({ handoff: h });
+  return 'offered';
+}
+
+/** Takes another device's newer place: Play was pressed with it newer. The place left goes in History, and Undo is offered. */
+function adopt(h: Handoff): void {
+  const from = position();
+  recordJump(h.itemId, from);
+  seekBook(h.position); // a chosen place now: the offer goes, and it is sent
+  notify({ kind: 'adopted', itemId: h.itemId, from, to: h.position, device: h.device });
+}
+
+/** Another device moved the book while this one played: this one wins. Their place stays in History, a tap away. */
+function conflict(h: Handoff): void {
+  recordJump(h.itemId, h.position);
+  if (Date.now() - conflictAt < CONFLICT_QUIET_MS) return;
+  conflictAt = Date.now();
+  notify({ kind: 'conflict', itemId: h.itemId, at: h.position, device: h.device });
+}
+
+/** A move to `t`: the newer place on offer goes. Unless `t` is that place, it stays in this visit's History. */
+function dismissHandoff(t: number): void {
+  const h = state.handoff;
+  if (!h) return;
+  if (Math.abs(t - h.position) > SAME_PLACE_S) recordJump(h.itemId, h.position);
+  set({ handoff: null });
+}
+
+/**
+ * Play after a pause: a newer place on offer is taken now, inside the gesture, so the old place never plays. With no
+ * offer, and nothing chosen since the pause, the server is asked while it plays; its syncs wait for the answer.
+ */
+function takeNewerOnPlay(): void {
+  const h = state.handoff;
+  if (h && h.itemId === state.item?.id) adopt(h);
+  else if (!verified) void verify();
+}
+
+/**
+ * Asks the server whether another device has a newer place for the loaded book: when the page wakes or gets focus, and
+ * now and then while it is open (see HandoffWatch). A book with no session (restored on load) is refreshed by
+ * RestoreLastBook instead.
+ */
+export function checkHandoff(why: string): Promise<void> {
+  if (!session || (state.status !== 'paused' && state.status !== 'playing')) return Promise.resolve();
+  if (why !== 'tick') note(`handoff check (${why})`);
+  return verify().then(() => undefined);
 }
 
 /** What the player held for a book `release` took out of it: enough to put it back, paused, with `restore`. */

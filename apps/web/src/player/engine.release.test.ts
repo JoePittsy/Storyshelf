@@ -139,13 +139,14 @@ describe('release', () => {
     const a = await playing(200);
     a.pause(); // the pause sync goes out and hangs
     await vi.waitFor(() => expect(log).toContain('sync s1 at 200 (sent)'));
-    a.currentTime = 210;
     const done = engine.release('li_1');
     await new Promise((r) => setTimeout(r, 10));
-    expect(log).not.toContain('close s1 at 210'); // not while the sync is out
+    expect(log.some((l) => l.startsWith('close'))).toBe(false); // not while the sync is out
     finishSync();
     await done;
-    expect(log).toEqual(['sync s1 at 200 (sent)', 'sync answered', 'close s1 at 210']);
+    // The pause sync carried the place. The close sends none: paused and unchecked since, the place might be older than
+    // one another device has written (see engine.handoff.test.ts).
+    expect(log).toEqual(['sync s1 at 200 (sent)', 'sync answered', 'close s1']);
   });
 
   it('closes a session the in-flight sync had to re-open (server restart) instead of leaving it open', async () => {
@@ -159,7 +160,7 @@ describe('release', () => {
     const done = engine.release('li_1');
     finishSync();
     await done;
-    expect(log).toEqual(expect.arrayContaining(['close s2', 'close s1 at 200']));
+    expect(log).toEqual(expect.arrayContaining(['close s2', 'close s1']));
   });
 
   it('a restored book: an unsaved move reaches the server, then the player is empty', async () => {
