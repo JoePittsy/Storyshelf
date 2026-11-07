@@ -259,7 +259,7 @@ Put `.page-scale` on a page root and size everything inside it in `em`. Page roo
 - **Auto-fill grids** for repeated tiles: `minmax(8.5em, 1fr)` for tiles; people use `minmax(min(100%, 22em), 1fr)`.
 - **Inside cards:** 1.1em under a section head, 0.9em between row items, row padding 0.45em × 0.6em.
 - **Heroes:** a HeroBand is 16em art (12.5em under 1100px, stacked under 700px) beside a feature title, on Lit Wall with the wash.
-- **Shelves:** a Carousel scrolls a row of cards of `--card-size`, with arrows only when it overflows.
+- **Shelves:** a Carousel scrolls a row of cards of `--card-size`, with arrows only when it overflows. Untitled, it has no header row until it overflows, so it can sit straight under a SectionCard's title.
 
 ## Elevation & Depth
 

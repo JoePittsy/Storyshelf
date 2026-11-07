@@ -36,6 +36,8 @@ export const Overflowing: Story = {};
 export const FewItems: Story = { args: { children: tiles(3) } };
 export const WithActions: Story = { args: { actions: <PillButton>New playlist</PillButton> } };
 export const NoTitle: Story = { args: { title: undefined } };
+/** No title and nothing to scroll: no header at all, so the row starts at the top (e.g. under a SectionCard's title). */
+export const NoTitleFewItems: Story = { args: { title: undefined, children: tiles(3) } };
 export const WideGap: Story = { args: { gap: '40px' } };
 function SearchCarousel(args: CarouselProps) {
   const [value, setValue] = useState('');

@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Reac
 import styles from './Carousel.module.css';
 
 export interface CarouselProps {
-  /** Section heading (h2). Header is omitted when neither title nor actions is given, arrows then sit alone. */
+  /**
+   * Section heading (h2). Without a title, actions or search the header holds only the arrows, and is left out while
+   * the row fits (no arrows), so a carousel under someone else's heading starts straight away.
+   */
   title?: ReactNode;
   /** Extra header controls (e.g. "+ New"), rendered just left of the arrows. */
   actions?: ReactNode;
@@ -56,68 +59,72 @@ export function Carousel({ title, actions, gap = '14px', className, rowStyle, se
     if (el) el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' });
   };
 
+  const header = title != null || actions != null || search != null || state.overflow;
+
   return (
     <div className={className}>
-      <div className={styles.header}>
-        {title != null && <h2 className={styles.title}>{title}</h2>}
-        {search && (
-          <div className={styles.search}>
-            <span className={styles.searchBox}>
-              <input
-                type="text"
-                className={styles.searchInput}
-                value={search.value}
-                placeholder={search.placeholder ?? 'Search'}
-                aria-label={search.placeholder ?? 'Search'}
-                onChange={(e) => search.onChange(e.target.value)}
-                onFocus={search.onFocus}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape' && search.value) {
-                    e.stopPropagation();
-                    search.onChange('');
-                  }
-                }}
-              />
-              {search.value && (
+      {header && (
+        <div className={styles.header}>
+          {title != null && <h2 className={styles.title}>{title}</h2>}
+          {search && (
+            <div className={styles.search}>
+              <span className={styles.searchBox}>
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  value={search.value}
+                  placeholder={search.placeholder ?? 'Search'}
+                  aria-label={search.placeholder ?? 'Search'}
+                  onChange={(e) => search.onChange(e.target.value)}
+                  onFocus={search.onFocus}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape' && search.value) {
+                      e.stopPropagation();
+                      search.onChange('');
+                    }
+                  }}
+                />
+                {search.value && (
+                  <button
+                    type="button"
+                    className={styles.searchClear}
+                    aria-label="Clear search"
+                    onClick={() => search.onChange('')}
+                  >
+                    ✕
+                  </button>
+                )}
+              </span>
+              {search.status != null && <span className={styles.searchStatus}>{search.status}</span>}
+            </div>
+          )}
+          <div className={styles.controls}>
+            {actions}
+            {state.overflow && (
+              <span className={styles.arrows}>
                 <button
                   type="button"
-                  className={styles.searchClear}
-                  aria-label="Clear search"
-                  onClick={() => search.onChange('')}
+                  className={styles.arrow}
+                  aria-label="Scroll left"
+                  disabled={state.atStart}
+                  onClick={() => scroll(-1)}
                 >
-                  ✕
+                  ‹
                 </button>
-              )}
-            </span>
-            {search.status != null && <span className={styles.searchStatus}>{search.status}</span>}
+                <button
+                  type="button"
+                  className={styles.arrow}
+                  aria-label="Scroll right"
+                  disabled={state.atEnd}
+                  onClick={() => scroll(1)}
+                >
+                  ›
+                </button>
+              </span>
+            )}
           </div>
-        )}
-        <div className={styles.controls}>
-          {actions}
-          {state.overflow && (
-            <span className={styles.arrows}>
-              <button
-                type="button"
-                className={styles.arrow}
-                aria-label="Scroll left"
-                disabled={state.atStart}
-                onClick={() => scroll(-1)}
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                className={styles.arrow}
-                aria-label="Scroll right"
-                disabled={state.atEnd}
-                onClick={() => scroll(1)}
-              >
-                ›
-              </button>
-            </span>
-          )}
         </div>
-      </div>
+      )}
       <div ref={ref} className={styles.row} style={{ gap, ...rowStyle }} onScroll={update}>
         {children}
       </div>

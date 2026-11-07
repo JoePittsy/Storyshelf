@@ -58,6 +58,28 @@ describe('Carousel', () => {
     expect(screen.queryByRole('button', { name: 'Scroll left' })).toBeNull();
   });
 
+  it('has no header at all without a title, actions or search while the row fits', () => {
+    setOverflow(false);
+    const { container } = render(
+      <Carousel>
+        <div>a</div>
+      </Carousel>
+    );
+    // The row is the wrapper's only child: no empty header (and its margin) above it.
+    expect(container.firstElementChild?.children).toHaveLength(1);
+    expect(container.firstElementChild?.firstElementChild?.textContent).toBe('a');
+  });
+
+  it('keeps the arrows without a title once the row overflows', () => {
+    setOverflow(true);
+    render(
+      <Carousel>
+        <div>a</div>
+      </Carousel>
+    );
+    expect(screen.getByRole('button', { name: 'Scroll right' })).toBeTruthy();
+  });
+
   describe('search', () => {
     it('is absent without the prop', () => {
       render(
