@@ -14,7 +14,7 @@ interface Props {
   caption?: string;
   /** The small line above the title, and the section's accessible name. */
   heading?: string;
-  /** What the action does: "Start", "Continue". Spoken with the title ("Start: The Hobbit"); shown on a roomy card. */
+  /** What the action does: "Play", "Resume". Spoken with the title ("Play: The Hobbit"); shown on a roomy card. */
   actionLabel?: string;
   onPlay: () => void;
   /** Loading: the action shows a spinner and is marked aria-busy. */

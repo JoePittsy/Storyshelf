@@ -6,7 +6,7 @@ const base = {
   art: <span data-testid="art" />,
   title: 'The Adventure of the Copper Beeches',
   caption: 'Book 2 of Sherlock Holmes',
-  actionLabel: 'Start',
+  actionLabel: 'Play',
   onOpen: () => {},
   onPlay: () => {},
 };
@@ -30,14 +30,14 @@ describe('UpNextCard', () => {
     cleanup();
     const onPlay = vi.fn();
     render(<UpNextCard {...base} onPlay={onPlay} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Start: The Adventure of the Copper Beeches' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play: The Adventure of the Copper Beeches' }));
     expect(onPlay).toHaveBeenCalledOnce();
   });
 
   it('marks the action busy while loading', () => {
     cleanup();
     render(<UpNextCard {...base} busy />);
-    expect(screen.getByRole('button', { name: /^Start/ })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: /^Play/ })).toHaveAttribute('aria-busy', 'true');
   });
 
   it('has a close button only when it can be dismissed', () => {

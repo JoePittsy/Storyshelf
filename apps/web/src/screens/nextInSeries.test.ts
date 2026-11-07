@@ -46,7 +46,7 @@ describe('nextInSeries: one series', () => {
     expect(next(current('b1', '1'), books)).toMatchObject({
       series: { id: 'S', name: 'The series' },
       book: { item: { id: 'b2' }, sequence: '2' },
-      label: 'Start',
+      label: 'Play',
     });
   });
 
@@ -70,7 +70,7 @@ describe('nextInSeries: one series', () => {
     const books = [sb('b1', '1'), sb('b2', '2')];
     expect(next(current('b1', '1'), books, progress({ b2: 'begun' }))).toMatchObject({
       book: { item: { id: 'b2' } },
-      label: 'Continue',
+      label: 'Resume',
     });
   });
 

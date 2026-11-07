@@ -10,7 +10,7 @@ const meta = {
   args: {
     detail: '1h 3m over 4 days',
     action: { label: 'Back to library', onClick: fn() },
-    secondary: { label: 'Listen again', onClick: onAgain },
+    secondary: { label: 'Play again', onClick: onAgain },
     wash: '217, 164, 65',
   },
   // The card is a container itself; the page gives it a width.
@@ -31,7 +31,7 @@ export const Default: Story = {
   play: async ({ canvasElement, args }) => {
     const c = within(canvasElement);
     await expect(c.getByRole('region', { name: 'Finished' })).toHaveTextContent('1h 3m over 4 days');
-    await userEvent.click(c.getByRole('button', { name: 'Listen again' }));
+    await userEvent.click(c.getByRole('button', { name: 'Play again' }));
     await expect(onAgain).toHaveBeenCalledTimes(1);
     await userEvent.click(c.getByRole('button', { name: 'Back to library' }));
     await expect(args.action.onClick).toHaveBeenCalledTimes(1);

@@ -65,7 +65,7 @@ function EndCard({ id, className }: { id: string; className?: string }) {
     <FinishedCard
       detail={finishedLine(player.duration, startedAt, now)}
       action={{ label: 'Back to library', onClick: () => void navigate('/') }}
-      secondary={{ label: 'Listen again', onClick: () => void player.play(id, 0) }}
+      secondary={{ label: 'Play again', onClick: () => void player.play(id, 0) }}
       wash={wash}
       className={className}
     />

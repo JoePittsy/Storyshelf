@@ -14,7 +14,7 @@ const meta = {
     title: 'The Adventure of the Copper Beeches',
     href: '/book/2',
     caption: 'Book 2 of Sherlock Holmes',
-    actionLabel: 'Start',
+    actionLabel: 'Play',
     wash: '47, 182, 106',
     onOpen: fn(),
     onPlay: fn(),
@@ -46,7 +46,7 @@ export const Phone: Story = {
   ],
 };
 /** Already begun: Continue, with the time left in the caption. */
-export const Continue: Story = { args: { actionLabel: 'Continue', caption: 'Book 2 of Sherlock Holmes · 51m left' } };
+export const Resume: Story = { args: { actionLabel: 'Resume', caption: 'Book 2 of Sherlock Holmes · 51m left' } };
 export const Loading: Story = { args: { busy: true } };
 /** On a book's page: its own heading, and no close. */
 export const NextInSeries: Story = {

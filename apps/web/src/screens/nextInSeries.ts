@@ -8,11 +8,11 @@ export interface SeriesPlace {
   sequence: string | null;
 }
 
-/** The book to offer once the current one is done: which series it continues, the book, and whether it starts or carries on. */
+/** The book to offer once the current one is done: which series it continues, the book, and whether it plays from the start or resumes. */
 export interface NextInSeries {
   series: { id: string; name: string };
   book: SeriesBook;
-  label: 'Start' | 'Continue';
+  label: 'Play' | 'Resume';
 }
 
 type Listening = Map<string, Pick<Progress, 'progress' | 'isFinished'>>;
@@ -103,7 +103,7 @@ export function nextInSeries(
     return {
       series: { id: c.s.id, name: c.s.name },
       book,
-      label: p && p.progress > 0 && !p.isFinished ? 'Continue' : 'Start',
+      label: p && p.progress > 0 && !p.isFinished ? 'Resume' : 'Play',
     };
   }
   return undefined;

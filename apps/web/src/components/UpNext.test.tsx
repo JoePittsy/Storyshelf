@@ -166,7 +166,7 @@ describe('Finished on Now Playing', () => {
     solo();
     player.state.ended = true;
     renderIn(<NowPlayingEnd />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Listen again' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Play again' }));
     expect(player.play).toHaveBeenCalledWith('solo', 0);
     await userEvent.click(screen.getByRole('button', { name: 'Back to library' }));
     expect(screen.getByTestId('where')).toHaveTextContent(/^\/$/);
@@ -213,7 +213,7 @@ describe('Up next on Now Playing', () => {
     expect(card).toHaveTextContent('The Adventure of the Copper Beeches');
     expect(card).toHaveTextContent('Book 2 of Sherlock Holmes');
     expect(player.play).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Start: The Adventure of the Copper Beeches' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Play: The Adventure of the Copper Beeches' }));
     expect(player.play).toHaveBeenCalledWith('b2');
   });
 
@@ -222,7 +222,7 @@ describe('Up next on Now Playing', () => {
     player.state.ended = true;
     renderIn(<NowPlayingEnd />);
     expect(
-      await screen.findByRole('button', { name: 'Continue: The Adventure of the Copper Beeches' })
+      await screen.findByRole('button', { name: 'Resume: The Adventure of the Copper Beeches' })
     ).toBeInTheDocument();
     expect(screen.getByText('Book 2 of Sherlock Holmes · 25m left')).toBeInTheDocument();
   });

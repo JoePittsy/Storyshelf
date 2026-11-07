@@ -24,10 +24,10 @@ describe('FinishedCard', () => {
     render(
       <FinishedCard
         action={{ label: 'Back to library', onClick: go }}
-        secondary={{ label: 'Listen again', onClick: again }}
+        secondary={{ label: 'Play again', onClick: again }}
       />
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Listen again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play again' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back to library' }));
     expect(again).toHaveBeenCalledOnce();
     expect(go).toHaveBeenCalledOnce();

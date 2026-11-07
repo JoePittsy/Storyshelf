@@ -41,7 +41,7 @@ export function useNextInSeries(bookId: string | undefined): UpNext | null | und
   const { item, sequence } = next.book;
   const at = progress.get(item.id)?.currentTime ?? 0;
   const duration = item.media.duration ?? 0;
-  const left = next.label === 'Continue' && duration > 0 && at > 0 ? ` · ${fmtLeft((duration - at) * 1000)}` : '';
+  const left = next.label === 'Resume' && duration > 0 && at > 0 ? ` · ${fmtLeft((duration - at) * 1000)}` : '';
   return {
     ...next,
     caption: bookInSeries(sequence, next.series.name) + left,
