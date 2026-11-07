@@ -6,10 +6,11 @@ import { changeProgress, undoProgressChange, type ProgressAction, type ProgressC
 
 /**
  * Everything that shows a book's progress: the book itself, the progress map (library grid, Continue listening, series),
- * the in-progress shelf, library lists (progress filters and the Recently listened sort) and History's Finished list.
+ * the in-progress shelf, library lists (progress filters and the Recently listened sort), History's Finished list and
+ * the series to carry on with (ABS's personalized shelves).
  */
 export const progressQueryKeys = (itemId: string) =>
-  [['item', itemId], ['me'], ['items-in-progress'], ['items'], ['finished']] as const;
+  [['item', itemId], ['me'], ['items-in-progress'], ['items'], ['finished'], ['personalized']] as const;
 
 const DONE: Record<ProgressAction, string> = {
   finish: 'Marked as finished',
