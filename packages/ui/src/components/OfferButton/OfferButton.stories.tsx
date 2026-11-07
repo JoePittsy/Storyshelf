@@ -13,6 +13,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Inline: Story = {};
 export const Bar: Story = { args: { variant: 'bar' } };
+export const AnotherDevice: Story = {
+  args: { label: 'Your iPhone is 42 min ahead · Jump to 3:12:05', shortLabel: 'Jump ahead to 3:12:05', icon: 'devices' },
+};
 export const Narrow: Story = {
   decorators: [(S) => <div style={{ width: 260 }}>{S()}</div>],
 };
