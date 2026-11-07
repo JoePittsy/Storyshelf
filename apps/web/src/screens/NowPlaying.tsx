@@ -38,6 +38,7 @@ import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
 import { ShortcutList } from '../frame/ShortcutList';
 import { NowPlayingUpNext } from '../components/UpNext';
+import { AirPlayControl } from '../player/AirPlayControl';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
 
@@ -205,7 +206,7 @@ export function NowPlaying() {
   if (phone)
     return (
       <main className={styles.sheetRoot} style={wash ? ({ '--wash': wash } as CSSProperties) : undefined}>
-        <GrabSheet onDismiss={close} closeLabel="Close player" className={styles.sheet}>
+        <GrabSheet onDismiss={close} closeLabel="Close player" end={<AirPlayControl />} className={styles.sheet}>
           <div className={styles.phoneArt}>
             <div className={styles.cover}>
               <Artwork src={p.item.coverUrl} fit="contain" lazy={false} placeholderClassName={styles.ph} />
@@ -289,11 +290,14 @@ export function NowPlaying() {
     <main className={`${styles.page} ${wide && !hasChapters && !description ? styles.solo : ''}`}>
       <div className={styles.bar} ref={bar}>
         <PillButton onClick={close}>Close</PillButton>
-        {!touch && (
-        <InfoTip label="Keyboard shortcuts">
-          <ShortcutList />
-        </InfoTip>
-        )}
+        <span className={styles.barEnd}>
+          <AirPlayControl />
+          {!touch && (
+            <InfoTip label="Keyboard shortcuts">
+              <ShortcutList />
+            </InfoTip>
+          )}
+        </span>
       </div>
 
       <div className={styles.player}>

@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
 import { AbsError } from '../api/auth';
 import { absUrl } from '../api/server';
+import { attachAirPlay } from './airplay';
 import { diag } from './diag';
 import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
@@ -374,6 +375,7 @@ function getAudio(): HTMLAudioElement {
   audio = a;
   a.setAttribute('playsinline', '');
   a.preload = 'auto';
+  attachAirPlay(a);
 
   for (const ev of ['play', 'waiting', 'stalled', 'suspend', 'emptied', 'loadstart', 'canplay', 'abort'])
     a.addEventListener(ev, () => note(`audio ${ev}`));
@@ -504,6 +506,11 @@ function detach(): { s: PlaybackSession; p: Progress } | null {
   lastMs = null;
   getAudio().pause();
   return { s, p };
+}
+
+/** Makes the player's <audio> element now rather than at the first Play, so AirPlay can offer its targets before then. */
+export function prepareAudio(): void {
+  getAudio();
 }
 
 export async function play(itemId: string, from?: number): Promise<void> {

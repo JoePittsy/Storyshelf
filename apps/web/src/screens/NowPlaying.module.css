@@ -29,6 +29,11 @@
   backdrop-filter: var(--material-filter);
   box-shadow: var(--material-edge);
 }
+.barEnd {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
 .bar > button:first-child {
   min-width: 8em;
   min-height: 44px;
