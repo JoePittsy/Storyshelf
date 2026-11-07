@@ -194,3 +194,78 @@ describe('ResumeHome: Remove from Continue listening', () => {
     expect(await heroTitle()).toBe('The Velveteen Rabbit');
   });
 });
+
+describe('ResumeHome: Recently added', () => {
+  const added = (b: ReturnType<typeof book>) => ({ ...b, addedAt: Date.now() - 3 * 86_400_000 });
+  /** ABS with these books in progress (and `finished` done), Continue series and Recently added shelves. */
+  function serveRecent({
+    inProgress = [],
+    series = [],
+    recent,
+    finished = [],
+  }: {
+    inProgress?: { id: string }[];
+    series?: object[];
+    recent: object[];
+    finished?: string[];
+  }) {
+    absFetch.mockImplementation((path: string) => {
+      const u = new URL(path, 'http://x');
+      if (path === '/api/me')
+        return Promise.resolve({
+          mediaProgress: [
+            ...inProgress.map((b) => ({ libraryItemId: b.id, progress: 0.3, isFinished: false })),
+            ...finished.map((id) => ({ libraryItemId: id, progress: 1, isFinished: true })),
+          ],
+        });
+      if (u.pathname === '/api/me/items-in-progress') return Promise.resolve({ libraryItems: inProgress });
+      if (u.pathname === '/api/libraries/L1/personalized')
+        return Promise.resolve([
+          { id: 'continue-series', entities: series },
+          { id: 'recently-added', entities: recent },
+        ]);
+      return Promise.reject(new Error(`unexpected ${path}`));
+    });
+  }
+
+  it('is the whole of home in a new library with nothing begun: each book to start, with when it was added', async () => {
+    serveRecent({ recent: [added(BLUE), added(RABBIT)] });
+    const { onPlay } = renderHome();
+    expect(await screen.findByRole('heading', { name: 'Recently added' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resume listening' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Added 3 days ago')).toHaveLength(2);
+    await userEvent.click(screen.getByRole('button', { name: 'Start The Velveteen Rabbit' }));
+    expect(onPlay).toHaveBeenCalledWith('r');
+  });
+
+  it('sits below Continue series, and repeats no book from the hero, the shelves above or the finished pile', async () => {
+    serveRecent({
+      inProgress: [RABBIT, PETER],
+      series: [COPPER],
+      recent: [added(RABBIT), added(PETER), added(COPPER), added(BLUE), added(book('g', 'La Grande Bretèche'))],
+      finished: ['g'],
+    });
+    renderHome();
+    const recent = await screen.findByRole('heading', { name: 'Recently added' });
+    const series = screen.getByRole('heading', { name: 'Continue series' });
+    expect(series.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start The Adventure of the Blue Carbuncle' })).toBeInTheDocument();
+    expect(screen.getAllByText('Added 3 days ago')).toHaveLength(1);
+    expect(screen.queryByText('La Grande Bretèche')).not.toBeInTheDocument();
+  });
+
+  it('asks ABS once for both shelves', async () => {
+    serveRecent({ series: [COPPER], recent: [added(BLUE)] });
+    renderHome();
+    await screen.findByRole('heading', { name: 'Recently added' });
+    expect(absFetch.mock.calls.filter(([p]) => p.includes('/personalized'))).toHaveLength(1);
+  });
+
+  it('is hidden when every recent book is accounted for', async () => {
+    serveRecent({ inProgress: [RABBIT], recent: [added(RABBIT)] });
+    renderHome();
+    await screen.findByRole('region', { name: 'Resume listening' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole('heading', { name: 'Recently added' })).not.toBeInTheDocument();
+  });
+});

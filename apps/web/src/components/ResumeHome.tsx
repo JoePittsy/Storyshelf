@@ -6,9 +6,11 @@ import { coverUrl, useProgress } from '../api/libraries';
 import type { Tile } from '../api/libraries';
 import { usePlayer } from '../player/engine';
 import { useProgressActions } from '../player/useProgressActions';
-import { useContinueSeries } from '../api/continueSeries';
+import { useContinueSeries, useRecentlyAdded } from '../api/continueSeries';
 import { ContinueShelf } from './ContinueShelf';
 import { continueSeriesTiles } from './continueSeries';
+import { recentlyAddedTiles } from './recentlyAdded';
+import { useNow } from '../screens/useNow';
 import { removeMenu } from './removeMenu';
 import { continueBooks, resumeStatus, splitResume } from './resume';
 import styles from './ResumeHome.module.css';
@@ -71,12 +73,15 @@ function Hero({ tile, onPlay, onRemove, busy: removing }: HeroProps) {
 
 /**
  * The top of the Books home: a resume hero for the book you were last in, then Continue listening for the rest, then
- * Continue series (the next book of series you have finished one of). Renders nothing when there is none of these.
+ * Continue series (the next book of series you have finished one of), then Recently added (the newest books not
+ * already on home). Renders nothing when there is none of these.
  */
 export function ResumeHome({ libraryId, onPlay }: Props) {
   const inProgress = useInProgress();
   const progress = useProgress();
   const continueSeries = useContinueSeries(libraryId);
+  const recentlyAdded = useRecentlyAdded(libraryId);
+  const now = useNow();
   const playerItem = usePlayer().item?.id;
   // Remove from Continue listening, with Undo. Once the server has the book hidden, it drops out of `tiles`, so the
   // next book becomes the hero.
@@ -98,13 +103,28 @@ export function ResumeHome({ libraryId, onPlay }: Props) {
           ),
     [inProgress.isPending, continueSeries.data, tiles, playerItem, progress.data]
   );
+  // After the others, so it never repeats a book any of them (or the player) has; and only once progress is known, so a
+  // finished book never shows for a moment.
+  const recentTiles = useMemo(
+    () =>
+      inProgress.isPending || progress.isPending
+        ? []
+        : recentlyAddedTiles(
+            recentlyAdded.data,
+            [...tiles, ...seriesTiles].map((t) => t.item.id).concat(playerItem ? [playerItem] : []),
+            progress.data ?? new Map(),
+            now,
+          ),
+    [inProgress.isPending, progress.isPending, recentlyAdded.data, tiles, seriesTiles, playerItem, progress.data, now]
+  );
   const { hero, rest } = splitResume(tiles);
-  if (!hero && seriesTiles.length === 0) return null;
+  if (!hero && seriesTiles.length === 0 && recentTiles.length === 0) return null;
   return (
     <div className={styles.home}>
       {hero && <Hero key={hero.item.id} tile={hero} onPlay={onPlay} onRemove={remove} busy={busy} />}
       <ContinueShelf tiles={rest} onPlay={onPlay} onRemove={remove} busy={busy} />
       <ContinueShelf tiles={seriesTiles} onPlay={onPlay} title="Continue series" playVerb="Start" />
+      <ContinueShelf tiles={recentTiles} onPlay={onPlay} title="Recently added" playVerb="Start" />
     </div>
   );
 }
