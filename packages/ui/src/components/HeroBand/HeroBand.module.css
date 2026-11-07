@@ -42,6 +42,11 @@
   min-width: 0;
   flex: 1;
 }
+/* Wide, the title group and the lines don't box: everything shares the column's one gap. A phone gives them a box each. */
+.head,
+.lines {
+  display: contents;
+}
 .kind {
   font-size: var(--fs-small);
   font-weight: 600;
@@ -80,5 +85,54 @@
   .artWrap {
     align-self: center;
     width: min(16em, 70cqw);
+  }
+}
+
+/*
+ * Phone width: the art steps down and sits beside the title, which may take four lines at the smaller size (as
+ * tall as the art on an SE); the lines (credits, meta, the action) run the band's full width beneath. The page's one action
+ * is then on the first screen, not under a cover the width of the phone.
+ */
+@container (max-width: 30em) {
+  .header {
+    display: grid;
+    grid-template-columns: 7em minmax(0, 1fr);
+    grid-template-areas:
+      'art head'
+      'lines lines';
+    align-items: center;
+    gap: 1em 1.1em;
+  }
+  .meta {
+    display: contents;
+  }
+  .artWrap {
+    grid-area: art;
+    width: 100%;
+  }
+  .head {
+    grid-area: head;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    min-width: 0;
+  }
+  .lines {
+    grid-area: lines;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55em;
+    min-width: 0;
+  }
+  .title {
+    font-size: var(--fs-title);
+    -webkit-line-clamp: 4;
+    overflow-wrap: anywhere;
+  }
+  /* No room top right beside the title: the chip follows the lines. */
+  .corner {
+    position: static;
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }

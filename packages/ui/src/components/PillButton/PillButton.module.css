@@ -14,6 +14,10 @@
     opacity var(--dur-fast) var(--ease-fast),
     background var(--dur-fast) var(--ease-fast);
 }
+/* Never squeezed by a long label: the words give way first. */
+.glyph {
+  flex: none;
+}
 .pill:disabled {
   opacity: 0.4;
   cursor: default;
