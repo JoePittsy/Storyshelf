@@ -151,7 +151,7 @@ describe('Book screen progress actions', () => {
     renderBook();
     await menuItems();
     await choose('Reset progress');
-    expect(await screen.findByText('Progress reset')).toBeInTheDocument();
+    expect(await screen.findByText('Progress reset from 1:02:10')).toBeInTheDocument();
     expect(writes()).toEqual(['DELETE /api/me/progress/mp_1 null']);
 
     serve(null);

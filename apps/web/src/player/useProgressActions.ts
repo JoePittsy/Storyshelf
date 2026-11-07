@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@joepittsy/ui';
 import { progressChanged } from '../api/libraries';
+import { fmtClock } from '../screens/bookHelpers';
 import { changeProgress, undoProgressChange, type ProgressAction, type ProgressChange } from './progressActions';
 
 /**
@@ -18,6 +19,18 @@ const DONE: Record<ProgressAction, string> = {
   reset: 'Progress reset',
   hide: 'Removed from Continue listening',
 };
+
+/**
+ * What the toast says once a change is made. A reset names the place it threw away ("Progress reset from 11:51", a
+ * position in the whole book), so the listener can tell whether Undo is worth reaching for.
+ */
+export function doneMessage(change: ProgressChange): string {
+  const { action, prev } = change;
+  if (action !== 'reset' || !prev) return DONE[action];
+  if (prev.isFinished) return `${DONE.reset}; it was finished`;
+  return prev.currentTime > 0 ? `${DONE.reset} from ${fmtClock(prev.currentTime, false)}` : DONE.reset;
+}
+
 const FAILED: Record<ProgressAction, string> = {
   finish: "Couldn't mark this book as finished. Check your connection and try again.",
   unfinish: "Couldn't mark this book as not finished. Check your connection and try again.",
@@ -65,7 +78,7 @@ export function useProgressActions() {
       setBusy(true);
       try {
         const change = await changeProgress(itemId, action);
-        showToast(DONE[action], 'info', {
+        showToast(doneMessage(change), 'info', {
           action: { label: 'Undo', shortcutKey: 'u', onClick: () => void undo(change) },
           durationMs: UNDO_MS,
           replaceKey: 'progress-change',
