@@ -1,23 +1,57 @@
+/* The form in the middle of the screen, at a comfortable measure. .app already pads the bottom by the home bar. */
 .page {
-  max-width: 24em;
-  margin: 0 auto;
-  padding: calc(3em + env(safe-area-inset-top)) 0 3em;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - env(safe-area-inset-bottom));
+  padding: calc(2em + env(safe-area-inset-top)) 0 2em;
+}
+.panel {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1.2em;
+  gap: 1.4em;
+  width: 100%;
+  max-width: 24em;
+}
+/* A desk has room around it: the form sits on a wall panel, like the cards inside the app. */
+@media (width >= 40em) {
+  .panel {
+    max-width: 27em;
+    padding: 2em 2.2em 2.2em;
+    border-radius: var(--r-card);
+    background: var(--surface);
+  }
+}
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+/* As the top bar sets the app's name. */
+.wordmark {
+  margin: 0 0 1.2em;
+  font-weight: 700;
+  white-space: nowrap;
 }
 .title {
+  margin: 0;
   font-size: var(--fs-title);
   font-weight: 700;
+  letter-spacing: -0.015em;
 }
 .form {
   display: flex;
   flex-direction: column;
   gap: 1em;
-  align-items: flex-start;
 }
-.form > :not(button) {
-  align-self: stretch;
+/* The primary action spans the form and is a full 44px target on every screen, not only on touch. */
+.form > button {
+  min-height: 44px;
+  justify-content: center;
+}
+.form > button[type='submit'] {
+  margin-top: 0.4em;
 }
 /* Always in the DOM so screen readers announce changes; hidden when empty. */
 .alert {
@@ -32,10 +66,16 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6em;
+  margin: 0;
+  color: var(--text-2);
   font-size: var(--fs-label);
 }
 .serverUrl {
   overflow-wrap: anywhere;
+}
+.address {
+  color: var(--text);
+  font-weight: 600;
 }
 .origin {
   overflow-wrap: anywhere;
