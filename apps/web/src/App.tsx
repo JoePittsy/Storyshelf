@@ -10,6 +10,7 @@ import { Book } from './screens/Book';
 import { play } from './player/engine';
 import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
+import { HandoffWatch } from './player/HandoffWatch';
 import { PlayerToasts } from './player/PlayerToasts';
 import { AuthorList } from './screens/AuthorList';
 import { Collection, Playlist } from './screens/BookListDetail';
@@ -50,6 +51,7 @@ export function App() {
   return (
     <>
       <PlayerToasts />
+      <HandoffWatch />
       <AppRoutes />
       <MiniPlayerPortal />
     </>

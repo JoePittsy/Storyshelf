@@ -410,14 +410,14 @@
     height: min(26em, 28dvh);
   }
 }
-/* The sleep timer's "go back" offer: a quiet pill under the title, never full width. */
-.asleep {
+/* The player's offer (another device's place, or the sleep timer's "go back"): a quiet pill under the title, never full width. */
+.offer {
   flex: none;
   align-self: center;
 }
 /* A short phone (an SE) has no height to spare: while the offer shows, the cover gives up the room, not the tray. */
 @media (height < 700px) {
-  .sheet:has(.asleep) .phoneArt {
+  .sheet:has(.offer) .phoneArt {
     min-height: 3.5em;
   }
 }
