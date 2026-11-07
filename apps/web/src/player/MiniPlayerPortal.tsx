@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { MiniPlayer } from '@joepittsy/ui';
 import { MiniUpNext } from '../components/UpNext';
+import { FellAsleepOffer } from './FellAsleepOffer';
 import { usePlayer } from './engine';
 import { ModeAnnouncer } from './ModeAnnouncer';
 import { useModeTap, useProgress } from './progressMode';
@@ -28,6 +29,8 @@ export function MiniPlayerPortal() {
         <>
           {/* Above the bar, in the same portal so it stays above it. Only once a book has ended. */}
           <MiniUpNext />
+          {/* Only after the sleep timer has paused the book, until it plays or moves. */}
+          <FellAsleepOffer variant="bar" />
           <MiniPlayer
             art={p.item.coverUrl}
             artFit="contain"

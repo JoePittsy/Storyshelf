@@ -33,6 +33,7 @@ import { useModeTap, useProgress } from '../player/progressMode';
 import { ChaptersSheet } from '../player/ChaptersSheet';
 import { HistorySheet } from '../player/HistorySheet';
 import { BookmarksSheet } from '../player/BookmarksSheet';
+import { FellAsleepOffer } from '../player/FellAsleepOffer';
 import { useBookmarkHere } from '../player/useBookmarkHere';
 import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
@@ -239,6 +240,7 @@ export function NowPlaying() {
             </p>
           </header>
           <NowPlayingUpNext className={styles.upNext} />
+          <FellAsleepOffer variant="inline" className={styles.asleep} />
 
           <div className={styles.phoneControls} ref={controls}>
             <ProgressModeTabs className={styles.tabs} />
@@ -337,6 +339,7 @@ export function NowPlaying() {
             )}
           </header>
           <NowPlayingUpNext className={styles.upNext} />
+          <FellAsleepOffer variant="inline" className={styles.asleep} />
 
           <div className={styles.controls}>
             <div className={styles.seek}>
