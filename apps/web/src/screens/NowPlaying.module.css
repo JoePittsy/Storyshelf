@@ -421,3 +421,10 @@
     min-height: 3.5em;
   }
 }
+/* A cover squeezed to a thumbnail has no room for the percentage pill, which would hide most of it. The progress bar
+   below says the same thing. */
+@container (height < 8em) {
+  .badge {
+    display: none;
+  }
+}
