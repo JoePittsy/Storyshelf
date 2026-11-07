@@ -51,7 +51,7 @@ const monthOf = (ms: number, tz?: string): { year: number; month: number } => {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: 'numeric' })
       .formatToParts(ms)
-      .map((x) => [x.type, x.value]),
+      .map((x) => [x.type, x.value])
   );
   return { year: Number(p.year), month: Number(p.month) - 1 };
 };
@@ -94,7 +94,9 @@ export function monthShares(startedAt: number, endedAt: number, seconds: number,
   const total = spans.reduce((a, s) => a + s.ms, 0);
   const [first] = spans;
   if (total <= 0 && first) return [{ year: first.year, month: first.month, seconds }];
-  return spans.filter((s) => s.ms > 0).map((s) => ({ year: s.year, month: s.month, seconds: (seconds * s.ms) / total }));
+  return spans
+    .filter((s) => s.ms > 0)
+    .map((s) => ({ year: s.year, month: s.month, seconds: (seconds * s.ms) / total }));
 }
 
 const named = (s: string | null | undefined): s is string => !!s && !!s.trim();
@@ -103,7 +105,10 @@ const named = (s: string | null | undefined): s is string => !!s && !!s.trim();
 function authorsOf(s: YearSession): string[] {
   const meta = (s.mediaMetadata?.authors ?? []).map((a) => a.name?.trim()).filter(named);
   if (meta.length) return meta;
-  return (s.displayAuthor ?? '').split(',').map((x) => x.trim()).filter(named);
+  return (s.displayAuthor ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(named);
 }
 
 const rank = (m: Map<string, number>): Ranked[] =>
@@ -133,7 +138,12 @@ export function yearReview(sessions: YearSession[], year: number, tz?: string): 
     const title = s.mediaMetadata?.title?.trim() || s.displayTitle || 'Untitled';
     const key = s.libraryItemId ?? `title:${title}`;
     const author = authorsOf(s);
-    const book = books.get(key) ?? { id: s.libraryItemId, title, author: author.length ? author.join(', ') : null, seconds: 0 };
+    const book = books.get(key) ?? {
+      id: s.libraryItemId,
+      title,
+      author: author.length ? author.join(', ') : null,
+      seconds: 0,
+    };
     book.seconds += here;
     books.set(key, book);
     for (const a of author) add(authors, a, here);
@@ -171,7 +181,7 @@ export function busiestMonth(months: number[]): number | null {
 }
 
 const MONTHS = Array.from({ length: 12 }, (_, i) =>
-  new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' }).format(Date.UTC(2000, i, 15)),
+  new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' }).format(Date.UTC(2000, i, 15))
 );
 const SHORT = MONTHS.map((m) => m.slice(0, 3));
 export const monthName = (i: number) => MONTHS[i] ?? '';
@@ -188,6 +198,7 @@ export function reviewCards(r: YearReview, finished: number | undefined): { labe
     { label: 'Finished', value: finished === undefined ? '–' : String(finished) },
   ];
   const busy = busiestMonth(r.months);
-  if (busy !== null && r.months.filter((s) => s > 0).length > 1) cards.push({ label: 'Busiest month', value: monthName(busy) });
+  if (busy !== null && r.months.filter((s) => s > 0).length > 1)
+    cards.push({ label: 'Busiest month', value: monthName(busy) });
   return cards;
 }

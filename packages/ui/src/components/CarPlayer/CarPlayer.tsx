@@ -68,7 +68,13 @@ export function CarPlayer({
   return (
     <div className={[styles.car, className].filter(Boolean).join(' ')}>
       <div className={styles.top}>
-        <button type="button" className={`${styles.btn} ${styles.close}`} onClick={onClose} aria-label={closeLabel} title={closeLabel}>
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.close}`}
+          onClick={onClose}
+          aria-label={closeLabel}
+          title={closeLabel}
+        >
           <X className={styles.icon} aria-hidden="true" />
         </button>
         {undo && (
@@ -152,7 +158,12 @@ export function CarPlayer({
                 <rect x="8" y="1" width="4" height="12" rx="1" />
               </svg>
             ) : (
-              <svg className={`${styles.glyph} ${styles.playGlyph}`} viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <svg
+                className={`${styles.glyph} ${styles.playGlyph}`}
+                viewBox="0 0 14 14"
+                fill="currentColor"
+                aria-hidden="true"
+              >
                 <path d="M3 1.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L4.2 1.1A.8.8 0 0 0 3 1.8Z" />
               </svg>
             )}

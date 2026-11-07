@@ -1,6 +1,15 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { ActivityRow, BarList, ColumnChart, EmptyState, PillButton, SectionCard, Select, StatGrid } from '@joepittsy/ui';
+import {
+  ActivityRow,
+  BarList,
+  ColumnChart,
+  EmptyState,
+  PillButton,
+  SectionCard,
+  Select,
+  StatGrid,
+} from '@joepittsy/ui';
 import type { BarListRow, Column } from '@joepittsy/ui';
 import { useYearSessions, useYearStats } from '../api/history';
 import { coverUrl } from '../api/libraries';
@@ -67,7 +76,7 @@ export function YearInReview({ days }: { days: Record<string, number> }) {
         else next.set('year', String(y));
         return next;
       },
-      { replace: true, preventScrollReset: true },
+      { replace: true, preventScrollReset: true }
     );
 
   const head = (
@@ -89,18 +98,15 @@ export function YearInReview({ days }: { days: Record<string, number> }) {
   );
 
   let body;
-  if (sessions.isError) body = <LoadFailed error={sessions.error} noun="your year" onRetry={() => void sessions.refetch()} />;
+  if (sessions.isError)
+    body = <LoadFailed error={sessions.error} noun="your year" onRetry={() => void sessions.refetch()} />;
   else if (!review) body = <div className={`skeleton ${styles.loading}`} role="status" aria-label="Loading" />;
   else if (review.seconds < 1) {
     const earlier = years.find((y) => y < year);
     body = (
       <EmptyState
         title={year === current ? `Nothing yet in ${year}` : `Nothing in ${year}`}
-        action={
-          earlier !== undefined && (
-            <PillButton onClick={() => pick(earlier)}>See {earlier}</PillButton>
-          )
-        }
+        action={earlier !== undefined && <PillButton onClick={() => pick(earlier)}>See {earlier}</PillButton>}
       >
         {year === current ? 'Your year fills in here as you listen.' : 'There was no listening this year.'}
       </EmptyState>
@@ -108,7 +114,7 @@ export function YearInReview({ days }: { days: Record<string, number> }) {
   } else {
     const longest = stats.data?.longestAudiobookFinished;
     const cards = reviewCards(review, stats.data?.numBooksFinished).map((c) =>
-      c.label === 'Finished' && longest ? { ...c, sub: `Longest: ${longest.title}` } : c,
+      c.label === 'Finished' && longest ? { ...c, sub: `Longest: ${longest.title}` } : c
     );
     const busy = busiestMonth(review.months);
     const columns: Column[] = review.months.map((s, i) => ({

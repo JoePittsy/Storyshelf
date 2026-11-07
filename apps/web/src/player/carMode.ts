@@ -27,7 +27,14 @@ export interface CarView {
  */
 export function carView({ position, duration, chapters, rate }: CarInput): CarView {
   const hasChapters = chapters.length > 0;
-  const w = progressWindow(hasChapters ? 'chapter' : 'book', { position, duration, chapters, rate, sleep: null, sleepFrom: 0 });
+  const w = progressWindow(hasChapters ? 'chapter' : 'book', {
+    position,
+    duration,
+    chapters,
+    rate,
+    sleep: null,
+    sleepFrom: 0,
+  });
   const span = Math.max(0, w.end - w.start);
   const speed = Number.isFinite(rate) && rate > 0 ? rate : 1;
   const left = span > 0 ? Math.min(span, Math.max(0, w.end - position)) : 0;

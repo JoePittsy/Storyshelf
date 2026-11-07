@@ -41,7 +41,13 @@ export const Paused: Story = { args: { playing: false } };
 export const WithUndo: Story = { args: { undo: { label: 'Undo', onUndo: fn() } } };
 /** A book with no chapters: no chapter line or chapter buttons, and the time counts to the end of the book. */
 export const NoChapters: Story = {
-  args: { chapter: null, timeLeft: '2:41:07', timeLeftOf: 'book', onPreviousChapter: undefined, onNextChapter: undefined },
+  args: {
+    chapter: null,
+    timeLeft: '2:41:07',
+    timeLeftOf: 'book',
+    onPreviousChapter: undefined,
+    onNextChapter: undefined,
+  },
 };
 /** The last chapter: Next is disabled. */
 export const LastChapter: Story = { args: { nextDisabled: true } };

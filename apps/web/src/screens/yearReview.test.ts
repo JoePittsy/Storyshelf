@@ -15,7 +15,11 @@ function session(over: Partial<YearSession> & { start: string; minutes: number; 
     timeListening: minutes * 60,
     startedAt,
     updatedAt: end ? at(end) : startedAt + minutes * 60_000,
-    mediaMetadata: { title: 'The Tale of Peter Rabbit', authors: [{ name: 'Beatrix Potter' }], narrators: ['Kate Reading'] },
+    mediaMetadata: {
+      title: 'The Tale of Peter Rabbit',
+      authors: [{ name: 'Beatrix Potter' }],
+      narrators: ['Kate Reading'],
+    },
     ...rest,
   };
 }
@@ -92,11 +96,15 @@ describe('yearReview', () => {
           libraryItemId: 'book-2',
           displayTitle: 'The Blue Carbuncle',
           displayAuthor: 'Arthur Conan Doyle',
-          mediaMetadata: { title: 'The Blue Carbuncle', authors: [{ name: 'Arthur Conan Doyle' }], narrators: ['Phil Chenevert'] },
+          mediaMetadata: {
+            title: 'The Blue Carbuncle',
+            authors: [{ name: 'Arthur Conan Doyle' }],
+            narrators: ['Phil Chenevert'],
+          },
         }),
       ],
       2026,
-      TZ,
+      TZ
     );
     expect(r.seconds).toBe(135 * 60);
     expect(r.months[0]).toBe(90 * 60);
@@ -126,11 +134,22 @@ describe('yearReview', () => {
   it('leaves unknown authors and narrators out of the rankings, but keeps the book', () => {
     const r = yearReview(
       [
-        session({ start: '2026-02-01T10:00:00Z', minutes: 20, displayAuthor: null, mediaMetadata: { title: 'Anonymous', authors: [], narrators: [] } }),
-        session({ start: '2026-02-02T10:00:00Z', minutes: 10, libraryItemId: 'b3', displayAuthor: '', mediaMetadata: null }),
+        session({
+          start: '2026-02-01T10:00:00Z',
+          minutes: 20,
+          displayAuthor: null,
+          mediaMetadata: { title: 'Anonymous', authors: [], narrators: [] },
+        }),
+        session({
+          start: '2026-02-02T10:00:00Z',
+          minutes: 10,
+          libraryItemId: 'b3',
+          displayAuthor: '',
+          mediaMetadata: null,
+        }),
       ],
       2026,
-      TZ,
+      TZ
     );
     expect(r.authors).toEqual([]);
     expect(r.narrators).toEqual([]);
@@ -140,9 +159,16 @@ describe('yearReview', () => {
 
   it('falls back to the display author, split on commas, when the session has no metadata', () => {
     const r = yearReview(
-      [session({ start: '2026-02-01T10:00:00Z', minutes: 20, displayAuthor: 'Neil Gaiman, Terry Pratchett', mediaMetadata: null })],
+      [
+        session({
+          start: '2026-02-01T10:00:00Z',
+          minutes: 20,
+          displayAuthor: 'Neil Gaiman, Terry Pratchett',
+          mediaMetadata: null,
+        }),
+      ],
       2026,
-      TZ,
+      TZ
     );
     expect(r.authors.map((a) => a.name)).toEqual(['Neil Gaiman', 'Terry Pratchett']);
   });
@@ -153,11 +179,15 @@ describe('yearReview', () => {
         session({
           start: '2026-02-01T10:00:00Z',
           minutes: 20,
-          mediaMetadata: { title: 'Good Omens', authors: [{ name: 'Neil Gaiman' }, { name: 'Terry Pratchett' }], narrators: [] },
+          mediaMetadata: {
+            title: 'Good Omens',
+            authors: [{ name: 'Neil Gaiman' }, { name: 'Terry Pratchett' }],
+            narrators: [],
+          },
         }),
       ],
       2026,
-      TZ,
+      TZ
     );
     expect(r.authors).toEqual([
       { name: 'Neil Gaiman', seconds: 1200 },
@@ -172,7 +202,7 @@ describe('yearReview', () => {
         session({ start: '2026-02-02T10:00:00Z', minutes: 10, libraryItemId: null, displayTitle: 'Gone' }),
       ],
       2026,
-      TZ,
+      TZ
     );
     expect(r.books).toHaveLength(1);
     expect(r.books[0]).toMatchObject({ id: null, seconds: 1800 });
@@ -185,7 +215,7 @@ describe('yearReview', () => {
         session({ start: '2026-02-01T11:00:00Z', minutes: 0, timeListening: 'oops' as unknown as number }),
       ],
       2026,
-      TZ,
+      TZ
     );
     expect(r.seconds).toBe(600);
   });
@@ -215,7 +245,10 @@ describe('reviewCards', () => {
     ]);
   });
   it('says "Finished" is unknown, rather than 0, while the server has not answered', () => {
-    const cards = reviewCards(r({ seconds: 60, bookCount: 1, months: [60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }), undefined);
+    const cards = reviewCards(
+      r({ seconds: 60, bookCount: 1, months: [60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }),
+      undefined
+    );
     expect(cards.find((c) => c.label === 'Finished')?.value).toBe('–');
   });
   it('drops "Busiest month" when there was only one month to choose from', () => {

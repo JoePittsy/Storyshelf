@@ -37,7 +37,14 @@ interface Props {
  * alternative). A column at zero draws nothing, so an empty month reads as empty. Sized in em: inside a .page-scale
  * root. Under 30em of container the labels shorten.
  */
-export function ColumnChart({ columns, label, nameHeading, valueHeading, tableLabel = 'Show as a table', className }: Props) {
+export function ColumnChart({
+  columns,
+  label,
+  nameHeading,
+  valueHeading,
+  tableLabel = 'Show as a table',
+  className,
+}: Props) {
   const [tip, setTip] = useState<Tip | null>(null);
   const frame = useRef<HTMLElement>(null);
   const max = Math.max(0, ...columns.map((c) => c.value));
@@ -62,8 +69,17 @@ export function ColumnChart({ columns, label, nameHeading, valueHeading, tableLa
   };
 
   return (
-    <figure ref={frame} className={[styles.frame, className].filter(Boolean).join(' ')} onPointerLeave={() => setTip(null)}>
-      <div className={styles.plot} role="img" aria-label={label} style={{ '--cols': columns.length } as React.CSSProperties}>
+    <figure
+      ref={frame}
+      className={[styles.frame, className].filter(Boolean).join(' ')}
+      onPointerLeave={() => setTip(null)}
+    >
+      <div
+        className={styles.plot}
+        role="img"
+        aria-label={label}
+        style={{ '--cols': columns.length } as React.CSSProperties}
+      >
         {columns.map((c, i) => (
           <div key={c.key} className={styles.slot} onPointerEnter={(e) => show(e, c)}>
             {i === top && (

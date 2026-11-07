@@ -2,7 +2,20 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ColumnChart } from './ColumnChart';
 import type { Column } from './ColumnChart';
 
-const NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 const months = (hours: number[]): Column[] =>
   hours.map((h, i) => ({
     key: String(i),
@@ -37,7 +50,10 @@ type Story = StoryObj<typeof meta>;
 export const Year: Story = {};
 /** A year that started in the autumn: the empty months draw nothing. */
 export const Partial: Story = {
-  args: { columns: months([0, 0, 0, 0, 0, 0, 0, 0, 0, 2.1, 6.4, 0.5]), label: 'Time listened each month of 2026. Most in November.' },
+  args: {
+    columns: months([0, 0, 0, 0, 0, 0, 0, 0, 0, 2.1, 6.4, 0.5]),
+    label: 'Time listened each month of 2026. Most in November.',
+  },
 };
 /** A phone: one letter a month. */
 export const Narrow: Story = {
