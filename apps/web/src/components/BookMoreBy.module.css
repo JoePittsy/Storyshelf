@@ -1,0 +1,18 @@
+/* Near the foot of the page, one card per row of small covers: a phone shows two and a bit, so the row reads as one to
+   scroll without taking a screenful. */
+.card {
+  min-width: 0;
+}
+.row {
+  container-type: inline-size;
+  min-width: 0;
+}
+.tile {
+  flex: none;
+  width: 8em;
+}
+@container (min-width: 40em) {
+  .tile {
+    width: 9.5em;
+  }
+}

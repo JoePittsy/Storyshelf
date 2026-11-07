@@ -31,12 +31,16 @@ export type SeriesItem = LibraryItem & { media: { metadata: { series?: { sequenc
 
 const retryUnlessMissing = (count: number, e: unknown) => !(e instanceof AbsError && e.status === 404) && count < 2;
 
-export const useAuthor = (id: string) =>
-  useQuery({
+/** An author with their books and series. Not under /api/libraries, so ABS's per-user response cache never holds it. */
+export const authorQuery = (id: string) =>
+  queryOptions({
     queryKey: ['author', id],
+    enabled: !!id,
     queryFn: () => absFetch<AuthorResponse>(`/api/authors/${encodeURIComponent(id)}?include=items,series`),
     retry: retryUnlessMissing,
   });
+
+export const useAuthor = (id: string) => useQuery(authorQuery(id));
 
 export const useSeries = (id: string) =>
   useQuery({
