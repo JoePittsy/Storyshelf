@@ -4,6 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
+import { ToastProvider } from '@joepittsy/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../api/auth', async (orig) => ({
@@ -12,10 +13,25 @@ vi.mock('../api/auth', async (orig) => ({
   logout: vi.fn(() => Promise.resolve()),
 }));
 const setSkip = vi.fn();
+const setDefaultRate = vi.fn();
+const setRewindOnResume = vi.fn();
+const undoReset = vi.fn();
+const resetBookSpeeds = vi.fn(() => undoReset);
 vi.mock('../player/engine', () => ({
   stop: vi.fn(() => Promise.resolve()),
-  usePlayer: () => ({ skipBack: 30, skipForward: 45, setSkip }),
+  usePlayer: () => ({
+    skipBack: 30,
+    skipForward: 45,
+    setSkip,
+    defaultRate: 1.2,
+    setDefaultRate,
+    resetBookSpeeds,
+    rewindOnResume: true,
+    setRewindOnResume,
+  }),
 }));
+let bookSpeedCount = 0;
+vi.mock('../player/bookSpeeds', () => ({ useBookSpeedCount: () => bookSpeedCount }));
 vi.mock('../api/libraries', async (orig) => ({
   ...(await orig<typeof import('../api/libraries')>()),
   useLibraries: () => ({ data: [] }),
@@ -28,6 +44,7 @@ import { Settings } from './Settings';
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  bookSpeedCount = 0;
 });
 
 function renderSettings() {
@@ -40,9 +57,11 @@ function renderSettings() {
   };
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter>
-        <Settings />
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter>
+          <Settings />
+        </MemoryRouter>
+      </ToastProvider>
     </QueryClientProvider>,
   );
 }
@@ -65,6 +84,37 @@ describe('Settings', () => {
     expect(setSkip).toHaveBeenCalledWith(15, 45);
     await userEvent.selectOptions(screen.getByLabelText('Skip forward'), '60');
     expect(setSkip).toHaveBeenCalledWith(30, 60);
+  });
+
+  it('sets the default speed, showing the one in use', async () => {
+    renderSettings();
+    expect(screen.getByLabelText('Default speed')).toHaveValue('1.2');
+    await userEvent.selectOptions(screen.getByLabelText('Default speed'), '1.5');
+    expect(setDefaultRate).toHaveBeenCalledWith(1.5);
+  });
+
+  it('says in one line that a speed set on the player stays with that book', () => {
+    renderSettings();
+    expect(screen.getByText(/stays with that book on this device/)).toBeInTheDocument();
+  });
+
+  it('offers to reset book speeds only when there are some, with an Undo', async () => {
+    renderSettings();
+    expect(screen.queryByRole('button', { name: 'Reset all book speeds' })).not.toBeInTheDocument();
+    cleanup();
+    bookSpeedCount = 3;
+    renderSettings();
+    await userEvent.click(screen.getByRole('button', { name: 'Reset all book speeds' }));
+    expect(resetBookSpeeds).toHaveBeenCalledOnce();
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    expect(undoReset).toHaveBeenCalledOnce();
+  });
+
+  it('turns rewinding after a pause on and off; it is on to begin with', async () => {
+    renderSettings();
+    expect(screen.getByLabelText('Rewind after a pause')).toHaveValue('on');
+    await userEvent.selectOptions(screen.getByLabelText('Rewind after a pause'), 'off');
+    expect(setRewindOnResume).toHaveBeenCalledWith(false);
   });
 
   it('lists the keyboard shortcuts', () => {
