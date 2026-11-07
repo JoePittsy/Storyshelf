@@ -1,7 +1,7 @@
-import { Car } from 'lucide-react';
+import { Car, Keyboard } from 'lucide-react';
 import styles from './IconButton.module.css';
 
-const ICONS = { car: Car } as const;
+const ICONS = { car: Car, keyboard: Keyboard } as const;
 
 interface Props {
   icon: keyof typeof ICONS;

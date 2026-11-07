@@ -4,13 +4,14 @@ import { MiniPlayer } from '@joepittsy/ui';
 import { MiniUpNext } from '../components/UpNext';
 import { PlayerOffer } from './PlayerOffer';
 import { usePlayer } from './engine';
+import { miniPlayerTimes } from './miniTimes';
 import { ModeAnnouncer } from './ModeAnnouncer';
 import { useModeTap, useProgress } from './progressMode';
 
 /**
  * The mini player, portalled into the frame's bottom slot whenever a book is loaded. Hidden on the full player. It is
- * deliberately slim: cover and title, skip back / play / skip forward, the seek bar with its time, and Expand. Chapters,
- * speed, sleep and the progress modes live on Now Playing.
+ * deliberately slim: cover and title, the chapter and its time left, skip back / play / skip forward, the seek bar, and
+ * Expand. Chapters, speed, sleep and the progress modes live on Now Playing.
  */
 export function MiniPlayerPortal() {
   const p = usePlayer();
@@ -23,6 +24,7 @@ export function MiniPlayerPortal() {
 
   if (!slot || !p.item || pathname === '/now-playing') return null;
   const open = () => void navigate('/now-playing');
+  const times = miniPlayerTimes(p);
   return (
     <>
       {createPortal(
@@ -36,6 +38,7 @@ export function MiniPlayerPortal() {
             artFit="contain"
             title={p.item.title}
             subtitle={p.chapters[p.chapterIndex]?.title}
+            remaining={times.remaining}
             author={p.item.author}
             position={Math.max(0, p.position - w.start) * 1000}
             duration={(w.end - w.start) * 1000}
@@ -50,12 +53,12 @@ export function MiniPlayerPortal() {
             onTap={onTap}
             flash={flash}
             markers={w.markers}
-            timeLabel={w.label}
+            timeLabel={times.side ?? w.label}
             onExpand={open}
             onOpen={open}
           />
         </>,
-        slot,
+        slot
       )}
       {createPortal(<ModeAnnouncer text={flash} />, slot)}
     </>

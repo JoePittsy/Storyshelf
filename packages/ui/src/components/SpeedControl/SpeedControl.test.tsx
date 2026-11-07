@@ -32,4 +32,10 @@ describe('SpeedControl', () => {
     expect(onChange).toHaveBeenCalledWith(1.5);
     expect(screen.getByRole('button', { name: '1×', hidden: true })).toHaveAttribute('aria-pressed', 'true');
   });
+  it('with fixedDecimal, reads tenths everywhere: the button, the readout and the presets', () => {
+    render(<SpeedControl value={1} onChange={vi.fn()} fixedDecimal />);
+    expect(screen.getByRole('button', { name: 'Playback speed 1.0×' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1.0×', hidden: true })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '2.0×', hidden: true })).toBeInTheDocument();
+  });
 });

@@ -1,9 +1,11 @@
 import { chapterIndexAt, type Chapter } from './chapters';
 
-export type SleepTimer = { kind: 'minutes'; remainingMs: number } | { kind: 'chapter'; endsAt: number };
+/** A minutes timer keeps the length it was set to, so the sleep list can tick that row while it counts down. */
+export type SleepTimer =
+  { kind: 'minutes'; remainingMs: number; minutes?: number } | { kind: 'chapter'; endsAt: number };
 
 export function sleepInMinutes(minutes: number): SleepTimer {
-  return { kind: 'minutes', remainingMs: minutes * 60_000 };
+  return { kind: 'minutes', remainingMs: minutes * 60_000, minutes };
 }
 
 /** Timer that ends at the end of the chapter containing t (in a gap: the next chapter start); null with no chapters. */
@@ -18,16 +20,17 @@ export function sleepAtChapterEnd(chapters: Chapter[], t: number): SleepTimer | 
 export function tickSleep(
   timer: SleepTimer,
   playingMs: number,
-  bookTime: number,
+  bookTime: number
 ): { timer: SleepTimer; expired: boolean } {
   if (timer.kind === 'chapter') return { timer, expired: bookTime >= timer.endsAt - 0.5 };
   const remainingMs = timer.remainingMs - playingMs;
-  return { timer: { kind: 'minutes', remainingMs }, expired: remainingMs <= 0 };
+  return { timer: { ...timer, remainingMs }, expired: remainingMs <= 0 };
 }
 
 /** Real ms until the timer stops playback. An end-of-chapter timer stops half a second before the chapter end, and the speed shortens the wait. */
 export function sleepRemainingMs(timer: SleepTimer, bookTime: number, rate: number): number {
-  const ms = timer.kind === 'minutes' ? timer.remainingMs : ((timer.endsAt - 0.5 - bookTime) / Math.max(rate, 0.1)) * 1000;
+  const ms =
+    timer.kind === 'minutes' ? timer.remainingMs : ((timer.endsAt - 0.5 - bookTime) / Math.max(rate, 0.1)) * 1000;
   return Math.max(0, ms);
 }
 

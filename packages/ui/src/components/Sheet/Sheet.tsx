@@ -10,6 +10,8 @@ interface Props {
   title: string;
   /** A primary button at the bottom that closes the sheet, within thumb reach (the close icon sits at the top right). */
   doneLabel?: string;
+  /** `ghost` when the sheet's body has its own primary action, so the view keeps to one primary. Default `primary`. */
+  doneVariant?: 'primary' | 'ghost';
   children: ReactNode;
 }
 
@@ -18,7 +20,7 @@ interface Props {
  * showModal(): inert page behind, Esc and a backdrop click close it, focus returns to the opener) restyled, with
  * a scrolling body. Popovers inside it open in the top layer, so the sheet cannot clip them.
  */
-export function Sheet({ open, onClose, title, doneLabel, children }: Props) {
+export function Sheet({ open, onClose, title, doneLabel, doneVariant = 'primary', children }: Props) {
   if (!open) return null;
   return (
     <Dialog
@@ -28,7 +30,7 @@ export function Sheet({ open, onClose, title, doneLabel, children }: Props) {
       className={styles.sheet}
       actions={
         doneLabel ? (
-          <PillButton variant="primary" onClick={onClose}>
+          <PillButton variant={doneVariant} onClick={onClose}>
             {doneLabel}
           </PillButton>
         ) : undefined

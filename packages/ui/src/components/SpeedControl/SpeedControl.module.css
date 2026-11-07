@@ -1,6 +1,6 @@
-/* Shared with SleepTimerControl: a quiet trigger button and the frosted popover it opens. The popover is in the
-   top layer, so no ancestor (the MiniPlayer's backdrop-filter, a Sheet's overflow) can clip it. It is placed
-   with CSS anchor positioning against the trigger and flips to stay on screen; without that support it centres. */
+/* Shared with SleepTimerControl: a quiet trigger button and the popover it opens. The popover is in the top layer,
+   so no ancestor (the MiniPlayer's backdrop-filter, a Sheet's overflow) can clip it. It is placed with CSS anchor
+   positioning against the trigger and flips to stay on screen; without that support it centres. */
 .root {
   display: inline-flex;
   anchor-scope: --anchor;
@@ -35,11 +35,16 @@
 .sizer {
   visibility: hidden;
 }
-.trigger:hover,
-.trigger:popover-open,
-.trigger[aria-expanded='true'] {
+/* Lit while its popover is open, and on hover only with a real pointer (a touch screen keeps :hover on the last tap). */
+.trigger:has(+ .pop:popover-open) {
   color: var(--text);
   background: var(--row-hover);
+}
+@media (hover: hover) {
+  .trigger:hover {
+    color: var(--text);
+    background: var(--row-hover);
+  }
 }
 
 .pop {
@@ -56,9 +61,9 @@
   padding: 1em;
   border: none;
   border-radius: var(--r-tile);
-  background: var(--material-bg);
-  -webkit-backdrop-filter: var(--material-filter);
-  backdrop-filter: var(--material-filter);
+  /* Solid Raised Navy, not the frosted material: rows of words over a title or the big Play button read as both at
+     once through glass. The same surface as the reduced-transparency fallback and the Dialog. */
+  background: var(--bg-1);
   box-shadow: var(--float-shadow);
   color: var(--text);
   overflow: visible;
@@ -138,7 +143,7 @@
   border: none;
   border-radius: var(--r-row);
   background: none;
-  color: var(--text-2);
+  color: var(--text);
   font-size: var(--fs-label);
   font-weight: 500;
   text-align: start;
@@ -148,9 +153,12 @@
   background: var(--row-hover);
   color: var(--text);
 }
+/* The current choice: weight and a tick, so it does not rest on one cue. */
 .option[aria-pressed='true'] {
-  color: var(--text);
   font-weight: 600;
+}
+.tick {
+  flex: none;
 }
 .option:disabled {
   opacity: 0.4;

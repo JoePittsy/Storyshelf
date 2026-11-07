@@ -38,7 +38,7 @@ function renderSheet(onClose = vi.fn()) {
       <ToastProvider>
         <BookmarksSheet open onClose={onClose} />
       </ToastProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
   return { onClose };
 }
@@ -97,7 +97,10 @@ describe('BookmarksSheet', () => {
     await waitFor(() => expect(undo).toHaveFocus());
     await userEvent.click(undo);
     await waitFor(() =>
-      expect(absFetch).toHaveBeenCalledWith('/api/me/item/li_1/bookmark', expect.objectContaining({ method: 'POST', body: JSON.stringify({ time: 900, title: 'The trolls' }) })),
+      expect(absFetch).toHaveBeenCalledWith(
+        '/api/me/item/li_1/bookmark',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ time: 900, title: 'The trolls' }) })
+      )
     );
   });
 
@@ -109,7 +112,10 @@ describe('BookmarksSheet', () => {
     await userEvent.clear(field);
     await userEvent.type(field, 'Trolls{Enter}');
     await waitFor(() =>
-      expect(absFetch).toHaveBeenCalledWith('/api/me/item/li_1/bookmark', expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ time: 900, title: 'Trolls' }) })),
+      expect(absFetch).toHaveBeenCalledWith(
+        '/api/me/item/li_1/bookmark',
+        expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ time: 900, title: 'Trolls' }) })
+      )
     );
   });
 
@@ -119,7 +125,30 @@ describe('BookmarksSheet', () => {
     expect(await screen.findByText('No bookmarks yet')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Bookmark 16:40' }));
     await waitFor(() =>
-      expect(absFetch).toHaveBeenCalledWith('/api/me/item/li_1/bookmark', expect.objectContaining({ method: 'POST', body: JSON.stringify({ time: 1000, title: 'Roast Mutton' }) })),
+      expect(absFetch).toHaveBeenCalledWith(
+        '/api/me/item/li_1/bookmark',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ time: 1000, title: 'Roast Mutton' }) })
+      )
+    );
+  });
+
+  it('with bookmarks, bookmarking here comes first, above the list, and is the sheet’s one primary action', async () => {
+    serve([bm(900, 'The trolls')]);
+    renderSheet();
+    const list = await screen.findByRole('list', { name: 'Bookmarks, in book order' });
+    const add = screen.getByRole('button', { name: 'Bookmark 16:40' });
+    expect(add.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(add.className).toMatch(/primary/);
+    // Done stays at the bottom, in thumb reach, as on the other player sheets, but as a quiet pill.
+    const done = screen.getByRole('button', { name: 'Done' });
+    expect(done.className).not.toMatch(/primary/);
+    expect(done.className).toMatch(/ghost/);
+    await userEvent.click(add);
+    await waitFor(() =>
+      expect(absFetch).toHaveBeenCalledWith(
+        '/api/me/item/li_1/bookmark',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ time: 1000, title: 'Roast Mutton' }) })
+      )
     );
   });
 });

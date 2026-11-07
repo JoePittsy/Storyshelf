@@ -11,14 +11,16 @@ import styles from './BookmarksSheet.module.css';
 
 /**
  * The playing book's bookmarks, in time order: choosing one jumps there (with Undo) and closes. Rows can be renamed
- * and deleted. The rename dialog sits beside the sheet, not inside it, so its events never reach the sheet.
+ * and deleted. Adding a bookmark where you are is the sheet's first and only primary action, so the player needs one
+ * Bookmarks control rather than two look-alikes; Done is a quiet pill beside it. The rename dialog sits beside the
+ * sheet, not inside it, so its events never reach the sheet.
  */
 export function BookmarksSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [renaming, setRenaming] = useState<Bookmark | null>(null);
   const { mutate: rename } = useRenameBookmark();
   return (
     <>
-      <Sheet open={open} onClose={onClose} title="Bookmarks" doneLabel="Done">
+      <Sheet open={open} onClose={onClose} title="Bookmarks" doneLabel="Done" doneVariant="ghost">
         <BookmarkList onClose={onClose} onRename={setRenaming} />
       </Sheet>
       {renaming && (
@@ -79,61 +81,63 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
   const rows = [...list.map((b) => ({ b, gone: false })), ...deleted.map((b) => ({ b, gone: true }))].sort(
     (x, y) => x.b.time - y.b.time
   );
+  // Quiet: the new row is the confirmation, since a toast can't be reached over the sheet.
+  const addHere = (
+    <PillButton variant="primary" onClick={() => bookmarkHere({ quiet: true })}>
+      Bookmark {fmtClock(bookmarkSecond(p.position), false)}
+    </PillButton>
+  );
 
   if (rows.length === 0)
     return (
-      <EmptyState
-        title="No bookmarks yet"
-        action={
-          <PillButton variant="primary" onClick={() => bookmarkHere({ quiet: true })}>
-            Bookmark {fmtClock(bookmarkSecond(p.position), false)}
-          </PillButton>
-        }
-      >
+      <EmptyState title="No bookmarks yet" action={addHere}>
         Mark a place in this book to come back to it later. Bookmarks are kept on your server, so every device has them.
       </EmptyState>
     );
 
   return (
-    <ul className={styles.list} aria-label="Bookmarks, in book order">
-      {rows.map(({ b, gone }) =>
-        gone ? (
-          <li
-            key={key(b)}
-            className={styles.deleted}
-            ref={(el) => {
-              if (el && focusUndo.current === key(b)) {
-                focusUndo.current = null;
-                el.querySelector('button')?.focus();
-              }
-            }}
-          >
-            <span className={styles.deletedText}>Deleted “{b.title}”</span>
-            <PillButton aria-label={`Undo deleting ${b.title}`} onClick={() => undo(b)}>
-              Undo
-            </PillButton>
-          </li>
-        ) : (
-          <ActionRow
-            key={key(b)}
-            title={b.title}
-            detail={bookmarkChapter(p.chapters, b)}
-            trailing={fmtClock(b.time)}
-            onOpen={() => {
-              jumpTo(b.time, b.title);
-              onClose();
-            }}
-            actions={[
-              { icon: 'rename', label: `Rename ${b.title}`, onClick: () => onRename(b) },
-              {
-                icon: 'delete',
-                label: `Delete ${b.title}`,
-                onClick: () => del(b),
-              },
-            ]}
-          />
-        )
-      )}
-    </ul>
+    <>
+      <div className={styles.add}>{addHere}</div>
+      <ul className={styles.list} aria-label="Bookmarks, in book order">
+        {rows.map(({ b, gone }) =>
+          gone ? (
+            <li
+              key={key(b)}
+              className={styles.deleted}
+              ref={(el) => {
+                if (el && focusUndo.current === key(b)) {
+                  focusUndo.current = null;
+                  el.querySelector('button')?.focus();
+                }
+              }}
+            >
+              <span className={styles.deletedText}>Deleted “{b.title}”</span>
+              <PillButton aria-label={`Undo deleting ${b.title}`} onClick={() => undo(b)}>
+                Undo
+              </PillButton>
+            </li>
+          ) : (
+            <ActionRow
+              key={key(b)}
+              title={b.title}
+              detail={bookmarkChapter(p.chapters, b)}
+              trailing={fmtClock(b.time)}
+              onOpen={() => {
+                jumpTo(b.time, b.title);
+                onClose();
+              }}
+              actions={[
+                { icon: 'rename', label: `Rename ${b.title}`, onClick: () => onRename(b) },
+                {
+                  icon: 'delete',
+                  label: `Delete ${b.title}`,
+                  onClick: () => del(b),
+                },
+              ]}
+            />
+          )
+        )}
+      </ul>
+    </>
   );
 }

@@ -53,9 +53,9 @@
   padding: 0.4em;
   border: none;
   border-radius: var(--r-tile);
-  background: var(--material-bg);
-  -webkit-backdrop-filter: var(--material-filter);
-  backdrop-filter: var(--material-filter);
+  /* Solid Raised Navy, as the speed and sleep popovers: a list of actions over a list of chapters reads as both through
+     glass. The same surface as the reduced-transparency fallback and the Dialog. */
+  background: var(--bg-1);
   box-shadow: var(--float-shadow);
   color: var(--text);
 }

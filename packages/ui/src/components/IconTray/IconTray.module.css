@@ -50,11 +50,18 @@
     color var(--dur-fast) var(--ease-fast),
     background var(--dur-fast) var(--ease-fast);
 }
-.tray > button:hover:not(:disabled),
-.tray > * > button:first-child:hover,
-.tray > * > button:first-child:popover-open {
+/* Lit while its popover is open. Hover only where there is a real pointer: a touch screen keeps :hover on whatever was
+   last tapped, or on whatever lands under the finger when the player opens, so a button would sit lit at rest. */
+.tray > *:has(> [popover]:popover-open) > button:first-child {
   color: var(--text);
   background: var(--row-hover);
+}
+@media (hover: hover) {
+  .tray > button:hover:not(:disabled),
+  .tray > * > button:first-child:hover {
+    color: var(--text);
+    background: var(--row-hover);
+  }
 }
 .tray > button:disabled {
   opacity: 0.4;

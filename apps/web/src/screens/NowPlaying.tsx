@@ -5,7 +5,6 @@ import {
   GrabSheet,
   IconButton,
   IconTray,
-  InfoTip,
   ExpandableText,
   ListRow,
   PeopleLinks,
@@ -35,10 +34,10 @@ import { ChaptersSheet } from '../player/ChaptersSheet';
 import { HistorySheet } from '../player/HistorySheet';
 import { BookmarksSheet } from '../player/BookmarksSheet';
 import { PlayerOffer } from '../player/PlayerOffer';
-import { useBookmarkHere } from '../player/useBookmarkHere';
+import { sleepRemainingMs } from '../player/sleep';
 import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
-import { ShortcutList } from '../frame/ShortcutList';
+import { ShortcutsDialog } from '../frame/ShortcutsDialog';
 import { NowPlayingEnd } from '../components/UpNext';
 import { AirPlayControl } from '../player/AirPlayControl';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
@@ -102,14 +101,13 @@ export function NowPlaying() {
   const bar = useRef<HTMLDivElement>(null);
   const controls = useRef<HTMLDivElement>(null);
   const [sheet, setSheet] = useState<'chapters' | 'history' | 'bookmarks' | null>(null);
-  const bookmarkHere = useBookmarkHere();
+  const [shortcuts, setShortcuts] = useState(false);
   // The player only knows the author's name; the book (cached from the book page) has their ids.
   const meta = useBook(p.item?.id ?? '').data?.media.metadata;
   const authors = meta?.authors;
   const narrators = meta?.narrators;
   const rawDescription = meta?.description;
   const description = useMemo(() => (rawDescription ? sanitiseDescription(rawDescription) : ''), [rawDescription]);
-
 
   // The cover's colour washes the page ground, as on the book page (frame/Frame.module.css reads these).
   const wash = useDominantColor(p.item?.coverUrl ?? null);
@@ -202,7 +200,13 @@ export function NowPlaying() {
       )}
     </div>
   );
-  const sleepValue = p.sleep?.kind === 'minutes' ? p.sleep : p.sleep ? ({ kind: 'chapter' } as const) : null;
+  // A chapter timer carries its time left, which the phone tray shows: "End of chapter" is too wide for a tray cell.
+  const sleepValue =
+    p.sleep?.kind === 'minutes'
+      ? p.sleep
+      : p.sleep
+        ? ({ kind: 'chapter', remainingMs: sleepRemainingMs(p.sleep, p.position, p.rate) } as const)
+        : null;
   const historySheet = <HistorySheet open={sheet === 'history'} onClose={() => setSheet(null)} />;
   const bookmarksSheet = <BookmarksSheet open={sheet === 'bookmarks'} onClose={() => setSheet(null)} />;
 
@@ -286,9 +290,13 @@ export function NowPlaying() {
             />
             <IconTray label="Player options">
               <SpeedControl value={p.rate} onChange={p.setRate} fixedDecimal />
-              <SleepTimerControl value={sleepValue} onChange={p.setSleep} chapterOptionDisabled={!hasChapters} compact />
+              <SleepTimerControl
+                value={sleepValue}
+                onChange={p.setSleep}
+                chapterOptionDisabled={!hasChapters}
+                compact
+              />
               {hasChapters && <TrayButton icon="chapters" label="Chapters" onClick={() => setSheet('chapters')} />}
-              <TrayButton icon="bookmark" label="Add bookmark" onClick={() => void bookmarkHere()} />
               <TrayButton icon="bookmarks" label="Bookmarks" onClick={() => setSheet('bookmarks')} />
               <TrayButton icon="history" label="History" onClick={() => setSheet('history')} />
             </IconTray>
@@ -307,10 +315,9 @@ export function NowPlaying() {
         <span className={styles.barEnd}>
           <IconButton icon="car" label="Car mode" shortcut={touch ? undefined : 'C'} onClick={toCar} />
           <AirPlayControl />
+          {/* The car button's twin, named and with its key in the tooltip; it opens the same list as ? does. */}
           {!touch && (
-            <InfoTip label="Keyboard shortcuts">
-              <ShortcutList />
-            </InfoTip>
+            <IconButton icon="keyboard" label="Keyboard shortcuts" shortcut="?" onClick={() => setShortcuts(true)} />
           )}
         </span>
       </div>
@@ -342,12 +349,11 @@ export function NowPlaying() {
                 <PeopleLinks people={narrators.join(', ')} onOpenPerson={(name) => void navigate(narratorPath(name))} />
               </p>
             )}
-            {chapter && (
+            {/* One line, the words of the phone's chapter row: "Part I · 1 of 3", or just "Chapter 6". */}
+            {row && (
               <p className={styles.chapter}>
-                <span className={styles.chapterCount}>
-                  Chapter {p.chapterIndex + 1} of {p.chapters.length}
-                </span>
-                {chapter.title}
+                {row.title}
+                {row.count && <span className={styles.chapterCount}> · {row.count}</span>}
               </p>
             )}
           </header>
@@ -380,13 +386,8 @@ export function NowPlaying() {
             />
 
             <div className={styles.options}>
-              <SpeedControl value={p.rate} onChange={p.setRate} />
-              <SleepTimerControl
-                value={sleepValue}
-                onChange={p.setSleep}
-                chapterOptionDisabled={!hasChapters}
-              />
-              <PillButton onClick={() => void bookmarkHere()}>Add bookmark</PillButton>
+              <SpeedControl value={p.rate} onChange={p.setRate} fixedDecimal />
+              <SleepTimerControl value={sleepValue} onChange={p.setSleep} chapterOptionDisabled={!hasChapters} />
               <PillButton onClick={() => setSheet('bookmarks')}>Bookmarks</PillButton>
               <PillButton onClick={() => setSheet('history')}>History</PillButton>
               {hasChapters && !wide && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
@@ -408,6 +409,7 @@ export function NowPlaying() {
 
       {historySheet}
       {bookmarksSheet}
+      {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Bookmark, BookmarkPlus, History, ListMusic, Settings } from 'lucide-react';
+import { Bookmark, History, ListMusic, Settings } from 'lucide-react';
 import styles from './IconTray.module.css';
 
 interface Props {
@@ -22,12 +22,11 @@ export function IconTray({ label, children, className }: Props) {
   );
 }
 
-/** `bookmark` adds one (a bookmark with a plus); `bookmarks` opens the list. */
+/** `bookmarks` opens the bookmark list, which also holds the button that adds one: one control, not two look-alikes. */
 const ICONS = {
   chapters: ListMusic,
   history: History,
   settings: Settings,
-  bookmark: BookmarkPlus,
   bookmarks: Bookmark,
 } as const;
 
