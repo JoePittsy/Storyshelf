@@ -133,7 +133,9 @@ beforeEach(async () => {
   engine = await import('./engine');
   engine.onHandoffNotice((n) => notices.push(n));
   // A test may change these; every test starts from the plain fake.
-  vi.mocked(handoffServer.serverPlace).mockImplementation(() => Promise.resolve(server && { ...server, isFinished: false }));
+  vi.mocked(handoffServer.serverPlace).mockImplementation(() =>
+    Promise.resolve(server && { ...server, isFinished: false })
+  );
   vi.mocked(handoffServer.recentSessions).mockImplementation(() => Promise.resolve([]));
   vi.mocked(sessionApi.syncSession).mockImplementation((s, p) => {
     if (ours(s)) write(p.currentTime);
@@ -201,8 +203,13 @@ describe('found while paused: offered, not jumped to', () => {
   it('names the device from the session that wrote it', async () => {
     vi.mocked(handoffServer.recentSessions).mockImplementation(() =>
       Promise.resolve([
-        { id: 'x', libraryItemId: 'li_1', updatedAt: server!.lastUpdate, deviceInfo: { deviceId: 'phone', model: 'iPhone' } },
-      ] as never),
+        {
+          id: 'x',
+          libraryItemId: 'li_1',
+          updatedAt: server!.lastUpdate,
+          deviceInfo: { deviceId: 'phone', model: 'iPhone' },
+        },
+      ] as never)
     );
     const a = await playing();
     await pauseFor(a, 60_000);
@@ -240,7 +247,10 @@ describe('found while paused: offered, not jumped to', () => {
     elsewhere(900);
     let answer!: () => void;
     vi.mocked(handoffServer.serverPlace).mockImplementationOnce(
-      () => new Promise((resolve) => (answer = () => resolve({ currentTime: 900, lastUpdate: now - 1000, isFinished: false }))),
+      () =>
+        new Promise(
+          (resolve) => (answer = () => resolve({ currentTime: 900, lastUpdate: now - 1000, isFinished: false }))
+        )
     );
     const check = engine.checkHandoff('wake');
     engine.seek(300);

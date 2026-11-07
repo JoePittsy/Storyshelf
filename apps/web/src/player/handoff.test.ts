@@ -13,7 +13,11 @@ import {
 
 // The player last told the server 1000 s, at t = 50_000 ms, and is still there.
 const ours = { position: 1000, lastSent: 1000, lastWriteAt: 50_000 };
-const server = (currentTime: number, lastUpdate = 60_000, isFinished = false) => ({ currentTime, lastUpdate, isFinished });
+const server = (currentTime: number, lastUpdate = 60_000, isFinished = false) => ({
+  currentTime,
+  lastUpdate,
+  isFinished,
+});
 
 describe('newerElsewhere: is there a newer place written by someone else?', () => {
   it('yes: written after our last write, and more than the threshold from our place, ahead or behind', () => {
@@ -48,7 +52,9 @@ describe('deviceName: what to call the device that wrote it', () => {
     expect(deviceName({ manufacturer: 'Apple', model: 'iPhone', clientName: 'Abs iOS' })).toBe('iPhone');
     expect(deviceName({ model: 'iPhone15,2' })).toBe('iPhone');
     expect(deviceName({ model: 'iPad13,4' })).toBe('iPad');
-    expect(deviceName({ osName: 'iOS', browserName: 'Mobile Safari', deviceType: 'mobile', clientName: 'Storyshelf' })).toBe('iPhone');
+    expect(
+      deviceName({ osName: 'iOS', browserName: 'Mobile Safari', deviceType: 'mobile', clientName: 'Storyshelf' })
+    ).toBe('iPhone');
     expect(deviceName({ osName: 'macOS', browserName: 'Safari' })).toBe('Mac');
     expect(deviceName({ osName: 'Mac OS', browserName: 'Chrome' })).toBe('Mac');
   });
@@ -85,7 +91,7 @@ const session = (over: Partial<ListeningSession> & { deviceInfo?: Record<string,
   }) as ListeningSession;
 
 describe('whoWrote: the session behind the newer place', () => {
-  it('is the one last updated nearest the place\'s update, within a couple of minutes', () => {
+  it("is the one last updated nearest the place's update, within a couple of minutes", () => {
     const sessions = [
       session({ id: 'a', updatedAt: 100_000, deviceInfo: { deviceId: 'phone', model: 'iPhone' } }),
       session({ id: 'b', updatedAt: 40_000, deviceInfo: { deviceId: 'pc', osName: 'Windows' } }),
@@ -140,9 +146,13 @@ describe('describeHandoff: the words', () => {
   });
 
   it('another device when it is not known; another tab when it is this browser', () => {
-    expect(describeHandoff({ position: 2470, device: unknown }, 100).label).toBe('Another device is 39 min ahead · Jump to 41:10');
+    expect(describeHandoff({ position: 2470, device: unknown }, 100).label).toBe(
+      'Another device is 39 min ahead · Jump to 41:10'
+    );
     expect(describeHandoff({ position: 2470, device: unknown }, 100).jumpLabel).toBe("the other device's place");
-    expect(describeHandoff({ position: 100, device: tab }, 2470).label).toBe('Another tab went back to 1:40 · Jump there');
+    expect(describeHandoff({ position: 100, device: tab }, 2470).label).toBe(
+      'Another tab went back to 1:40 · Jump there'
+    );
     expect(describeHandoff({ position: 100, device: tab }, 2470).jumpLabel).toBe("the other tab's place");
   });
 });

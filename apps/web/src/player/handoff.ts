@@ -116,7 +116,7 @@ export function writerPlace(w: Writer): string {
  */
 export function describeHandoff(
   h: { position: number; device: Writer },
-  ours: number,
+  ours: number
 ): { label: string; shortLabel: string; jumpLabel: string; ahead: boolean } {
   const at = fmtClock(h.position, false);
   const ahead = h.position > ours;

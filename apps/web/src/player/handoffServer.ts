@@ -18,7 +18,7 @@ export async function serverPlace(libraryItemId: string): Promise<ServerPlace | 
  */
 export async function recentSessions(libraryItemId: string): Promise<ListeningSession[]> {
   const page = await absFetch<{ sessions?: ListeningSession[] }>(
-    `/api/me/item/listening-sessions/${encodeURIComponent(libraryItemId)}?itemsPerPage=10&page=0`,
+    `/api/me/item/listening-sessions/${encodeURIComponent(libraryItemId)}?itemsPerPage=10&page=0`
   );
   return page.sessions ?? [];
 }
