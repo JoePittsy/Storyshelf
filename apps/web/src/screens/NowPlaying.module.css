@@ -415,3 +415,9 @@
   flex: none;
   align-self: center;
 }
+/* A short phone (an SE) has no height to spare: while the offer shows, the cover gives up the room, not the tray. */
+@media (height < 700px) {
+  .sheet:has(.asleep) .phoneArt {
+    min-height: 3.5em;
+  }
+}
