@@ -28,7 +28,7 @@ export function dueOnStop(c: SyncClock, currentTime: number): boolean {
 export function payload(
   c: SyncClock,
   currentTime: number,
-  duration: number,
+  duration: number
 ): { currentTime: number; timeListened: number; duration: number } {
   return { currentTime, timeListened: c.listened, duration };
 }

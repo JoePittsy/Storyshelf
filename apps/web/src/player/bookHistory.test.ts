@@ -35,7 +35,7 @@ describe('sessionMarks', () => {
         session({ mediaType: 'podcast', startTime: 2000 }),
         session({ libraryItemId: 'other', startTime: 3000 }),
       ],
-      'book',
+      'book'
     );
     expect(marks).toEqual([]);
   });
@@ -61,7 +61,7 @@ describe('historyRows', () => {
     expect(rows[0]).toMatchObject({ key: 'now', at: NOW });
   });
 
-  it('merges this visit\'s jump marks with the sessions by time', () => {
+  it("merges this visit's jump marks with the sessions by time", () => {
     const rows = historyRows({
       ...base,
       position: 9000,

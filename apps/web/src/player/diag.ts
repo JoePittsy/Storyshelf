@@ -33,9 +33,7 @@ function load(storage: NonNullable<Deps['storage']>, max: number): DiagEntry[] {
   try {
     const raw: unknown = JSON.parse(storage().getItem(DIAG_KEY) ?? '[]');
     if (!Array.isArray(raw)) return [];
-    return raw
-      .filter((e): e is DiagEntry => !!e && typeof e.t === 'string' && typeof e.ev === 'string')
-      .slice(-max);
+    return raw.filter((e): e is DiagEntry => !!e && typeof e.t === 'string' && typeof e.ev === 'string').slice(-max);
   } catch {
     return [];
   }

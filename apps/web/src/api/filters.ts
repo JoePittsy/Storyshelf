@@ -94,7 +94,17 @@ export const hasFilterParams = (params: URLSearchParams): boolean => countActive
 // --- Server filter: ABS takes one `filter=group.<base64>` per request. -------------------------------------------
 
 /** The filter sent to ABS, most selective first. The rest are applied here. */
-export const SERVER_PRIORITY: FilterKey[] = ['narrator', 'genre', 'tag', 'publisher', 'lang', 'decade', 'progress', 'ebook', 'abridged'];
+export const SERVER_PRIORITY: FilterKey[] = [
+  'narrator',
+  'genre',
+  'tag',
+  'publisher',
+  'lang',
+  'decade',
+  'progress',
+  'ebook',
+  'abridged',
+];
 
 export function serverKey(f: Filters): FilterKey | null {
   return SERVER_PRIORITY.find((k) => isOn(f, k)) ?? null;
@@ -138,7 +148,11 @@ const same = (a: string | null | undefined, b: string): boolean =>
   (a ?? '').trim().toLowerCase() === b.trim().toLowerCase();
 const has = (list: string[] | null | undefined, v: string): boolean => (list ?? []).some((x) => same(x, v));
 
-const names = (s: string): string => s.split(',').map((x) => x.trim().toLowerCase()).join(', ');
+const names = (s: string): string =>
+  s
+    .split(',')
+    .map((x) => x.trim().toLowerCase())
+    .join(', ');
 /** ABS joins narrators with ", ". Compare whole names (a name with a comma still works), never substrings. */
 const hasNarrator = (joined: string | null | undefined, name: string): boolean =>
   `, ${names(joined ?? '')}, `.includes(`, ${names(name)}, `);

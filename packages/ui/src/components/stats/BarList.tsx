@@ -31,7 +31,10 @@ export function BarList({
 }) {
   const top = max ?? Math.max(1e-9, ...rows.map((r) => r.value));
   return (
-    <div className={styles.bars} style={{ '--rank-col': ranked ? '1.6em' : '0px', ...(nameMax ? { '--name-max': nameMax } : {}) } as CSSProperties}>
+    <div
+      className={styles.bars}
+      style={{ '--rank-col': ranked ? '1.6em' : '0px', ...(nameMax ? { '--name-max': nameMax } : {}) } as CSSProperties}
+    >
       {rows.map((r, i) => (
         <div key={r.key} className={`${styles.row}${r.value <= 0 ? ' ' + styles.empty : ''}`} title={r.title ?? r.name}>
           <span className={styles.rank}>{ranked ? i + 1 : ''}</span>

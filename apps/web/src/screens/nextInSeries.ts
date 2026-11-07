@@ -44,7 +44,7 @@ function nextAfter(
   currentId: string,
   place: { start: number; end: number },
   books: SeriesBook[],
-  progress: Listening,
+  progress: Listening
 ): SeriesBook | undefined {
   const later = sortSeriesBooks(books).filter((b) => {
     const s = seriesSpan(b.sequence);
@@ -86,7 +86,7 @@ function followed(currentStart: number, books: SeriesBook[], progress: Listening
 export function nextInSeries(
   current: { id: string; series: SeriesPlace[] },
   books: Map<string, SeriesBook[] | undefined>,
-  progress: Listening,
+  progress: Listening
 ): NextInSeries | undefined {
   const ranked = current.series
     .map((s, order) => {

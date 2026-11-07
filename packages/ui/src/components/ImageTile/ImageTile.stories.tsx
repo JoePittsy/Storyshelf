@@ -26,7 +26,10 @@ export const Circular: Story = { args: { title: 'Maya Rowan', sub: '412 items', 
 export const Small: Story = { args: { size: 'sm', meta: 'Yesterday' } };
 export const WithAddButton: Story = { args: { onAdd: fn() } };
 export const AsLinkWithProgress: Story = {
-  args: { href: '/book/1', overlay: <ProgressBar value={0.4} label="Progress through Golden Hour" variant="overlay" /> },
+  args: {
+    href: '/book/1',
+    overlay: <ProgressBar value={0.4} label="Progress through Golden Hour" variant="overlay" />,
+  },
 };
 export const NoArt: Story = { args: { imageUrl: null } };
 export const SquareCover: Story = { args: { imageUrl: covers.sunset, artFit: 'cover' } };
@@ -40,11 +43,24 @@ export const MixedGrid: Story = {
   decorators: [
     () => (
       <ul
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 12em)', gap: '1.4em', listStyle: 'none', padding: 0, margin: 0 }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 12em)',
+          gap: '1.4em',
+          listStyle: 'none',
+          padding: 0,
+          margin: 0,
+        }}
       >
         {[covers.sunset, portraitCover, covers.forest, portraitCover].map((src, i) => (
           <li key={i}>
-            <ImageTile title={i % 2 ? 'A Crown of Swords' : 'Golden Hour'} sub="Author" imageUrl={src} artFit="contain" onOpen={fn()} />
+            <ImageTile
+              title={i % 2 ? 'A Crown of Swords' : 'Golden Hour'}
+              sub="Author"
+              imageUrl={src}
+              artFit="contain"
+              onOpen={fn()}
+            />
           </li>
         ))}
       </ul>

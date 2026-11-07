@@ -17,7 +17,9 @@ interface Rec {
 const header = (init: RequestInit, name: string) => new Headers(init.headers).get(name);
 const jsonRes = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-const userBody = (access: string, refresh: string) => ({ user: { id: 'u1', username: 'joe', accessToken: access, refreshToken: refresh } });
+const userBody = (access: string, refresh: string) => ({
+  user: { id: 'u1', username: 'joe', accessToken: access, refreshToken: refresh },
+});
 
 let store: Map<string, string>;
 let calls: Rec[];
@@ -65,7 +67,9 @@ beforeEach(() => {
       return jsonRes(userBody(t.access, t.refresh));
     }
     if (rec.url === `${SERVER}/logout`) return jsonRes({});
-    return header(init, 'authorization') === `Bearer ${validAccess}` ? jsonRes({ ok: true }) : new Response('x', { status: 401 });
+    return header(init, 'authorization') === `Bearer ${validAccess}`
+      ? jsonRes({ ok: true })
+      : new Response('x', { status: 401 });
   });
   setMode('hosted');
   setServerUrl(SERVER);

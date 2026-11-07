@@ -70,9 +70,13 @@ describe('list helpers', () => {
 });
 
 function setup(initial: Bookmark[] | undefined) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } },
+  });
   if (initial) qc.setQueryData(BOOKMARKS_KEY, initial);
-  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  );
   return { qc, wrapper };
 }
 
@@ -110,7 +114,9 @@ describe('useBookmarks', () => {
 describe('useAddBookmark', () => {
   it('shows the bookmark at once, POSTs time and title, then marks the list for a refetch', async () => {
     const server = pending<Bookmark>();
-    absFetch.mockImplementation((path, init) => (init?.method === 'POST' ? server.promise : Promise.resolve({ bookmarks: [bm(40, 'Here')] })));
+    absFetch.mockImplementation((path, init) =>
+      init?.method === 'POST' ? server.promise : Promise.resolve({ bookmarks: [bm(40, 'Here')] })
+    );
     const { qc, wrapper } = setup([]);
     const { result } = renderHook(() => useAddBookmark(), { wrapper });
     act(() => result.current.mutate({ libraryItemId: 'li_1', time: 40, title: 'Here' }));
@@ -125,7 +131,9 @@ describe('useAddBookmark', () => {
   });
 
   it('rolls back when the server refuses', async () => {
-    absFetch.mockImplementation((_path, init) => (init?.method === 'POST' ? Promise.reject(new Error('down')) : Promise.resolve({ bookmarks: [bm(5)] })));
+    absFetch.mockImplementation((_path, init) =>
+      init?.method === 'POST' ? Promise.reject(new Error('down')) : Promise.resolve({ bookmarks: [bm(5)] })
+    );
     const { qc, wrapper } = setup([bm(5)]);
     const { result } = renderHook(() => useAddBookmark(), { wrapper });
     act(() => result.current.mutate({ libraryItemId: 'li_1', time: 40, title: 'Here' }));
@@ -133,11 +141,13 @@ describe('useAddBookmark', () => {
     expect(cached(qc)?.map((b) => b.time)).toEqual([5]);
   });
 
-  it("rolling back one add keeps another that is still on its way", async () => {
+  it('rolling back one add keeps another that is still on its way', async () => {
     const first = pending<Bookmark>();
     const second = pending<Bookmark>();
     const posts = [first, second];
-    absFetch.mockImplementation((_path, init) => (init?.method === 'POST' ? (posts.shift() ?? second).promise : new Promise(() => undefined)));
+    absFetch.mockImplementation((_path, init) =>
+      init?.method === 'POST' ? (posts.shift() ?? second).promise : new Promise(() => undefined)
+    );
     const { qc, wrapper } = setup([]);
     const { result } = renderHook(() => ({ a: useAddBookmark(), b: useAddBookmark() }), { wrapper });
     act(() => result.current.a.mutate({ libraryItemId: 'li_1', time: 10, title: 'A' }));
@@ -153,7 +163,9 @@ describe('useAddBookmark', () => {
 describe('useRenameBookmark', () => {
   it('renames at once with a PATCH matched by time, and restores the old name on failure', async () => {
     const server = pending<Bookmark>();
-    absFetch.mockImplementation((_path, init) => (init?.method === 'PATCH' ? server.promise : new Promise(() => undefined)));
+    absFetch.mockImplementation((_path, init) =>
+      init?.method === 'PATCH' ? server.promise : new Promise(() => undefined)
+    );
     const { qc, wrapper } = setup([bm(100, 'Old')]);
     const { result } = renderHook(() => useRenameBookmark(), { wrapper });
     act(() => result.current.mutate({ libraryItemId: 'li_1', time: 100, title: 'New' }));
@@ -171,7 +183,9 @@ describe('useRenameBookmark', () => {
 describe('useDeleteBookmark', () => {
   it('removes at once with a DELETE by time, and puts it back on failure', async () => {
     const server = pending<undefined>();
-    absFetch.mockImplementation((_path, init) => (init?.method === 'DELETE' ? server.promise : new Promise(() => undefined)));
+    absFetch.mockImplementation((_path, init) =>
+      init?.method === 'DELETE' ? server.promise : new Promise(() => undefined)
+    );
     const original = bm(100.5, 'Keep me', 'li_1', 42);
     const { qc, wrapper } = setup([bm(5), original]);
     const { result } = renderHook(() => useDeleteBookmark(), { wrapper });

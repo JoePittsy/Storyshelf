@@ -6,8 +6,7 @@ body {
 /* The page-scale root: full dynamic viewport height, clear of the iPhone notch and home bar. */
 .app {
   min-height: 100dvh;
-  padding: 0 max(1em, env(safe-area-inset-right)) env(safe-area-inset-bottom)
-    max(1em, env(safe-area-inset-left));
+  padding: 0 max(1em, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(1em, env(safe-area-inset-left));
 }
 
 .appLoading {
@@ -15,4 +14,3 @@ body {
   margin-top: 3em;
   border-radius: var(--r-xs);
 }
-

@@ -85,7 +85,10 @@ const modeControl = (value: 'book' | 'chapter' | 'sleep', sleepOff = false) => (
 );
 
 /** Book mode (the default) with the mode toggle in the right-hand zone. */
-export const BookMode: Story = { args: { markers: chapters(12), modeControl: modeControl('book', true) }, decorators: frame(1440) };
+export const BookMode: Story = {
+  args: { markers: chapters(12), modeControl: modeControl('book', true) },
+  decorators: frame(1440),
+};
 /** Chapter mode: the bar spans the chapter (4:12 / 18:40), no ticks. */
 export const ChapterMode: Story = {
   args: { position: 252000, duration: 1120000, modeControl: modeControl('chapter', true) },
@@ -93,12 +96,24 @@ export const ChapterMode: Story = {
 };
 /** Sleep, minutes timer: from where it was set to where playback stops. Passive: not seekable. */
 export const SleepMinutes: Story = {
-  args: { position: 300000, duration: 750000, onSeek: undefined, timeLabel: 'Stops in 12:30', modeControl: modeControl('sleep') },
+  args: {
+    position: 300000,
+    duration: 750000,
+    onSeek: undefined,
+    timeLabel: 'Stops in 12:30',
+    modeControl: modeControl('sleep'),
+  },
   decorators: frame(1440),
 };
 /** Sleep, end of chapter. */
 export const SleepChapterEnd: Story = {
-  args: { position: 540000, duration: 600000, onSeek: undefined, timeLabel: 'Stops in 1:00', modeControl: modeControl('sleep') },
+  args: {
+    position: 540000,
+    duration: 600000,
+    onSeek: undefined,
+    timeLabel: 'Stops in 1:00',
+    modeControl: modeControl('sleep'),
+  },
   decorators: frame(1440),
 };
 /** No sleep timer: the Sleep option is visibly disabled with its reason. */
@@ -115,11 +130,23 @@ export const Desktop1440ManyChapters: Story = {
   decorators: frame(1440),
 };
 /** A short title: the left zone is content-sized, so there is no dead gap before the controls. */
-export const Desktop1440ShortTitle: Story = { args: { markers: chapters(12), modeControl: modeControl('book', true), ...short }, decorators: frame(1440) };
+export const Desktop1440ShortTitle: Story = {
+  args: { markers: chapters(12), modeControl: modeControl('book', true), ...short },
+  decorators: frame(1440),
+};
 /** About 1870px wide, as on a large monitor. */
 /** What the app uses: none of the optional zones. Cover and title, skip back / play / skip forward, seek bar and time, Expand. */
 export const Slim1440: Story = {
-  args: { onPrevious: undefined, onNext: undefined, rate: undefined, onRateChange: undefined, sleep: undefined, onSleepChange: undefined, onChapters: undefined, markers: chapters(12) },
+  args: {
+    onPrevious: undefined,
+    onNext: undefined,
+    rate: undefined,
+    onRateChange: undefined,
+    sleep: undefined,
+    onSleepChange: undefined,
+    onChapters: undefined,
+    markers: chapters(12),
+  },
   decorators: frame(1440),
 };
 
@@ -152,7 +179,7 @@ export const SquareContain: Story = { args: { art: covers.sunset, artFit: 'conta
 export const PortraitCover: Story = { args: { art: portraitCover, artFit: 'cover' }, decorators: frame(1440) };
 /** The whole cover shows over a blurred copy of itself. */
 export const PortraitContain: Story = { args: { art: portraitCover, artFit: 'contain' }, decorators: frame(1440) };
-export const NoArt: Story ={ args: { art: undefined, markers: chapters(12) }, decorators: frame(1440) };
+export const NoArt: Story = { args: { art: undefined, markers: chapters(12) }, decorators: frame(1440) };
 /** The preview held open at 31:00, clamped inside the bar. */
 export const PreviewOpen: Story = { args: { markers: chapters(12), previewAt: 1860000 }, decorators: frame(1440) };
 /** Under prefers-reduced-transparency the bar is the same: it is already an opaque surface. */

@@ -30,12 +30,7 @@ export function PeopleList({ noun, rows, failed }: Props) {
   return (
     <main className={styles.page}>
       <div className={styles.controls}>
-        <SearchField
-          label={`Filter ${noun}`}
-          placeholder={`Filter ${noun}`}
-          value={text}
-          onChange={setText}
-        />
+        <SearchField label={`Filter ${noun}`} placeholder={`Filter ${noun}`} value={text} onChange={setText} />
         {rows && (
           <p className={styles.count} aria-live="polite">
             {shown.length === rows.length ? `${rows.length} ${noun}` : `${shown.length} of ${rows.length} ${noun}`}
@@ -52,7 +47,9 @@ export function PeopleList({ noun, rows, failed }: Props) {
         </div>
       ) : shown.length === 0 ? (
         text.trim() ? (
-          <EmptyState title="No matches">Nothing in {noun} matches “{text.trim()}”.</EmptyState>
+          <EmptyState title="No matches">
+            Nothing in {noun} matches “{text.trim()}”.
+          </EmptyState>
         ) : (
           <EmptyState title={`No ${noun} yet`}>They will appear here once your books have them.</EmptyState>
         )

@@ -24,7 +24,7 @@ export interface Restorable {
 export function pickRestorable(
   inProgress: InProgressItem[] | undefined,
   progress: Map<string, Progress>,
-  libraryId: string,
+  libraryId: string
 ): Restorable | undefined {
   const tile = continueBooks(inProgress, progress, libraryId).find((t) => !t.isFinished);
   if (!tile) return undefined;
@@ -69,7 +69,7 @@ export interface ServerPlace {
  */
 export function refreshedPosition(
   snapshot: { id: string; updatedAt: number; movedHere: boolean },
-  server: ServerPlace | undefined,
+  server: ServerPlace | undefined
 ): number | null {
   if (!server || server.id !== snapshot.id || snapshot.movedHere || server.isFinished) return null;
   if (!(server.lastUpdate > snapshot.updatedAt) || !(server.position >= 0)) return null;
@@ -80,7 +80,7 @@ export function refreshedPosition(
 export function restoredPatch(
   r: Restorable,
   coverUrl: string,
-  chapters: Chapter[],
+  chapters: Chapter[]
 ): {
   status: 'paused';
   item: { id: string; title: string; author: string; coverUrl: string };
@@ -107,7 +107,11 @@ export function restoredPatch(
  * A seek on a restored book has no audio to move, so it moves the place Play will start from: the clamped target and
  * the chapter it falls in.
  */
-export function restoredSeek(target: number, duration: number, chapters: Chapter[]): { position: number; chapterIndex: number } {
+export function restoredSeek(
+  target: number,
+  duration: number,
+  chapters: Chapter[]
+): { position: number; chapterIndex: number } {
   const position = clampSeek(target, duration);
   return { position, chapterIndex: chapterIndexAt(chapters, position) };
 }

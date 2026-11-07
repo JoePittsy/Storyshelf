@@ -26,7 +26,14 @@ interface Props<T extends string> {
  * A small radio group drawn as joined segments. One tab stop (the selected segment); the arrow keys move to
  * the next enabled one and select it. A disabled option stays visible and says why.
  */
-export function SegmentedControl<T extends string>({ label, value, onChange, options, variant = 'pill', className }: Props<T>) {
+export function SegmentedControl<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  variant = 'pill',
+  className,
+}: Props<T>) {
   const id = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 

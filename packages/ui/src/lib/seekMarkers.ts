@@ -31,7 +31,7 @@ export function markerAt(markers: SeekMarker[] | undefined, ms: number): SeekMar
 export function segmentAt(
   markers: SeekMarker[] | undefined,
   ms: number,
-  duration: number,
+  duration: number
 ): { start: number; end: number; index: number } | null {
   const sorted = [...(markers ?? [])].sort((a, b) => a.at - b.at);
   let index = -1;

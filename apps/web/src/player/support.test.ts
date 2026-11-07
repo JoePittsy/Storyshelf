@@ -44,8 +44,16 @@ describe('player settings', () => {
   });
 
   it('REQ-19: a stored rate outside 0.5-3 is clamped, and junk falls back to defaults', () => {
-    localStorage.setItem('storyshelf.player', JSON.stringify({ rate: 9, skipBack: -4, skipForward: 'x', rewindOnResume: 'no' }));
-    expect(loadSettings(), 'Expected rate 3 and default skips').toEqual({ rate: 3, skipBack: 30, skipForward: 30, rewindOnResume: true });
+    localStorage.setItem(
+      'storyshelf.player',
+      JSON.stringify({ rate: 9, skipBack: -4, skipForward: 'x', rewindOnResume: 'no' })
+    );
+    expect(loadSettings(), 'Expected rate 3 and default skips').toEqual({
+      rate: 3,
+      skipBack: 30,
+      skipForward: 30,
+      rewindOnResume: true,
+    });
     localStorage.setItem('storyshelf.player', 'not json');
     expect(loadSettings()).toEqual(DEFAULTS);
   });

@@ -75,8 +75,9 @@ describe('description sanitising', () => {
 });
 
 describe('description links', () => {
-  const links = (html: string) =>
-    [...new DOMParser().parseFromString(sanitiseDescription(html), 'text/html').querySelectorAll('a')];
+  const links = (html: string) => [
+    ...new DOMParser().parseFromString(sanitiseDescription(html), 'text/html').querySelectorAll('a'),
+  ];
 
   it('links a bare http(s) URL, opening in a new tab without leaking the opener', () => {
     const [a] = links('<p>Read more at https://en.wikipedia.org/wiki/Peter_Rabbit for the history.</p>');
@@ -89,16 +90,19 @@ describe('description links', () => {
     const out = sanitiseDescription('See http://a.example/x and https://b.example/y.');
     expect(out).toBe(
       'See <a href="http://a.example/x" rel="noopener noreferrer" target="_blank">http://a.example/x</a> and ' +
-        '<a href="https://b.example/y" rel="noopener noreferrer" target="_blank">https://b.example/y</a>.',
+        '<a href="https://b.example/y" rel="noopener noreferrer" target="_blank">https://b.example/y</a>.'
     );
   });
   it('leaves trailing punctuation, and an unmatched closing bracket, outside the link', () => {
-    expect(links('(see https://a.example/x), then https://b.example/y!')
-      .map((a) => a.getAttribute('href'))).toEqual(['https://a.example/x', 'https://b.example/y']);
+    expect(links('(see https://a.example/x), then https://b.example/y!').map((a) => a.getAttribute('href'))).toEqual([
+      'https://a.example/x',
+      'https://b.example/y',
+    ]);
     expect(links('https://a.example/Foo_(bar)')[0]?.getAttribute('href')).toBe('https://a.example/Foo_(bar)');
   });
   it('leaves existing anchors alone, including their text and attributes', () => {
-    const html = '<a href="https://a.example/">https://a.example/</a> and <a href="https://b.example/">click https://c.example</a>';
+    const html =
+      '<a href="https://a.example/">https://a.example/</a> and <a href="https://b.example/">click https://c.example</a>';
     const found = links(html);
     expect(found.map((a) => a.getAttribute('href'))).toEqual(['https://a.example/', 'https://b.example/']);
     expect(found[1]?.textContent).toBe('click https://c.example');
@@ -106,7 +110,7 @@ describe('description links', () => {
   });
   it('never produces a javascript: link, and does not link other schemes', () => {
     const out = sanitiseDescription(
-      'javascript:alert(1) data:text/html,x <a href="javascript:alert(2)">x</a> ftp://a.example http://javascript:alert(3)',
+      'javascript:alert(1) data:text/html,x <a href="javascript:alert(2)">x</a> ftp://a.example http://javascript:alert(3)'
     );
     const hrefs = links(out).map((a) => a.getAttribute('href') ?? '');
     expect(hrefs.some((h) => /^\s*javascript:/i.test(h))).toBe(false);
@@ -198,7 +202,9 @@ describe('bookProgress', () => {
 
   it('uses the fetched progress when the book is not the one playing', () => {
     expect(bookProgress(book, idle)).toMatchObject({ currentTime: 100, progress: 0.1, chapterIndex: 0, live: false });
-    expect(bookProgress(book, { item: { id: 'other' }, position: 900, duration: 2000, chapterIndex: 1 }).live).toBe(false);
+    expect(bookProgress(book, { item: { id: 'other' }, position: 900, duration: 2000, chapterIndex: 1 }).live).toBe(
+      false
+    );
   });
 
   it('uses the player for the book that is loaded, however stale the fetch', () => {
@@ -207,11 +213,16 @@ describe('bookProgress', () => {
   });
 
   it('starts from nothing when there is no fetched progress', () => {
-    expect(bookProgress({ ...book, userMediaProgress: null }, idle)).toMatchObject({ currentTime: 0, chapterIndex: -1 });
+    expect(bookProgress({ ...book, userMediaProgress: null }, idle)).toMatchObject({
+      currentTime: 0,
+      chapterIndex: -1,
+    });
   });
 
   it('reads as finished within a second of the end', () => {
-    expect(bookProgress(book, { item: { id: 'li_1' }, position: 999.5, duration: 1000, chapterIndex: 1 }).isFinished).toBe(true);
+    expect(
+      bookProgress(book, { item: { id: 'li_1' }, position: 999.5, duration: 1000, chapterIndex: 1 }).isFinished
+    ).toBe(true);
   });
 });
 

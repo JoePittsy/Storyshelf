@@ -17,5 +17,5 @@ export const useRestoreSettled = (): boolean =>
       listeners.add(cb);
       return () => void listeners.delete(cb);
     },
-    () => settled,
+    () => settled
   );

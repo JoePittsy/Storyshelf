@@ -23,7 +23,7 @@ export function SeriesList() {
       ([e]) => {
         if (e?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
       },
-      { rootMargin: '400px' },
+      { rootMargin: '400px' }
     );
     io.observe(el);
     return () => io.disconnect();

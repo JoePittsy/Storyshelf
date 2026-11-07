@@ -11,7 +11,7 @@ export type SeriesTile = Tile & { sub: string | null };
 export function continueSeriesTiles(
   items: ContinueSeriesItem[] | undefined,
   not: Iterable<string>,
-  progress: Map<string, Progress>,
+  progress: Map<string, Progress>
 ): SeriesTile[] {
   const seen = new Set(not);
   const tiles: SeriesTile[] = [];

@@ -47,7 +47,9 @@ describe('ImageTile play button', () => {
   });
 
   it('takes a custom label and is absent without onPlay', () => {
-    const { rerender } = render(<ImageTile title="Mythos" onOpen={vi.fn()} onPlay={vi.fn()} playLabel="Resume Mythos" />);
+    const { rerender } = render(
+      <ImageTile title="Mythos" onOpen={vi.fn()} onPlay={vi.fn()} playLabel="Resume Mythos" />
+    );
     expect(screen.getByRole('button', { name: 'Resume Mythos' })).toBeInTheDocument();
     rerender(<ImageTile title="Mythos" onOpen={vi.fn()} />);
     expect(screen.queryByRole('button', { name: /Resume|Play/ })).not.toBeInTheDocument();

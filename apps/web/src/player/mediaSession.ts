@@ -11,7 +11,8 @@ export interface MediaActions {
   seekTo: (t: number) => void;
 }
 
-const ms = (): MediaSession | null => (typeof navigator !== 'undefined' && 'mediaSession' in navigator ? navigator.mediaSession : null);
+const ms = (): MediaSession | null =>
+  typeof navigator !== 'undefined' && 'mediaSession' in navigator ? navigator.mediaSession : null;
 
 export function installHandlers(a: MediaActions): void {
   const m = ms();

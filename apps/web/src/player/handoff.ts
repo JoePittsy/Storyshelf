@@ -87,7 +87,7 @@ export function deviceName(info: SessionDevice | null | undefined): string | nul
 export function whoWrote(
   sessions: ListeningSession[],
   place: { currentTime: number; lastUpdate: number },
-  ourDeviceId: string,
+  ourDeviceId: string
 ): Writer {
   let best: ListeningSession | null = null;
   for (const s of sessions) {

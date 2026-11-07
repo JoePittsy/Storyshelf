@@ -18,7 +18,12 @@ const item = {
   id: 'li_1',
   media: { chapters: [{ id: 0, start: 0, end: 3600, title: 'An Unexpected Party' }] },
 } as unknown as BookItem;
-const bm = (time: number, title: string, libraryItemId = 'li_1'): Bookmark => ({ libraryItemId, time, title, createdAt: 1 });
+const bm = (time: number, title: string, libraryItemId = 'li_1'): Bookmark => ({
+  libraryItemId,
+  time,
+  title,
+  createdAt: 1,
+});
 
 function renderSection(list: Bookmark[], onOpen = vi.fn()) {
   absFetch.mockResolvedValue({ bookmarks: list });
@@ -26,7 +31,7 @@ function renderSection(list: Bookmark[], onOpen = vi.fn()) {
   const view = render(
     <QueryClientProvider client={qc}>
       <BookBookmarks item={item} onOpen={onOpen} />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
   return { onOpen, ...view };
 }

@@ -3,7 +3,11 @@ import type { LibraryItem, Progress } from '../api/libraries';
 import { bookInSeries, nextInSeries, seriesSpan } from './nextInSeries';
 import type { SeriesBook } from './seriesHelpers';
 
-const item = (id: string, title = id): LibraryItem => ({ id, updatedAt: 1, media: { metadata: { title, authorName: null } } });
+const item = (id: string, title = id): LibraryItem => ({
+  id,
+  updatedAt: 1,
+  media: { metadata: { title, authorName: null } },
+});
 const sb = (id: string, sequence: string | null, title = id): SeriesBook => ({ item: item(id, title), sequence });
 const series = (id: string, ...books: SeriesBook[]) => [id, books] as const;
 
@@ -13,7 +17,7 @@ const progress = (entries: Record<string, 'finished' | 'begun'>): P =>
     Object.entries(entries).map(([id, s]) => [
       id,
       s === 'finished' ? { progress: 1, isFinished: true } : { progress: 0.3, currentTime: 100, isFinished: false },
-    ]),
+    ])
   );
 
 /** The book being finished, in one series called "S" at `sequence`. */
@@ -150,12 +154,19 @@ describe('nextInSeries: a book in several series', () => {
 
   it('follows the series whose earlier books you have listened to', () => {
     const p = progress({ dw1: 'finished', dw2: 'finished', dw3: 'finished' });
-    expect(nextInSeries(mort, books, p)).toMatchObject({ series: { name: 'Discworld' }, book: { item: { id: 'dw5' } } });
+    expect(nextInSeries(mort, books, p)).toMatchObject({
+      series: { name: 'Discworld' },
+      book: { item: { id: 'dw5' } },
+    });
   });
 
   it('follows a sub-series read in its own order over the main series', () => {
     // Reaper Man (Discworld #11, Death #2) after Mort: of the Death books before it, all heard; of Discworld's, few.
-    const dw = [...Array.from({ length: 10 }, (_, i) => sb(`dw${i + 1}`, String(i + 1))), sb('reaper', '11'), sb('dw12', '12')];
+    const dw = [
+      ...Array.from({ length: 10 }, (_, i) => sb(`dw${i + 1}`, String(i + 1))),
+      sb('reaper', '11'),
+      sb('dw12', '12'),
+    ];
     const d = [sb('dw4', '1'), sb('reaper', '2'), sb('soul', '3')]; // dw4 is Mort
     const reaper = {
       id: 'reaper',

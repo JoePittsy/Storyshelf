@@ -61,7 +61,7 @@ describe('SegmentedControl underline variant', () => {
           { value: 'a', label: 'Whole book' },
           { value: 'b', label: 'This chapter' },
         ]}
-      />,
+      />
     );
     expect(screen.getByRole('radio', { name: 'Whole book' })).toBeChecked();
     fireEvent.click(screen.getByRole('radio', { name: 'This chapter' }));

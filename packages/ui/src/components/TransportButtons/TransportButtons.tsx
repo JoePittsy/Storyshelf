@@ -50,7 +50,9 @@ export function TransportButtons({
   const playLabel = playing ? 'Pause' : 'Play';
   return (
     <div
-      className={[styles.transport, size === 'lg' ? styles.lg : size === 'xl' ? styles.xl : '', className].filter(Boolean).join(' ')}
+      className={[styles.transport, size === 'lg' ? styles.lg : size === 'xl' ? styles.xl : '', className]
+        .filter(Boolean)
+        .join(' ')}
       role="group"
       aria-label="Playback controls"
     >

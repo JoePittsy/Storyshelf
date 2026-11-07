@@ -100,7 +100,7 @@ describe('SeekBar markers', () => {
           this.cb([{ contentRect: { width } }]);
         }
         disconnect() {}
-      },
+      }
     );
 
   it('draws a hidden tick per marker (none at 0) when there is room, and none when crowded', () => {

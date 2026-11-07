@@ -18,7 +18,8 @@ export function TextField({ label, hint, error, id, ref, ...rest }: Props) {
   const inputId = id ?? auto;
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
-  const describedBy = [rest['aria-describedby'], hint && hintId, error && errorId].filter(Boolean).join(' ') || undefined;
+  const describedBy =
+    [rest['aria-describedby'], hint && hintId, error && errorId].filter(Boolean).join(' ') || undefined;
   return (
     <div className={styles.field}>
       <label htmlFor={inputId} className={styles.label}>

@@ -15,7 +15,12 @@ export function FilterChip({ label, onRemove, removeLabel }: Props) {
   return (
     <span className={styles.chip}>
       <span className={styles.label}>{label}</span>
-      <button type="button" className={styles.remove} aria-label={removeLabel ?? `Remove filter: ${label}`} onClick={onRemove}>
+      <button
+        type="button"
+        className={styles.remove}
+        aria-label={removeLabel ?? `Remove filter: ${label}`}
+        onClick={onRemove}
+      >
         <X aria-hidden="true" size="1em" />
       </button>
     </span>

@@ -20,12 +20,23 @@ describe('releaseVelocity', () => {
     expect(releaseVelocity(slowThenFast)).toBeCloseTo(0.8); // 40px in 50ms from the 250 sample
   });
   it('reads a finger that stopped before lifting as slow', () => {
-    expect(releaseVelocity([{ y: 0, t: 0 }, { y: 100, t: 50 }, { y: 100, t: 300 }])).toBe(0);
+    expect(
+      releaseVelocity([
+        { y: 0, t: 0 },
+        { y: 100, t: 50 },
+        { y: 100, t: 300 },
+      ])
+    ).toBe(0);
   });
   it('is 0 without two samples, and negative when moving up', () => {
     expect(releaseVelocity([])).toBe(0);
     expect(releaseVelocity([{ y: 5, t: 1 }])).toBe(0);
-    expect(releaseVelocity([{ y: 100, t: 0 }, { y: 60, t: 40 }])).toBeLessThan(0);
+    expect(
+      releaseVelocity([
+        { y: 100, t: 0 },
+        { y: 60, t: 40 },
+      ])
+    ).toBeLessThan(0);
   });
 });
 

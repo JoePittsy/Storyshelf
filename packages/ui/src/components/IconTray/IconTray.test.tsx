@@ -9,7 +9,7 @@ describe('IconTray', () => {
       <IconTray label="Player options">
         <TrayButton icon="chapters" label="Chapters" onClick={onClick} />
         <TrayButton icon="settings" label="Settings" onClick={() => {}} />
-      </IconTray>,
+      </IconTray>
     );
     const group = screen.getByRole('group', { name: 'Player options' });
     expect(group).toContainElement(screen.getByRole('button', { name: 'Chapters' }));

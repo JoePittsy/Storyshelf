@@ -20,7 +20,8 @@ interface Props {
 /** A finger must move this far (px) before a drag starts, and mostly downwards, so taps and sideways scrubs pass through. */
 const SLOP = 8;
 /** Things that keep their own touches: a swipe that starts on one of these is theirs. */
-const OWN_TOUCH = 'button, a, input, select, textarea, [role="slider"], [role="progressbar"], [role="radio"], [popover]';
+const OWN_TOUCH =
+  'button, a, input, select, textarea, [role="slider"], [role="progressbar"], [role="radio"], [popover]';
 
 /**
  * The shell of a full-height sheet: a grab handle and a chevron-down button along the top, and the content below.
@@ -64,7 +65,13 @@ export function GrabSheet({ onDismiss, closeLabel, end, className, children }: P
     const target = e.target instanceof Element ? e.target : null;
     const inHandle = !!target && !!handle.current?.contains(target);
     if (!inHandle && target?.closest(OWN_TOUCH)) return;
-    gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, samples: [{ y: e.clientY, t: e.timeStamp }], dragging: false };
+    gesture.current = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      samples: [{ y: e.clientY, t: e.timeStamp }],
+      dragging: false,
+    };
   };
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;

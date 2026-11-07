@@ -33,7 +33,7 @@ export function TopResultCard({
   meta,
   imageUrl,
   artFit = 'cover',
-  heading ='Top result',
+  heading = 'Top result',
   onOpen,
   openLabel,
   onMouseEnter,

@@ -64,7 +64,7 @@ export async function openSession(libraryItemId: string, supportedMimeTypes: str
       supportedMimeTypes,
       mediaPlayer: 'html5',
       forceDirectPlay: false,
-    }),
+    })
   );
   if (s.playMethod !== 0) {
     await closeSession(s);
@@ -77,7 +77,7 @@ export async function openSession(libraryItemId: string, supportedMimeTypes: str
 export async function syncSession(
   s: PlaybackSession,
   p: Progress,
-  supportedMimeTypes: string[],
+  supportedMimeTypes: string[]
 ): Promise<PlaybackSession> {
   const send = (id: string) => absFetch<void>(`/api/session/${id}/sync`, { ...json(p), keepalive: true });
   try {

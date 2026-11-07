@@ -21,7 +21,7 @@ export interface FellAsleep {
 export function fellAsleepPlace(
   sleepFrom: number,
   chapters: Chapter[],
-  stoppedAt: number,
+  stoppedAt: number
 ): { target: number; chapter: number | null } | null {
   const i = chapterIndexAt(chapters, stoppedAt);
   const cur = chapters[i];
@@ -40,8 +40,14 @@ const SAME_PLACE_S = 2;
 function load(): FellAsleep | null {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<FellAsleep> | null;
-    if (!v || typeof v.itemId !== 'string' || typeof v.target !== 'number' || typeof v.stoppedAt !== 'number') return null;
-    return { itemId: v.itemId, target: v.target, stoppedAt: v.stoppedAt, chapter: typeof v.chapter === 'number' ? v.chapter : null };
+    if (!v || typeof v.itemId !== 'string' || typeof v.target !== 'number' || typeof v.stoppedAt !== 'number')
+      return null;
+    return {
+      itemId: v.itemId,
+      target: v.target,
+      stoppedAt: v.stoppedAt,
+      chapter: typeof v.chapter === 'number' ? v.chapter : null,
+    };
   } catch {
     return null;
   }

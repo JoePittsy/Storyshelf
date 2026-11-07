@@ -9,7 +9,11 @@ function describe(r: FellAsleep): { label: string; shortLabel: string; jumpLabel
   const at = fmtClock(r.target, false);
   // The short form is for a small phone, where the sentence would take two lines; the moon beside it says why.
   return r.chapter === null
-    ? { label: `Go back to where the timer began, ${at}`, shortLabel: `Go back to ${at}`, jumpLabel: 'where the timer began' }
+    ? {
+        label: `Go back to where the timer began, ${at}`,
+        shortLabel: `Go back to ${at}`,
+        jumpLabel: 'where the timer began',
+      }
     : {
         label: `Go back to the start of Chapter ${r.chapter + 1}, ${at}`,
         shortLabel: `Go back to Chapter ${r.chapter + 1}, ${at}`,

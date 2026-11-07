@@ -40,7 +40,7 @@ function RequireSession() {
         qc.setQueryData(['session'], null);
         void navigate('/sign-in', { replace: true });
       }),
-    [qc, navigate],
+    [qc, navigate]
   );
   if (isPending) return <div className="skeleton appLoading" role="status" aria-label="Loading" />;
   if (!user) return <Navigate to="/sign-in" replace state={{ from: location.pathname + location.search }} />;

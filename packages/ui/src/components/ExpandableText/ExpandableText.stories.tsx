@@ -3,7 +3,7 @@ import { ExpandableText } from './ExpandableText';
 
 const long = Array.from(
   { length: 12 },
-  () => 'The lighthouse keeper had not seen another face in nine months, and the sea had begun to answer back.',
+  () => 'The lighthouse keeper had not seen another face in nine months, and the sea had begun to answer back.'
 ).join(' ');
 
 const meta = {

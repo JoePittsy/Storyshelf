@@ -13,7 +13,9 @@ const inProgress = (id: string, extra: Partial<InProgressItem> = {}): InProgress
   ...extra,
 });
 const prog = (entries: [string, Partial<Progress>][]) =>
-  new Map<string, Progress>(entries.map(([id, p]) => [id, { progress: 0.2, isFinished: false, currentTime: 200, ...p }]));
+  new Map<string, Progress>(
+    entries.map(([id, p]) => [id, { progress: 0.2, isFinished: false, currentTime: 200, ...p }])
+  );
 
 const chapters = [
   { id: 0, start: 0, end: 300, title: 'One' },
@@ -22,8 +24,22 @@ const chapters = [
 
 describe('pickRestorable', () => {
   it('takes the most recently played book of this library, with where it was left', () => {
-    const got = pickRestorable([inProgress('a'), inProgress('b')], prog([['a', {}], ['b', {}]]), 'lib1');
-    expect(got).toEqual({ id: 'a', title: 'Title a', author: 'An Author', duration: 1000, position: 200, updatedAt: 0 });
+    const got = pickRestorable(
+      [inProgress('a'), inProgress('b')],
+      prog([
+        ['a', {}],
+        ['b', {}],
+      ]),
+      'lib1'
+    );
+    expect(got).toEqual({
+      id: 'a',
+      title: 'Title a',
+      author: 'An Author',
+      duration: 1000,
+      position: 200,
+      updatedAt: 0,
+    });
   });
   it('skips other libraries, podcasts and hidden books', () => {
     const items = [
@@ -32,7 +48,14 @@ describe('pickRestorable', () => {
       inProgress('hid'),
       inProgress('ok'),
     ];
-    const got = pickRestorable(items, prog([['hid', { hidden: true }], ['ok', {}]]), 'lib1');
+    const got = pickRestorable(
+      items,
+      prog([
+        ['hid', { hidden: true }],
+        ['ok', {}],
+      ]),
+      'lib1'
+    );
     expect(got?.id).toBe('ok');
   });
   it('skips a finished book, and one with no place to return to', () => {

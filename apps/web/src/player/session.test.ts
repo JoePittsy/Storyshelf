@@ -80,14 +80,21 @@ function fakeAbs(opts: { route?: Route; syncReply?: string; playMethod?: number 
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init: RequestInit = {}) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const method = (init.method ?? 'GET').toUpperCase();
-    const call: Call = { url, method, init, body: parseBody(init), auth: new Headers(init.headers).get('authorization') };
+    const call: Call = {
+      url,
+      method,
+      init,
+      body: parseBody(init),
+      auth: new Headers(init.headers).get('authorization'),
+    };
     calls.push(call);
 
     return Promise.resolve().then(async (): Promise<Response> => {
       const forced = opts.route?.(call);
       if (forced) return forced;
 
-      if (url.startsWith('/api/') && call.auth !== `Bearer ${ACCESS}`) return new Response('Unauthorized', { status: 401 });
+      if (url.startsWith('/api/') && call.auth !== `Bearer ${ACCESS}`)
+        return new Response('Unauthorized', { status: 401 });
 
       const play = /^\/api\/items\/([^/]+)\/play$/.exec(url);
       if (method === 'POST' && play) {
@@ -181,7 +188,9 @@ async function load() {
   const session = await import('./session');
   const auth = await import('../api/auth');
   vi.stubGlobal('fetch', () =>
-    Promise.resolve(jsonRes({ user: { id: 'u1', username: 'joe', accessToken: ACCESS, refreshToken: null, mediaProgress: [] } })),
+    Promise.resolve(
+      jsonRes({ user: { id: 'u1', username: 'joe', accessToken: ACCESS, refreshToken: null, mediaProgress: [] } })
+    )
   );
   await auth.login('joe', 'correct');
   return session;
@@ -230,7 +239,10 @@ describe('REQ-14: openSession starts from the saved position', () => {
     const { openSession } = await load();
     fakeAbs();
     const s = await openSession(ITEM, MIME);
-    expect(s, 'Expected id, item, duration, play method, tracks, chapters and display text from the play reply').toMatchObject({
+    expect(
+      s,
+      'Expected id, item, duration, play method, tracks, chapters and display text from the play reply'
+    ).toMatchObject({
       id: 'sess-1',
       libraryItemId: ITEM,
       duration: 3600,
@@ -272,7 +284,7 @@ describe('REQ-14: openSession request', () => {
     expect(info.deviceId, 'Expected the generated device id in deviceInfo.deviceId').toBe('device-uuid-1');
     expect(
       Object.keys(info).every((k) => ['deviceId', 'clientName', 'clientVersion'].includes(k)),
-      'Expected deviceInfo to hold only deviceId, clientName and the optional clientVersion',
+      'Expected deviceInfo to hold only deviceId, clientName and the optional clientVersion'
     ).toBe(true);
   });
 
@@ -281,7 +293,9 @@ describe('REQ-14: openSession request', () => {
     const abs = fakeAbs();
     await openSession(ITEM, MIME);
     const play = abs.to('POST', `/api/items/${ITEM}/play`)[0];
-    expect(new Headers(play?.init.headers).get('content-type'), 'Expected a JSON content type').toMatch(/application\/json/);
+    expect(new Headers(play?.init.headers).get('content-type'), 'Expected a JSON content type').toMatch(
+      /application\/json/
+    );
     expect(play?.auth, 'Expected the in-memory access token as a bearer token').toBe(`Bearer ${ACCESS}`);
   });
 
@@ -290,7 +304,7 @@ describe('REQ-14: openSession request', () => {
     fakeAbs({ route: (c) => (c.url.endsWith('/play') ? new Response('Not Found', { status: 404 }) : undefined) });
     const result = await openSession(ITEM, MIME).then(
       () => 'resolved',
-      (e: unknown) => (e instanceof UnsupportedFormatError ? 'unsupported' : 'rejected'),
+      (e: unknown) => (e instanceof UnsupportedFormatError ? 'unsupported' : 'rejected')
     );
     expect(result, 'Expected a plain rejection (not UnsupportedFormatError) for a 404 from /play').toBe('rejected');
   });
@@ -304,7 +318,10 @@ describe('REQ-14: openSession device id', () => {
     fakeAbs();
     await openSession(ITEM, MIME);
     expect(uuid, 'Expected exactly one UUID to be generated').toHaveBeenCalledTimes(1);
-    expect(storage.setItem, "Expected the id saved under 'storyshelf.deviceId'").toHaveBeenCalledWith('storyshelf.deviceId', 'device-uuid-1');
+    expect(storage.setItem, "Expected the id saved under 'storyshelf.deviceId'").toHaveBeenCalledWith(
+      'storyshelf.deviceId',
+      'device-uuid-1'
+    );
   });
 
   it('REQ-14: reuses a device id already stored, without generating a new one', async () => {
@@ -322,7 +339,9 @@ describe('REQ-14: openSession device id', () => {
     const abs = fakeAbs();
     await openSession(ITEM, MIME);
     await openSession('li_2', MIME);
-    const ids = abs.calls.filter((c) => c.url.endsWith('/play')).map((c) => (bodyOf(c).deviceInfo as { deviceId: string }).deviceId);
+    const ids = abs.calls
+      .filter((c) => c.url.endsWith('/play'))
+      .map((c) => (bodyOf(c).deviceInfo as { deviceId: string }).deviceId);
     expect(ids, 'Expected both play requests to carry the same device id').toEqual(['device-uuid-1', 'device-uuid-1']);
     expect(uuid, 'Expected the id to be generated only once').toHaveBeenCalledTimes(1);
   });
@@ -331,12 +350,21 @@ describe('REQ-14: openSession device id', () => {
     const boom = () => {
       throw new DOMException('Storage disabled', 'SecurityError');
     };
-    vi.stubGlobal('localStorage', { getItem: boom, setItem: boom, removeItem: boom, clear: boom, key: boom, length: 0 });
+    vi.stubGlobal('localStorage', {
+      getItem: boom,
+      setItem: boom,
+      removeItem: boom,
+      clear: boom,
+      key: boom,
+      length: 0,
+    });
     const { openSession } = await load();
     const abs = fakeAbs();
     await openSession(ITEM, MIME);
     await openSession('li_2', MIME);
-    const ids = abs.calls.filter((c) => c.url.endsWith('/play')).map((c) => (bodyOf(c).deviceInfo as { deviceId: string }).deviceId);
+    const ids = abs.calls
+      .filter((c) => c.url.endsWith('/play'))
+      .map((c) => (bodyOf(c).deviceInfo as { deviceId: string }).deviceId);
     expect(ids, 'Expected the session to open and the same in-memory id to be reused when storage throws').toEqual([
       'device-uuid-1',
       'device-uuid-1',
@@ -355,7 +383,9 @@ describe('REQ-14: openSession device id', () => {
     const s = await openSession(ITEM, MIME);
     expect(s.id, 'Expected a session to open although the storage accessor throws').toBe('sess-1');
     const info = bodyOf(abs.to('POST', `/api/items/${ITEM}/play`)[0]).deviceInfo as Record<string, unknown>;
-    expect(typeof info.deviceId === 'string' && info.deviceId !== '', 'Expected a non-empty in-memory device id').toBe(true);
+    expect(typeof info.deviceId === 'string' && info.deviceId !== '', 'Expected a non-empty in-memory device id').toBe(
+      true
+    );
   });
 });
 
@@ -366,7 +396,7 @@ describe('REQ-14: openSession only accepts direct play', () => {
     fakeAbs({ playMethod });
     await expect(
       openSession(ITEM, MIME),
-      `Expected UnsupportedFormatError because ABS chose playMethod ${playMethod} instead of direct play (0)`,
+      `Expected UnsupportedFormatError because ABS chose playMethod ${playMethod} instead of direct play (0)`
     ).rejects.toBeInstanceOf(UnsupportedFormatError);
   });
 });
@@ -401,7 +431,10 @@ describe('REQ-22: syncSession sends progress', () => {
     const { syncSession } = await load();
     const abs = fakeAbs({ syncReply: 'OK' });
     const s = liveSession(abs.open(ITEM));
-    await expect(syncSession(s, SYNC_BODY, MIME), 'Expected a non-JSON "OK" body not to be parsed as JSON').resolves.toEqual(s);
+    await expect(
+      syncSession(s, SYNC_BODY, MIME),
+      'Expected a non-JSON "OK" body not to be parsed as JSON'
+    ).resolves.toEqual(s);
   });
 
   it('REQ-22: resolves when ABS answers 200 with an empty body', async () => {
@@ -413,10 +446,15 @@ describe('REQ-22: syncSession sends progress', () => {
 
   it('REQ-22: rejects on a server error and does not open a new session', async () => {
     const { syncSession } = await load();
-    const abs = fakeAbs({ route: (c) => (c.url.endsWith('/sync') ? new Response('boom', { status: 500 }) : undefined) });
+    const abs = fakeAbs({
+      route: (c) => (c.url.endsWith('/sync') ? new Response('boom', { status: 500 }) : undefined),
+    });
     const s = liveSession(abs.open(ITEM));
     await expect(syncSession(s, SYNC_BODY, MIME), 'Expected a 500 to reject').rejects.toThrow();
-    expect(abs.to('POST', `/api/items/${ITEM}/play`), 'Expected only a 404 to trigger a re-open, not a 500').toHaveLength(0);
+    expect(
+      abs.to('POST', `/api/items/${ITEM}/play`),
+      'Expected only a 404 to trigger a re-open, not a 500'
+    ).toHaveLength(0);
   });
 
   // Pause, kill the app -> the server holds the paused position (REQ-22), and another device resumes there (REQ-23).
@@ -427,7 +465,10 @@ describe('REQ-22: syncSession sends progress', () => {
     const clock = tick(startClock(100), 3);
     expect(dueOnStop(clock, 103), 'Expected the pause to be a sync point').toBe(true);
     await syncSession(s, payload(clock, 103, 3600), MIME);
-    expect(abs.progress.get(ITEM), 'Expected the server to hold 103 s with 3 s listened').toEqual({ currentTime: 103, timeListened: 3 });
+    expect(abs.progress.get(ITEM), 'Expected the server to hold 103 s with 3 s listened').toEqual({
+      currentTime: 103,
+      timeListened: 3,
+    });
   });
 
   it('REQ-23: another device opening the book resumes from the position the first device last synced', async () => {
@@ -452,9 +493,10 @@ describe('REQ-24: syncSession recovers when the server has lost the session', ()
       `POST /api/items/${ITEM}/play`,
       'POST /api/session/sess-2/sync',
     ]);
-    expect(abs.to('POST', '/api/session/sess-2/sync')[0]?.body, 'Expected the original progress to be sent on the new session').toEqual(
-      SYNC_BODY,
-    );
+    expect(
+      abs.to('POST', '/api/session/sess-2/sync')[0]?.body,
+      'Expected the original progress to be sent on the new session'
+    ).toEqual(SYNC_BODY);
     expect(active.id, 'Expected the resolved session to be the new one').toBe('sess-2');
     expect(abs.progress.get(ITEM)?.currentTime, 'Expected the server to hold the position after recovery').toBe(112);
   });
@@ -467,7 +509,10 @@ describe('REQ-24: syncSession recovers when the server has lost the session', ()
     await syncSession(old, SYNC_BODY, MIME);
     const reopen = bodyOf(abs.to('POST', `/api/items/${ITEM}/play`)[0]);
     expect(reopen.supportedMimeTypes, 'Expected the MIME types passed to syncSession to be reused').toEqual(MIME);
-    expect((reopen.deviceInfo as { clientName: string }).clientName, 'Expected the re-open to identify as Storyshelf').toBe('Storyshelf');
+    expect(
+      (reopen.deviceInfo as { clientName: string }).clientName,
+      'Expected the re-open to identify as Storyshelf'
+    ).toBe('Storyshelf');
   });
 
   it('REQ-24: the new session is what the caller gets back, with its tracks and chapters', async () => {
@@ -498,28 +543,44 @@ describe('REQ-24: syncSession recovers when the server has lost the session', ()
   });
 
   // The re-opened sync also fails: stop after one re-open and surface the failure.
-  it.each([404, 500])('REQ-24: if the sync on the new session also fails with %i, it re-opens exactly once and rejects', async (status) => {
-    const { syncSession } = await load();
-    let oldId = '';
-    // The original sync 404s because the server restarted; only syncs on the re-opened session fail with `status`.
-    const abs = fakeAbs({
-      route: (c) =>
-        c.url.endsWith('/sync') && !c.url.includes(`/session/${oldId}/`) ? new Response('nope', { status }) : undefined,
-    });
-    const old = liveSession(abs.open(ITEM));
-    oldId = old.id;
-    abs.restart();
-    await expect(syncSession(old, SYNC_BODY, MIME), 'Expected a rejection when the recovery sync fails too').rejects.toThrow();
-    expect(abs.to('POST', `/api/items/${ITEM}/play`), 'Expected exactly one re-open, not a loop').toHaveLength(1);
-    expect(abs.log().filter((l) => l.endsWith('/sync')), 'Expected two sync attempts: the original and the one on the new session').toHaveLength(2);
-  });
+  it.each([404, 500])(
+    'REQ-24: if the sync on the new session also fails with %i, it re-opens exactly once and rejects',
+    async (status) => {
+      const { syncSession } = await load();
+      let oldId = '';
+      // The original sync 404s because the server restarted; only syncs on the re-opened session fail with `status`.
+      const abs = fakeAbs({
+        route: (c) =>
+          c.url.endsWith('/sync') && !c.url.includes(`/session/${oldId}/`)
+            ? new Response('nope', { status })
+            : undefined,
+      });
+      const old = liveSession(abs.open(ITEM));
+      oldId = old.id;
+      abs.restart();
+      await expect(
+        syncSession(old, SYNC_BODY, MIME),
+        'Expected a rejection when the recovery sync fails too'
+      ).rejects.toThrow();
+      expect(abs.to('POST', `/api/items/${ITEM}/play`), 'Expected exactly one re-open, not a loop').toHaveLength(1);
+      expect(
+        abs.log().filter((l) => l.endsWith('/sync')),
+        'Expected two sync attempts: the original and the one on the new session'
+      ).toHaveLength(2);
+    }
+  );
 
   it('REQ-24: a re-open that is itself refused rejects without retrying', async () => {
     const { syncSession } = await load();
-    const abs = fakeAbs({ route: (c) => (c.url.endsWith('/play') ? new Response('down', { status: 503 }) : undefined) });
+    const abs = fakeAbs({
+      route: (c) => (c.url.endsWith('/play') ? new Response('down', { status: 503 }) : undefined),
+    });
     const old = liveSession(abs.open(ITEM));
     abs.restart();
-    await expect(syncSession(old, SYNC_BODY, MIME), 'Expected a rejection when ABS cannot open a replacement session').rejects.toThrow();
+    await expect(
+      syncSession(old, SYNC_BODY, MIME),
+      'Expected a rejection when ABS cannot open a replacement session'
+    ).rejects.toThrow();
     expect(abs.to('POST', `/api/items/${ITEM}/play`), 'Expected a single re-open attempt').toHaveLength(1);
   });
 });
@@ -558,14 +619,22 @@ describe('REQ-22: closeSession saves progress when the app is hidden or closed',
   it('REQ-22: resolves with no value on success', async () => {
     const { closeSession } = await load();
     const abs = fakeAbs();
-    await expect(closeSession(liveSession(abs.open(ITEM)), SYNC_BODY), 'Expected closeSession to resolve to undefined').resolves.toBeUndefined();
+    await expect(
+      closeSession(liveSession(abs.open(ITEM)), SYNC_BODY),
+      'Expected closeSession to resolve to undefined'
+    ).resolves.toBeUndefined();
   });
 
   it('REQ-22: never rejects when the network is down', async () => {
     const { closeSession } = await load();
-    const abs = fakeAbs({ route: (c) => (c.url.endsWith('/close') ? Promise.reject(new TypeError('Failed to fetch')) : undefined) });
+    const abs = fakeAbs({
+      route: (c) => (c.url.endsWith('/close') ? Promise.reject(new TypeError('Failed to fetch')) : undefined),
+    });
     const s = liveSession(abs.open(ITEM));
-    await expect(closeSession(s, SYNC_BODY), 'Expected a network failure on close to be swallowed').resolves.toBeUndefined();
+    await expect(
+      closeSession(s, SYNC_BODY),
+      'Expected a network failure on close to be swallowed'
+    ).resolves.toBeUndefined();
   });
 
   it.each([404, 500])('REQ-22: never rejects when the server answers %i', async (status) => {
@@ -581,7 +650,9 @@ describe('REQ-22: closeSession saves progress when the app is hidden or closed',
     const s = liveSession(abs.open(ITEM));
     abs.restart();
     await closeSession(s, SYNC_BODY);
-    expect(abs.log(), 'Expected close to be best effort: one request, no re-open').toEqual([`POST /api/session/${s.id}/close`]);
+    expect(abs.log(), 'Expected close to be best effort: one request, no re-open').toEqual([
+      `POST /api/session/${s.id}/close`,
+    ]);
   });
 });
 
@@ -592,7 +663,9 @@ describe('REQ-22: closeSession saves progress when the app is hidden or closed',
 describe('REQ-21: trackUrl points <audio> at the public session track route', () => {
   it('REQ-21: builds /public/session/:sessionId/track/:index', async () => {
     const { trackUrl } = await load();
-    expect(trackUrl(liveSession('sess-9'), 3), 'Expected the unauthenticated track route for the session').toBe('/public/session/sess-9/track/3');
+    expect(trackUrl(liveSession('sess-9'), 3), 'Expected the unauthenticated track route for the session').toBe(
+      '/public/session/sess-9/track/3'
+    );
   });
 
   it('REQ-21: uses the ABS track index as given, including 0 and 1', async () => {

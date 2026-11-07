@@ -131,21 +131,25 @@ describe('probeServer', () => {
   it('classifies a fetch TypeError as cors-or-offline', async () => {
     const f = () => Promise.reject(new TypeError('Failed to fetch'));
     expect(await kindOf(probeServer('https://abs.example.com', { fetchFn: f as never, pageProtocol: 'https:' }))).toBe(
-      'cors-or-offline',
+      'cors-or-offline'
     );
   });
 
   it('classifies http from an https page as mixed-content without fetching', async () => {
     const f = vi.fn(ok);
     expect(await kindOf(probeServer('http://abs.example.com', { fetchFn: f as never, pageProtocol: 'https:' }))).toBe(
-      'mixed-content',
+      'mixed-content'
     );
     expect(f).not.toHaveBeenCalled();
   });
 
   it('allows http from an http page, and http://localhost from an https page', async () => {
-    await expect(probeServer('http://192.168.1.5:13378', { fetchFn: ok as never, pageProtocol: 'http:' })).resolves.toBeDefined();
-    await expect(probeServer('http://localhost:13378', { fetchFn: ok as never, pageProtocol: 'https:' })).resolves.toBeDefined();
+    await expect(
+      probeServer('http://192.168.1.5:13378', { fetchFn: ok as never, pageProtocol: 'http:' })
+    ).resolves.toBeDefined();
+    await expect(
+      probeServer('http://localhost:13378', { fetchFn: ok as never, pageProtocol: 'https:' })
+    ).resolves.toBeDefined();
   });
 
   it('classifies a reachable non-ABS answer as not-abs', async () => {
@@ -153,7 +157,9 @@ describe('probeServer', () => {
     const nope = () => Promise.resolve(new Response('', { status: 404 }));
     const other = () => Promise.resolve(json({ hello: 'world' }));
     for (const f of [html, nope, other]) {
-      expect(await kindOf(probeServer('https://x.example.com', { fetchFn: f as never, pageProtocol: 'https:' }))).toBe('not-abs');
+      expect(await kindOf(probeServer('https://x.example.com', { fetchFn: f as never, pageProtocol: 'https:' }))).toBe(
+        'not-abs'
+      );
     }
   });
 });
@@ -171,10 +177,12 @@ describe('absUrl and URL builders', () => {
     setServerUrl('https://abs.example.com');
     expect(getServerUrl()).toBe('https://abs.example.com');
     expect(absUrl('/api/me')).toBe('https://abs.example.com/api/me');
-    expect(coverUrl({ id: 'i1', updatedAt: 5 })).toBe('https://abs.example.com/api/items/i1/cover?width=400&format=webp&ts=5');
+    expect(coverUrl({ id: 'i1', updatedAt: 5 })).toBe(
+      'https://abs.example.com/api/items/i1/cover?width=400&format=webp&ts=5'
+    );
     expect(bookCoverUrl('i1', 5)).toBe('https://abs.example.com/api/items/i1/cover?width=800&format=webp&ts=5');
     expect(authorImageUrl({ id: 'a1', imagePath: '/x', updatedAt: 2 }, 64)).toBe(
-      'https://abs.example.com/api/authors/a1/image?width=64&format=webp&ts=2',
+      'https://abs.example.com/api/authors/a1/image?width=64&format=webp&ts=2'
     );
     expect(authorImageUrl({ id: 'a1' })).toBeUndefined();
     expect(trackUrl({ id: 's1' } as never, 3)).toBe('https://abs.example.com/public/session/s1/track/3');

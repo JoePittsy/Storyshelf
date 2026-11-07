@@ -48,7 +48,7 @@ export function useUndoableJump(go: (seconds: number) => void, offer?: (o: UndoO
         replaceKey: 'chapter-jump',
       });
     },
-    [go, showToast],
+    [go, showToast]
   );
 }
 
@@ -79,7 +79,7 @@ export function usePlayerJump(offer?: (o: UndoOffer) => void) {
       const cur = latest.current;
       jump(target, label, undoPoint(cur.status, cur.position, target));
     },
-    [jump],
+    [jump]
   );
   const previousChapter = useCallback(() => {
     const j = previousJump(latest.current.chapters, latest.current.position);

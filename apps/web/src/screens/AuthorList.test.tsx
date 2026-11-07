@@ -20,8 +20,8 @@ describe('Authors list', () => {
       Promise.resolve(
         path === '/api/libraries'
           ? { libraries: [{ id: 'lib1', name: 'Books', mediaType: 'book' }] }
-          : { authors: [{ id: 'a1', name: 'Honoré de Balzac', lastFirst: 'de Balzac, Honoré', numBooks: 2 }] },
-      ),
+          : { authors: [{ id: 'a1', name: 'Honoré de Balzac', lastFirst: 'de Balzac, Honoré', numBooks: 2 }] }
+      )
     );
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
@@ -29,7 +29,7 @@ describe('Authors list', () => {
         <MemoryRouter>
           <AuthorList />
         </MemoryRouter>
-      </QueryClientProvider>,
+      </QueryClientProvider>
     );
     const link = await screen.findByRole('link', { name: /de Balzac, Honoré/ });
     expect(link).toBeInTheDocument();

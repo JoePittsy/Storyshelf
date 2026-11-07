@@ -3,7 +3,11 @@ import type { ContinueSeriesItem } from '../api/continueSeries';
 import type { Progress } from '../api/libraries';
 import { continueSeriesTiles } from './continueSeries';
 
-const book = (id: string, series?: { name: string; sequence: string | null }, authorName: string | null = 'An Author'): ContinueSeriesItem => ({
+const book = (
+  id: string,
+  series?: { name: string; sequence: string | null },
+  authorName: string | null = 'An Author'
+): ContinueSeriesItem => ({
   id,
   updatedAt: 1,
   media: {
@@ -13,7 +17,11 @@ const book = (id: string, series?: { name: string; sequence: string | null }, au
 const ids = (tiles: { item: { id: string } }[]) => tiles.map((t) => t.item.id);
 
 describe('continueSeriesTiles', () => {
-  const shelf = [book('a', { name: 'Sherlock Holmes', sequence: '2' }), book('b', { name: 'Discworld', sequence: '5' }), book('c')];
+  const shelf = [
+    book('a', { name: 'Sherlock Holmes', sequence: '2' }),
+    book('b', { name: 'Discworld', sequence: '5' }),
+    book('c'),
+  ];
 
   it("keeps ABS's order and says which book of which series", () => {
     const tiles = continueSeriesTiles(shelf, [], new Map());
@@ -38,7 +46,11 @@ describe('continueSeriesTiles', () => {
   });
 
   it('lists a book once, and has nothing when ABS has nothing', () => {
-    expect(ids(continueSeriesTiles([...shelf, shelf[0] as ContinueSeriesItem], [], new Map()))).toEqual(['a', 'b', 'c']);
+    expect(ids(continueSeriesTiles([...shelf, shelf[0] as ContinueSeriesItem], [], new Map()))).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
     expect(continueSeriesTiles(undefined, [], new Map())).toEqual([]);
     expect(continueSeriesTiles([], ['a'], new Map())).toEqual([]);
   });

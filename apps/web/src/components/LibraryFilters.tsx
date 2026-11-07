@@ -11,7 +11,12 @@ const subscribe = (cb: () => void) => {
   return () => mq?.removeEventListener('change', cb);
 };
 /** True on a screen wide enough for the inline filter row; false on a phone (and where matchMedia is missing). */
-const useWide = (): boolean => useSyncExternalStore(subscribe, () => !!window.matchMedia?.(WIDE).matches, () => false);
+const useWide = (): boolean =>
+  useSyncExternalStore(
+    subscribe,
+    () => !!window.matchMedia?.(WIDE).matches,
+    () => false
+  );
 
 const ANY = '';
 /** "Any" first, then the options; a value from a shared link that ABS doesn't list is kept so the select can show it. */
@@ -47,7 +52,10 @@ export function LibraryFilters({ filters, onChange, data }: Props) {
     <Select
       label="Progress"
       value={filters.progress}
-      options={[{ value: ANY, label: 'Any progress' }, ...PROGRESS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))]}
+      options={[
+        { value: ANY, label: 'Any progress' },
+        ...PROGRESS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+      ]}
       onChange={(v) => set('progress', v)}
     />
   );
@@ -63,7 +71,14 @@ export function LibraryFilters({ filters, onChange, data }: Props) {
       />
     ) : null;
 
-  const moreCount = countActive({ ...NO_FILTERS, tag: filters.tag, publisher: filters.publisher, decade: filters.decade, abridged: filters.abridged, ebook: filters.ebook });
+  const moreCount = countActive({
+    ...NO_FILTERS,
+    tag: filters.tag,
+    publisher: filters.publisher,
+    decade: filters.decade,
+    abridged: filters.abridged,
+    ebook: filters.ebook,
+  });
   const buttonCount = wide ? moreCount : countActive({ ...filters, narrator: '' }); // narrator has no control here
   const buttonLabel = wide ? 'More filters' : 'Filters';
 

@@ -53,8 +53,7 @@ const jsonRes = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const textRes = (text: string, status: number): Response => new Response(text, { status });
 
-const headerOf = (init: RequestInit, name: string): string | null =>
-  new Headers(init.headers).get(name);
+const headerOf = (init: RequestInit, name: string): string | null => new Headers(init.headers).get(name);
 
 const userBody = (accessToken: string) => ({
   user: {
@@ -132,9 +131,7 @@ function absServer() {
         state.validAccess = '';
         return jsonRes({ redirect_url: null });
       default:
-        return r.auth === `Bearer ${state.validAccess}`
-          ? jsonRes({ path: r.url })
-          : textRes('Unauthorized', 401);
+        return r.auth === `Bearer ${state.validAccess}` ? jsonRes({ path: r.url }) : textRes('Unauthorized', 401);
     }
   });
   return {
@@ -223,9 +220,9 @@ describe('REQ-6: assertSupported (server compatibility check)', () => {
     (serverVersion) => {
       expect(
         () => assertSupported(status({ serverVersion })),
-        `Expected server version ${serverVersion} to be supported (minimum is 2.26.0)`,
+        `Expected server version ${serverVersion} to be supported (minimum is 2.26.0)`
       ).not.toThrow();
-    },
+    }
   );
 
   // Given a server older than 2.26 (compared numerically, not as text), assertSupported
@@ -236,12 +233,12 @@ describe('REQ-6: assertSupported (server compatibility check)', () => {
     (serverVersion) => {
       const err = thrownBy(() => assertSupported(status({ serverVersion })));
       expect(err, `Expected an UnsupportedServerError for server ${serverVersion}`).toBeInstanceOf(
-        UnsupportedServerError,
+        UnsupportedServerError
       );
       expect((err as UnsupportedServerError).reason, `Expected reason 'version' for ${serverVersion}`).toBe(
-        'version' satisfies UnsupportedReason,
+        'version' satisfies UnsupportedReason
       );
-    },
+    }
   );
 
   // Given a server whose authMethods lack 'local' (SSO-only), assertSupported throws
@@ -249,7 +246,7 @@ describe('REQ-6: assertSupported (server compatibility check)', () => {
   it("REQ-6: rejects an SSO-only server (no 'local' in authMethods) with reason 'no-local-auth'", () => {
     const err = thrownBy(() => assertSupported(status({ authMethods: ['openid'] })));
     expect(err, "Expected UnsupportedServerError when authMethods is ['openid']").toBeInstanceOf(
-      UnsupportedServerError,
+      UnsupportedServerError
     );
     expect((err as UnsupportedServerError).reason, "Expected reason 'no-local-auth'").toBe('no-local-auth');
   });
@@ -258,7 +255,7 @@ describe('REQ-6: assertSupported (server compatibility check)', () => {
   it("REQ-6: accepts a server offering both 'local' and 'openid'", () => {
     expect(
       () => assertSupported(status({ authMethods: ['local', 'openid'] })),
-      "Expected a server offering 'local' alongside 'openid' to be supported",
+      "Expected a server offering 'local' alongside 'openid' to be supported"
     ).not.toThrow();
   });
 
@@ -332,7 +329,7 @@ describe('REQ-4: login (sign in with username and password)', () => {
     await absFetch('/api/me');
     const req = callsTo(calls, '/api/me')[0];
     expect(req?.auth, 'Expected Authorization: Bearer access-1 (the accessToken, not the legacy token)').toBe(
-      'Bearer access-1',
+      'Bearer access-1'
     );
   });
 
@@ -397,7 +394,7 @@ describe('REQ-4: restoreSession (stay signed in across restarts)', () => {
     await restoreSession();
     await absFetch('/api/me');
     expect(callsTo(calls, '/api/me')[0]?.auth, 'Expected Authorization: Bearer access-1 after restoreSession').toBe(
-      'Bearer access-1',
+      'Bearer access-1'
     );
   });
 
@@ -425,7 +422,7 @@ describe('REQ-4: restoreSession (stay signed in across restarts)', () => {
     await absFetch('/api/me').catch(() => undefined);
     expect(
       calls.filter((c) => c.url === '/api/me' && c.auth !== null),
-      'Expected no Authorization header when there is no session',
+      'Expected no Authorization header when there is no session'
     ).toHaveLength(0);
   });
 
@@ -435,9 +432,10 @@ describe('REQ-4: restoreSession (stay signed in across restarts)', () => {
     installFetch(() => {
       throw new TypeError('Failed to fetch');
     });
-    await expect(restoreSession(), 'Expected a network failure to reject, so offline differs from signed-out').rejects.toThrow(
-      'Failed to fetch',
-    );
+    await expect(
+      restoreSession(),
+      'Expected a network failure to reject, so offline differs from signed-out'
+    ).rejects.toThrow('Failed to fetch');
   });
 
   it('REQ-4: a network failure during restore does not notify onSignedOut', async () => {
@@ -477,7 +475,7 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
     expect(req?.method, 'Expected the caller-supplied method').toBe('PATCH');
     expect(req?.init.body, 'Expected the caller-supplied body').toBe(JSON.stringify({ currentTime: 12 }));
     expect(headerOf(req?.init ?? {}, 'content-type'), 'Expected caller-supplied headers to be kept').toBe(
-      'application/json',
+      'application/json'
     );
     expect(req?.auth, 'Expected the Authorization header to be added').toBe('Bearer access-1');
   });
@@ -496,7 +494,7 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
       'GET /api/me Bearer access-2',
     ]);
     expect(refreshCalls(server.calls)[0]?.init.credentials, "Expected the refresh to use credentials: 'include'").toBe(
-      'include',
+      'include'
     );
     expect(data, 'Expected the caller to receive the retried response, none the wiser').toEqual({ path: '/api/me' });
   });
@@ -508,7 +506,7 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
     await absFetch('/api/me');
     await absFetch('/api/libraries');
     expect(callsTo(server.calls, '/api/libraries')[0]?.auth, 'Expected the renewed token to be reused').toBe(
-      'Bearer access-2',
+      'Bearer access-2'
     );
     expect(refreshCalls(server.calls), 'Expected exactly one refresh in total').toHaveLength(1);
   });
@@ -527,8 +525,8 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
     await vi.waitFor(() =>
       expect(
         server.calls.filter((c) => paths.includes(c.url)),
-        'Expected all three requests to be sent before the refresh completes',
-      ).toHaveLength(3),
+        'Expected all three requests to be sent before the refresh completes'
+      ).toHaveLength(3)
     );
     await new Promise((r) => setTimeout(r, 10));
     release();
@@ -567,7 +565,7 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
     await absFetch('/api/later').catch(() => undefined);
     expect(
       server.calls.slice(before).filter((c) => c.auth === 'Bearer access-1'),
-      'Expected the cleared access token not to be reused after a failed renewal',
+      'Expected the cleared access token not to be reused after a failed renewal'
     ).toHaveLength(0);
   });
 
@@ -613,9 +611,7 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
 
   // Not an expired-session problem: report it as is, leave the session alone.
   it.each([403, 404, 500])('REQ-5: a %i response rejects with AbsError(%i) without refreshing', async (status) => {
-    const calls = installFetch((r) =>
-      r.url === '/login' ? jsonRes(userBody('access-1')) : textRes('nope', status),
-    );
+    const calls = installFetch((r) => (r.url === '/login' ? jsonRes(userBody('access-1')) : textRes('nope', status)));
     await login('joe', 'correct');
     const err = await absFetch('/api/items/missing').catch((e: unknown) => e);
     expect(err, `Expected a ${status} to reject`).toBeInstanceOf(AbsError);
@@ -653,7 +649,7 @@ describe('REQ-7: logout (signing out)', () => {
     expect(req, 'Expected a request to /logout').toBeDefined();
     expect(req?.method, 'Expected POST').toBe('POST');
     expect(req?.init.credentials, "Expected credentials: 'include' so ABS can clear the refresh cookie").toBe(
-      'include',
+      'include'
     );
   });
 
@@ -673,7 +669,7 @@ describe('REQ-7: logout (signing out)', () => {
     await absFetch('/api/me').catch(() => undefined);
     expect(
       calls.slice(before).filter((c) => c.auth === 'Bearer access-1'),
-      'Expected the old access token not to be sent after logout',
+      'Expected the old access token not to be sent after logout'
     ).toHaveLength(0);
   });
 
@@ -715,13 +711,13 @@ describe('REQ-7: logout (signing out)', () => {
     expect(signedOut, 'Expected onSignedOut even though /logout failed').toHaveBeenCalledTimes(1);
     expect(
       calls.slice(before).filter((c) => c.auth === 'Bearer access-1'),
-      'Expected the access token to be cleared even though /logout failed',
+      'Expected the access token to be cleared even though /logout failed'
     ).toHaveLength(0);
   });
 
   it('REQ-7: still clears local state and notifies when /logout answers 500', async () => {
     const calls = installFetch((r) =>
-      r.url === '/login' ? jsonRes(userBody('access-1')) : r.url === '/logout' ? textRes('boom', 500) : jsonRes({}),
+      r.url === '/login' ? jsonRes(userBody('access-1')) : r.url === '/logout' ? textRes('boom', 500) : jsonRes({})
     );
     await login('joe', 'correct');
     const signedOut = listen();
@@ -732,7 +728,7 @@ describe('REQ-7: logout (signing out)', () => {
     expect(signedOut, 'Expected onSignedOut even though /logout answered 500').toHaveBeenCalledTimes(1);
     expect(
       calls.slice(before).filter((c) => c.auth === 'Bearer access-1'),
-      'Expected the access token to be cleared even though /logout answered 500',
+      'Expected the access token to be cleared even though /logout answered 500'
     ).toHaveLength(0);
   });
 });
@@ -776,7 +772,7 @@ describe('resetAuthForTests (module state reset)', () => {
     await absFetch('/api/me').catch(() => undefined);
     expect(
       calls.slice(before).filter((c) => c.auth === 'Bearer access-1'),
-      'Expected resetAuthForTests to forget the access token',
+      'Expected resetAuthForTests to forget the access token'
     ).toHaveLength(0);
   });
 });
@@ -809,11 +805,11 @@ describe('REQ-8: same-origin requests, no server URL', () => {
 
     const urls = server.calls.map((c) => c.url);
     expect(urls, 'Expected the lifecycle to exercise /status, /login, /auth/refresh and /logout').toEqual(
-      expect.arrayContaining(['/status', '/login', '/auth/refresh', '/logout']),
+      expect.arrayContaining(['/status', '/login', '/auth/refresh', '/logout'])
     );
     for (const url of urls) {
       expect(url, `Expected ${url} to be a path on the app's own origin (starting with a single "/")`).toMatch(
-        /^\/(?!\/)/,
+        /^\/(?!\/)/
       );
     }
   });

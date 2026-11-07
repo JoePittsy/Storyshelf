@@ -9,6 +9,6 @@ export function useMediaQuery(query: string): boolean {
       return () => mq?.removeEventListener('change', cb);
     },
     () => !!window.matchMedia?.(query).matches,
-    () => false,
+    () => false
   );
 }

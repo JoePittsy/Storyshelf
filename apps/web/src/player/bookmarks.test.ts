@@ -9,7 +9,12 @@ const chapters = [
   { id: 3, start: 1300, end: 2000, title: 'Roast Mutton' },
 ];
 
-const bm = (time: number, title: string, libraryItemId = 'li_1'): Bookmark => ({ libraryItemId, time, title, createdAt: 1 });
+const bm = (time: number, title: string, libraryItemId = 'li_1'): Bookmark => ({
+  libraryItemId,
+  time,
+  title,
+  createdAt: 1,
+});
 
 describe('bookmarkSecond', () => {
   it('rounds down to a whole second, so a bookmark never lands after the place it marks', () => {

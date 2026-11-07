@@ -23,6 +23,6 @@ export function useRefreshOnSave(): void {
         progressChanged(); // a stop can finish a book: the Finished list and progress filters must not come from ABS's cache
         PROGRESS_KEYS.forEach((queryKey) => void qc.invalidateQueries({ queryKey }));
       }),
-    [qc],
+    [qc]
   );
 }

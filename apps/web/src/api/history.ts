@@ -129,8 +129,8 @@ export const useItemSessions = (libraryItemId: string) =>
     queryFn: async () =>
       clean(
         await absFetch<SessionsPage>(
-          `/api/me/item/listening-sessions/${encodeURIComponent(libraryItemId)}?itemsPerPage=${ITEM_SESSIONS_LIMIT}&page=0`,
-        ),
+          `/api/me/item/listening-sessions/${encodeURIComponent(libraryItemId)}?itemsPerPage=${ITEM_SESSIONS_LIMIT}&page=0`
+        )
       ),
   });
 
@@ -163,7 +163,8 @@ export interface InProgressItem extends LibraryItem {
 export const useInProgress = () =>
   useQuery({
     queryKey: ['items-in-progress'],
-    queryFn: async () => (await absFetch<{ libraryItems: InProgressItem[] }>('/api/me/items-in-progress?limit=20')).libraryItems,
+    queryFn: async () =>
+      (await absFetch<{ libraryItems: InProgressItem[] }>('/api/me/items-in-progress?limit=20')).libraryItems,
   });
 
 interface FinishedPage {
@@ -214,7 +215,7 @@ export function useChapters(ids: string[]): Map<string, ChapterInfo> {
               ? { state: 'ready', chapters: r.data.media.chapters }
               : { state: r?.isError ? 'failed' : 'pending', chapters: [] },
           ];
-        }),
+        })
       ),
   });
 }

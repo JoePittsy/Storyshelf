@@ -92,7 +92,13 @@ export function parseSort(value: string | null): SortKey {
 export const usualDesc = (sort: SortKey): boolean => SORTS.find((s) => s.key === sort)?.desc ?? false;
 
 /** One page of a library's books. `desc` defaults to the field's usual direction. */
-export function itemsUrl(libraryId: string, sort: SortKey, page: number, filter?: string, desc = usualDesc(sort)): string {
+export function itemsUrl(
+  libraryId: string,
+  sort: SortKey,
+  page: number,
+  filter?: string,
+  desc = usualDesc(sort)
+): string {
   const qs = new URLSearchParams({
     limit: String(PAGE_SIZE),
     page: String(page),
@@ -109,7 +115,9 @@ export function authorImageUrl(
   a: { id: string; imagePath?: string | null; updatedAt?: number },
   width = 200
 ): string | undefined {
-  return a.imagePath ? absUrl(`/api/authors/${a.id}/image?width=${width}&format=webp&ts=${a.updatedAt ?? 0}`) : undefined;
+  return a.imagePath
+    ? absUrl(`/api/authors/${a.id}/image?width=${width}&format=webp&ts=${a.updatedAt ?? 0}`)
+    : undefined;
 }
 
 export function searchUrl(libraryId: string, q: string): string {
@@ -207,7 +215,12 @@ export const withProgressStamp = (url: string): string =>
 export const dependsOnProgress = (sort: SortKey, filter?: string): boolean =>
   sort === 'progress' || !!filter?.startsWith('progress.');
 
-export const useLibraryItems = (libraryId: string | undefined, sort: SortKey, filter?: string, desc = usualDesc(sort)) =>
+export const useLibraryItems = (
+  libraryId: string | undefined,
+  sort: SortKey,
+  filter?: string,
+  desc = usualDesc(sort)
+) =>
   useInfiniteQuery({
     queryKey: ['items', libraryId, sort, filter ?? '', desc],
     enabled: !!libraryId,

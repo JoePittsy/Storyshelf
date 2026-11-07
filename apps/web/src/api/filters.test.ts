@@ -25,7 +25,10 @@ const decodeFilter = (v: string | undefined) => {
   return [group, Buffer.from(decodeURIComponent(enc ?? ''), 'base64').toString('utf8')];
 };
 
-const book = (over: Partial<LibraryItem['media']['metadata']> = {}, media: Partial<LibraryItem['media']> = {}): LibraryItem => ({
+const book = (
+  over: Partial<LibraryItem['media']['metadata']> = {},
+  media: Partial<LibraryItem['media']> = {}
+): LibraryItem => ({
   id: 'b1',
   updatedAt: 1,
   media: { metadata: { title: 'T', authorName: 'A', ...over }, ...media },
@@ -71,7 +74,16 @@ describe('narrator filter', () => {
 
 describe('REQ-43 URL and filter state round trip', () => {
   it('writes and reads every filter', () => {
-    const all = f({ genre: 'Sci-Fi & Fantasy', progress: 'in-progress', lang: 'English', tag: 'a/b #1', publisher: 'Zoë Press', decade: '1980', abridged: true, ebook: true });
+    const all = f({
+      genre: 'Sci-Fi & Fantasy',
+      progress: 'in-progress',
+      lang: 'English',
+      tag: 'a/b #1',
+      publisher: 'Zoë Press',
+      decade: '1980',
+      abridged: true,
+      ebook: true,
+    });
     const params = writeFilters(new URLSearchParams('library=L1&sort=x'), all);
     expect(parseFilters(new URLSearchParams(params.toString()))).toEqual(all);
     expect(params.get('library')).toBe('L1');
@@ -216,12 +228,12 @@ describe('REQ-37 REQ-40 client predicates', () => {
 describe('REQ-42 chips', () => {
   it('labels what is applied', () => {
     const all = f({ genre: 'Fantasy', progress: 'in-progress', decade: '1980', abridged: true });
-    expect([chipLabel(all, 'genre'), chipLabel(all, 'progress'), chipLabel(all, 'decade'), chipLabel(all, 'abridged')]).toEqual([
-      'Genre: Fantasy',
-      'Progress: In progress',
-      'Published: 1980s',
-      'Abridged',
-    ]);
+    expect([
+      chipLabel(all, 'genre'),
+      chipLabel(all, 'progress'),
+      chipLabel(all, 'decade'),
+      chipLabel(all, 'abridged'),
+    ]).toEqual(['Genre: Fantasy', 'Progress: In progress', 'Published: 1980s', 'Abridged']);
     expect(countActive(all)).toBe(4);
   });
 });

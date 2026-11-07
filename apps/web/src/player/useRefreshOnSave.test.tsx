@@ -20,7 +20,9 @@ describe('useRefreshOnSave', () => {
   it('invalidates the book, progress and listening queries when the player reports a save, and only then', () => {
     const qc = new QueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
-    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+    );
     const { unmount } = renderHook(() => useRefreshOnSave(), { wrapper });
     expect(spy).not.toHaveBeenCalled();
     saved?.();

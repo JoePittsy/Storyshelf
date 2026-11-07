@@ -49,7 +49,11 @@ export function BookGrid({ tiles, onEndReached, onPlay }: Props) {
               overlay={
                 <>
                   {badge && <span className={styles.badge}>{badge}</span>}
-                  <ProgressBar variant="overlay" value={progress} label={`Progress through ${item.media.metadata.title}`} />
+                  <ProgressBar
+                    variant="overlay"
+                    value={progress}
+                    label={`Progress through ${item.media.metadata.title}`}
+                  />
                 </>
               }
             />

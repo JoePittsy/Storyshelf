@@ -97,7 +97,7 @@ describe('formatDiag', () => {
       formatDiag([
         { t: 'T1', ev: 'a' },
         { t: 'T2', ev: 'b', detail: { x: 1 } },
-      ]),
+      ])
     ).toBe('T2 b {"x":1}\nT1 a');
   });
 });

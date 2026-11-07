@@ -14,7 +14,9 @@ export function formatUnsupported(mimeType: string | undefined, canPlayType: (ty
 
 /** The error to report for a media element's SRC_NOT_SUPPORTED: the format message only with evidence of a bad format. */
 export function srcNotSupportedError(mimeType: string | undefined, canPlayType: (type: string) => string): Error {
-  return formatUnsupported(mimeType, canPlayType) ? new UnsupportedFormatError() : new Error('Track could not be loaded');
+  return formatUnsupported(mimeType, canPlayType)
+    ? new UnsupportedFormatError()
+    : new Error('Track could not be loaded');
 }
 
 /** One toast per failure: a second report close behind the first (the error event and the play() rejection) is dropped. */

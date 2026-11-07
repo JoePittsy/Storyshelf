@@ -28,5 +28,5 @@ createRoot(root).render(
         </div>
       </BrowserRouter>
     </QueryClientProvider>
-  </StrictMode>,
+  </StrictMode>
 );

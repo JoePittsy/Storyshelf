@@ -13,14 +13,20 @@ import { pickRestorable } from './restore';
  * Until the book is played, its place is a snapshot. When the tab wakes or gets focus the server's progress is
  * fetched again, and a later place there (another device) replaces the snapshot's.
  */
-export function RestoreLastBook({ libraryId, librariesPending }: { libraryId: string | undefined; librariesPending: boolean }) {
+export function RestoreLastBook({
+  libraryId,
+  librariesPending,
+}: {
+  libraryId: string | undefined;
+  librariesPending: boolean;
+}) {
   const inProgress = useInProgress();
   const progress = useProgress();
   const done = useRef(false);
   const ready = !!libraryId && !inProgress.isPending && !progress.isPending;
   const pick = useMemo(
     () => (ready ? pickRestorable(inProgress.data, progress.data ?? new Map(), libraryId) : undefined),
-    [ready, inProgress.data, progress.data, libraryId],
+    [ready, inProgress.data, progress.data, libraryId]
   );
   const chapters = useChapters(pick ? [pick.id] : []).get(pick?.id ?? '');
   useEffect(() => {

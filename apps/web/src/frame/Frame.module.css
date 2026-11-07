@@ -36,7 +36,8 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    padding: calc(0.4em + var(--safe-top, env(safe-area-inset-top, 0px))) max(calc(var(--gutter) - 0.45em), env(safe-area-inset-right)) 0
+    padding: calc(0.4em + var(--safe-top, env(safe-area-inset-top, 0px)))
+      max(calc(var(--gutter) - 0.45em), env(safe-area-inset-right)) 0
       max(calc(var(--gutter) - 0.45em), env(safe-area-inset-left));
     background: var(--material-bg);
     -webkit-backdrop-filter: var(--material-filter);

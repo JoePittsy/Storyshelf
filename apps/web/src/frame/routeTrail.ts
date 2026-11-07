@@ -66,8 +66,10 @@ export function useRouteTrail(): void {
     lastKey = key;
     const path = fromByKey.get(key);
     const fromKey = fromKeyByKey.get(key);
-    const same = current && path === current.path && (fromKey ? titleByKey.get(fromKey) ?? null : null) === current.title;
-    if (!same) current = path === undefined ? null : { path, title: (fromKey ? titleByKey.get(fromKey) : undefined) ?? null };
+    const same =
+      current && path === current.path && (fromKey ? (titleByKey.get(fromKey) ?? null) : null) === current.title;
+    if (!same)
+      current = path === undefined ? null : { path, title: (fromKey ? titleByKey.get(fromKey) : undefined) ?? null };
     listeners.forEach((l) => l());
   }, [key, pathname, search]);
 }
@@ -79,7 +81,7 @@ export function usePreviousPlace(): Place | null {
       listeners.add(l);
       return () => void listeners.delete(l);
     },
-    () => current,
+    () => current
   );
 }
 

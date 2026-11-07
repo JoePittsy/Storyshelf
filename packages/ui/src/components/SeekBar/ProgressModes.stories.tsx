@@ -70,8 +70,12 @@ export const BookMode: Story = { args: { markers: ticks, duration: 1120000 * 8 }
 /** Chapter: spans the current chapter (4:12 of 18:40), no ticks. */
 export const ChapterMode: Story = { args: { initial: 'chapter', label: undefined } };
 /** Sleep, minutes timer: from where it was set to where playback will stop; read-only. */
-export const SleepMinutes: Story = { args: { initial: 'sleep', position: 300000, duration: 750000, label: 'Stops in 12:30' } };
+export const SleepMinutes: Story = {
+  args: { initial: 'sleep', position: 300000, duration: 750000, label: 'Stops in 12:30' },
+};
 /** Sleep, end of chapter: read-only, up to the chapter end. */
-export const SleepChapterEnd: Story = { args: { initial: 'sleep', position: 540000, duration: 600000, label: 'Stops in 1:00' } };
+export const SleepChapterEnd: Story = {
+  args: { initial: 'sleep', position: 540000, duration: 600000, label: 'Stops in 1:00' },
+};
 /** No sleep timer: the Sleep option is visibly disabled and explains why. */
 export const SleepDisabled: Story = { args: { sleepOff: true } };

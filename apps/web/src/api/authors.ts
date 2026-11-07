@@ -55,7 +55,12 @@ export const seriesBooksQuery = (libraryId: string | undefined, seriesId: string
     queryKey: ['series-books', libraryId, seriesId],
     enabled: !!libraryId,
     queryFn: async () => {
-      const qs = new URLSearchParams({ filter: absFilter('series', seriesId), sort: 'sequence', limit: '0', minified: '1' });
+      const qs = new URLSearchParams({
+        filter: absFilter('series', seriesId),
+        sort: 'sequence',
+        limit: '0',
+        minified: '1',
+      });
       return (await absFetch<{ results: SeriesItem[] }>(`/api/libraries/${libraryId}/items?${qs.toString()}`)).results;
     },
   });
@@ -71,7 +76,7 @@ export const useAuthorIds = (libraryId: string | undefined) =>
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const { authors } = await absFetch<{ authors: { id: string; name: string }[] }>(
-        `/api/libraries/${libraryId}/authors`,
+        `/api/libraries/${libraryId}/authors`
       );
       return new Map(authors.map((a) => [a.name, a.id]));
     },

@@ -33,7 +33,7 @@ function renderMenu(onShowShortcuts?: () => void) {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <AccountMenu onShowShortcuts={onShowShortcuts} />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 

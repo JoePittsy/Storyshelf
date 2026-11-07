@@ -323,8 +323,7 @@ function fail(e: unknown): void {
   if (isRepeatFailure(lastFailAt, now)) return void diag.log('fail (repeat)', errInfo(e));
   lastFailAt = now;
   diag.log('fail', errInfo(e));
-  const message =
-    e instanceof UnsupportedFormatError ? MSG_FORMAT : e instanceof TypeError ? MSG_NETWORK : MSG_OTHER;
+  const message = e instanceof UnsupportedFormatError ? MSG_FORMAT : e instanceof TypeError ? MSG_NETWORK : MSG_OTHER;
   set({ status: 'error', error: message });
   updatePlaybackState('paused');
 }
@@ -346,7 +345,7 @@ function startPlay(a: HTMLAudioElement, why = 'play'): void {
         return;
       }
       if (!reloadAndPlay('rejected')) fail(e);
-    },
+    }
   );
 }
 
@@ -437,7 +436,7 @@ function flushMoved(): void {
   const id = state.item.id;
   saveProgress(id, movedHere, state.duration).then(
     () => emitSaved(),
-    (e: unknown) => diag.log('move not saved', errInfo(e)),
+    (e: unknown) => diag.log('move not saved', errInfo(e))
   );
 }
 
@@ -603,7 +602,7 @@ function getAudio(): HTMLAudioElement {
       return fail(
         a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
           ? srcNotSupportedError(track.mimeType, (t) => a.canPlayType(t))
-          : new TypeError(),
+          : new TypeError()
       );
     }
     // First failure after a resume: reload the same track right here. A second one falls through to the session re-open below.
@@ -762,7 +761,12 @@ export function restore(r: Restorable, chapters: Chapter[]): void {
 export function refreshRestored(progress: Map<string, LibraryProgress>): void {
   if (!state.restored || !state.item) return;
   const p = progress.get(state.item.id);
-  const server = p && { id: state.item.id, position: p.currentTime ?? 0, lastUpdate: p.lastUpdate ?? 0, isFinished: p.isFinished };
+  const server = p && {
+    id: state.item.id,
+    position: p.currentTime ?? 0,
+    lastUpdate: p.lastUpdate ?? 0,
+    isFinished: p.isFinished,
+  };
   const pos = refreshedPosition({ id: state.item.id, updatedAt: restoredAt, movedHere: movedHere !== null }, server);
   if (pos === null || !server) return;
   restoredAt = server.lastUpdate;
@@ -1043,7 +1047,8 @@ export async function release(itemId: string): Promise<Released | null> {
   const moved = state.restored ? movedHere : null;
   const duration = state.duration;
   await stop();
-  if (moved !== null) await saveProgress(itemId, moved, duration).catch((e: unknown) => diag.log('move not saved', errInfo(e)));
+  if (moved !== null)
+    await saveProgress(itemId, moved, duration).catch((e: unknown) => diag.log('move not saved', errInfo(e)));
   return out;
 }
 

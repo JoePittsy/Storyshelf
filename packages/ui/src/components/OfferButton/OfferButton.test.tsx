@@ -11,7 +11,9 @@ describe('OfferButton', () => {
   });
 
   it('carries short words for a narrow screen beside the full ones (CSS shows one or the other)', () => {
-    render(<OfferButton label="Go back to where the timer began, 41:10" shortLabel="Go back to 41:10" onClick={() => {}} />);
+    render(
+      <OfferButton label="Go back to where the timer began, 41:10" shortLabel="Go back to 41:10" onClick={() => {}} />
+    );
     expect(screen.getByText('Go back to where the timer began, 41:10')).toBeInTheDocument();
     expect(screen.getByText('Go back to 41:10')).toBeInTheDocument();
   });

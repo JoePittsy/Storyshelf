@@ -83,7 +83,10 @@ export function normalizeServerUrl(input: string): string | null {
     return null;
   }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-  const path = u.pathname.replace(/\/+$/, '').replace(/\/login$/i, '').replace(/\/+$/, '');
+  const path = u.pathname
+    .replace(/\/+$/, '')
+    .replace(/\/login$/i, '')
+    .replace(/\/+$/, '');
   return `${u.origin}${path}`;
 }
 
@@ -116,7 +119,7 @@ const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
  */
 export async function probeServer(
   url: string,
-  opts: { fetchFn?: typeof fetch; pageProtocol?: string } = {},
+  opts: { fetchFn?: typeof fetch; pageProtocol?: string } = {}
 ): Promise<ServerStatus> {
   const fetchFn = opts.fetchFn ?? fetch;
   const pageProtocol = opts.pageProtocol ?? location.protocol;

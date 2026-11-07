@@ -10,7 +10,7 @@ function setup() {
       <div role="slider" aria-label="Progress" aria-valuenow={0} tabIndex={0}>
         bar
       </div>
-    </GrabSheet>,
+    </GrabSheet>
   );
   const sheet = view.container.firstElementChild as HTMLElement;
   return { onDismiss, sheet };

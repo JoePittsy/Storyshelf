@@ -11,7 +11,9 @@ const meta = {
   render: (args) => (
     <GrabSheet {...args} className="demo">
       <div style={{ padding: '1em', background: 'var(--bg)', minHeight: '60vh' }}>
-        <p>Drag the handle (or anywhere quiet) down to dismiss. The chevron does the same for anyone who can't swipe.</p>
+        <p>
+          Drag the handle (or anywhere quiet) down to dismiss. The chevron does the same for anyone who can't swipe.
+        </p>
       </div>
     </GrabSheet>
   ),

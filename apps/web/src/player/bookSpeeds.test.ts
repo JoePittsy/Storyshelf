@@ -80,7 +80,7 @@ describe('book speeds', () => {
   it('ignores junk in storage: bad entries are dropped, speeds are clamped to the player range', async () => {
     localStorage.setItem(
       'storyshelf.bookSpeeds',
-      JSON.stringify([['b1', 9], ['b2', 'fast'], [3, 1.5], 'nope', ['b3', 1.25]]),
+      JSON.stringify([['b1', 9], ['b2', 'fast'], [3, 1.5], 'nope', ['b3', 1.25]])
     );
     vi.resetModules();
     const again = await import('./bookSpeeds');

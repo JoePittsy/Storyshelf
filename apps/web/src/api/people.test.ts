@@ -33,7 +33,7 @@ describe('REQ-33 list URLs', () => {
   it('builds an author photo URL only when they have one', () => {
     expect(authorImageUrl({ id: 'a1', imagePath: null })).toBeUndefined();
     expect(authorImageUrl({ id: 'a1', imagePath: '/x.jpg', updatedAt: 5 })).toBe(
-      '/api/authors/a1/image?width=200&format=webp&ts=5',
+      '/api/authors/a1/image?width=200&format=webp&ts=5'
     );
   });
 });
@@ -85,7 +85,11 @@ describe('REQ-32 search chips', () => {
 });
 
 describe('series authors', () => {
-  const book = (authorName: string | null) => ({ id: 'x', updatedAt: 1, media: { metadata: { title: 't', authorName } } });
+  const book = (authorName: string | null) => ({
+    id: 'x',
+    updatedAt: 1,
+    media: { metadata: { title: 't', authorName } },
+  });
   it('lists each author once', () => {
     expect(seriesAuthors([book('A, B'), book('A'), book(null)])).toBe('A, B');
   });

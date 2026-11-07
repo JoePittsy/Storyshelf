@@ -28,7 +28,7 @@ export function Author() {
   const tiles = (books: SeriesBook[]): BookTile[] =>
     mergeProgress(
       books.map((b) => b.item),
-      progress.data ?? new Map(),
+      progress.data ?? new Map()
     ).map((t, i) => ({ item: t.item, progress: t.progress, badge: sequenceBadge(books[i]?.sequence ?? null) }));
 
   if (!data)

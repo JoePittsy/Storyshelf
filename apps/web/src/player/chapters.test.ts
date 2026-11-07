@@ -12,7 +12,15 @@
  * chapters is possible: t in a gap is in no chapter (index -1).
  */
 import { describe, expect, it } from 'vitest';
-import { chapterIndexAt, chapterMarkers, chapterTitle, cleanChapters, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
+import {
+  chapterIndexAt,
+  chapterMarkers,
+  chapterTitle,
+  cleanChapters,
+  nextChapterTarget,
+  previousChapterTarget,
+  type Chapter,
+} from './chapters';
 
 const ch = (id: number, start: number, end: number): Chapter => ({ id, start, end, title: `Chapter ${id + 1}` });
 
@@ -68,7 +76,10 @@ describe('REQ-18: chapterIndexAt finds the chapter containing a book time', () =
 
 describe('REQ-18: previousChapterTarget', () => {
   it('REQ-18: 0:02 into Chapter 5 goes to the start of Chapter 4', () => {
-    expect(previousChapterTarget(BOOK, 1002), 'Expected 2 s into chapter index 4 to go to chapter index 3 start (700)').toBe(700);
+    expect(
+      previousChapterTarget(BOOK, 1002),
+      'Expected 2 s into chapter index 4 to go to chapter index 3 start (700)'
+    ).toBe(700);
   });
 
   it('REQ-18: exactly at a chapter start goes to the previous chapter', () => {
@@ -85,11 +96,17 @@ describe('REQ-18: previousChapterTarget', () => {
   });
 
   it('REQ-18: a custom threshold widens the window', () => {
-    expect(previousChapterTarget(BOOK, 708, 10), 'Expected 8 s into chapter index 3 to go back when threshold is 10').toBe(400);
+    expect(
+      previousChapterTarget(BOOK, 708, 10),
+      'Expected 8 s into chapter index 3 to go back when threshold is 10'
+    ).toBe(400);
   });
 
   it('REQ-18: a custom threshold narrows the window', () => {
-    expect(previousChapterTarget(BOOK, 702, 1), 'Expected 2 s into chapter index 3 to restart when threshold is 1').toBe(700);
+    expect(
+      previousChapterTarget(BOOK, 702, 1),
+      'Expected 2 s into chapter index 3 to restart when threshold is 1'
+    ).toBe(700);
   });
 
   it('REQ-18: in the first chapter within the window goes to the start of the book', () => {
@@ -152,7 +169,12 @@ describe('REQ-18: nextChapterTarget', () => {
 
 describe('chapterMarkers', () => {
   it('maps chapters to ms starts with numbered labels', () => {
-    expect(chapterMarkers([{ id: 0, start: 0, end: 60, title: 'Intro' }, { id: 1, start: 60, end: 90, title: 'Two' }])).toEqual([
+    expect(
+      chapterMarkers([
+        { id: 0, start: 0, end: 60, title: 'Intro' },
+        { id: 1, start: 60, end: 90, title: 'Two' },
+      ])
+    ).toEqual([
       { at: 0, label: 'Chapter 1: Intro' },
       { at: 60000, label: 'Chapter 2: Two' },
     ]);

@@ -53,7 +53,10 @@ describe('parseSortParams', () => {
     expect(parseSortParams(qs('sort=addedAt'))).toEqual({ key: 'addedAt', desc: true });
   });
   it('reads an explicit direction', () => {
-    expect(parseSortParams(qs('sort=media.metadata.title&desc=1'))).toEqual({ key: 'media.metadata.title', desc: true });
+    expect(parseSortParams(qs('sort=media.metadata.title&desc=1'))).toEqual({
+      key: 'media.metadata.title',
+      desc: true,
+    });
     expect(parseSortParams(qs('sort=addedAt&desc=0'))).toEqual({ key: 'addedAt', desc: false });
     expect(parseSortParams(qs('sort=media.duration&desc=1'))).toEqual({ key: 'media.duration', desc: true });
   });
@@ -66,17 +69,20 @@ describe('parseSortParams', () => {
     expect(parseSortParams(qs('sort=progress&desc=0'))).toEqual({ key: 'progress', desc: true });
   });
   it('treats a junk direction as the field’s usual one', () => {
-    expect(parseSortParams(qs('sort=media.metadata.title&desc=yes'))).toEqual({ key: 'media.metadata.title', desc: false });
+    expect(parseSortParams(qs('sort=media.metadata.title&desc=yes'))).toEqual({
+      key: 'media.metadata.title',
+      desc: false,
+    });
   });
 });
 
 describe('writeSort', () => {
   it('writes the key, and the direction only when it is not the field’s usual one', () => {
     expect(writeSort(qs('library=L1'), { key: 'media.metadata.title', desc: false }).toString()).toBe(
-      'library=L1&sort=media.metadata.title',
+      'library=L1&sort=media.metadata.title'
     );
     expect(writeSort(qs('library=L1'), { key: 'media.metadata.title', desc: true }).toString()).toBe(
-      'library=L1&sort=media.metadata.title&desc=1',
+      'library=L1&sort=media.metadata.title&desc=1'
     );
     expect(writeSort(qs('sort=addedAt'), { key: 'addedAt', desc: false }).toString()).toBe('sort=addedAt&desc=0');
   });

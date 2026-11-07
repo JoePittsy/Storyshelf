@@ -14,7 +14,10 @@ function load(): BookSpeedEntry[] {
     const v: unknown = JSON.parse(localStorage.getItem(KEY) ?? '[]');
     if (!Array.isArray(v)) return [];
     return v
-      .filter((e): e is [string, number] => Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'number' && Number.isFinite(e[1]))
+      .filter(
+        (e): e is [string, number] =>
+          Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'number' && Number.isFinite(e[1])
+      )
       .map(([id, r]): BookSpeedEntry => [id, clampRate(r)]);
   } catch {
     return [];
@@ -71,4 +74,3 @@ export function putBackBookSpeeds(list: BookSpeedEntry[]): void {
 
 /** How many books have a speed of their own. */
 export const useBookSpeedCount = (): number => useSyncExternalStore(subscribe, () => entries).length;
-
