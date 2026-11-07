@@ -188,15 +188,16 @@ export const monthName = (i: number) => MONTHS[i] ?? '';
 export const monthShort = (i: number) => SHORT[i] ?? '';
 
 /**
- * The headline figures. `finished` is the server's count, undefined while it is on its way. "Busiest month" only
- * appears when there was more than one month to pick from.
+ * The headline figures. `finished` is the server's count, undefined while it is on its way; it is left out until it
+ * comes, and when it is 0, as a zero card standing alone says nothing. "Busiest month" only appears when there was more
+ * than one month to pick from.
  */
 export function reviewCards(r: YearReview, finished: number | undefined): { label: string; value: string }[] {
   const cards = [
     { label: 'Listened', value: fmtListened(r.seconds) },
     { label: 'Books', value: String(r.bookCount) },
-    { label: 'Finished', value: finished === undefined ? '–' : String(finished) },
   ];
+  if (finished) cards.push({ label: 'Finished', value: String(finished) });
   const busy = busiestMonth(r.months);
   if (busy !== null && r.months.filter((s) => s > 0).length > 1)
     cards.push({ label: 'Busiest month', value: monthName(busy) });

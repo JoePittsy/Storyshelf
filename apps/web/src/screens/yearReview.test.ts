@@ -244,15 +244,19 @@ describe('reviewCards', () => {
       ['Busiest month', 'February'],
     ]);
   });
-  it('says "Finished" is unknown, rather than 0, while the server has not answered', () => {
+  it('leaves "Finished" out while the server has not answered, rather than showing a placeholder', () => {
     const cards = reviewCards(
       r({ seconds: 60, bookCount: 1, months: [60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }),
       undefined
     );
-    expect(cards.find((c) => c.label === 'Finished')?.value).toBe('–');
+    expect(cards.map((c) => c.label)).toEqual(['Listened', 'Books']);
+  });
+  it('leaves "Finished" out when nothing was finished: a zero card says nothing', () => {
+    const cards = reviewCards(r({ seconds: 7200, bookCount: 3, months: [600, 6600, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }), 0);
+    expect(cards.map((c) => c.label)).toEqual(['Listened', 'Books', 'Busiest month']);
   });
   it('drops "Busiest month" when there was only one month to choose from', () => {
-    const cards = reviewCards(r({ seconds: 60, bookCount: 1, months: [60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }), 0);
+    const cards = reviewCards(r({ seconds: 60, bookCount: 1, months: [60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }), 1);
     expect(cards.map((c) => c.label)).toEqual(['Listened', 'Books', 'Finished']);
   });
 });

@@ -9,7 +9,7 @@ const parts = (ms: number, tz: string | undefined, opts: Intl.DateTimeFormatOpti
   Object.fromEntries(
     new Intl.DateTimeFormat('en-GB', { timeZone: tz, hourCycle: 'h23', ...opts })
       .formatToParts(ms)
-      .map((p) => [p.type, p.value]),
+      .map((p) => [p.type, p.value])
   );
 
 /** The local calendar day of an instant, as "YYYY-MM-DD". */
@@ -61,28 +61,41 @@ export function fmtDate(ms: number, now: number, year: 'auto' | 'always' = 'auto
   return year === 'always' || p.year !== parts(now, tz, { year: 'numeric' }).year ? `${base} ${p.year}` : base;
 }
 
-/** "48 min", "1h 05m", "6h 40m". Rounded to the minute; under half a minute is "<1 min". */
+/**
+ * "48 min", "1h 05m", "6h 40m". Rounded to the minute; under half a minute is "under 1 min", in words because a "<"
+ * reads as a back chevron at a glance. The spaces don't break, so a narrow duration column can't wrap it.
+ */
 export function fmtListened(seconds: number): string {
   const s = Math.max(0, seconds);
-  if (s > 0 && s < 30) return '<1 min';
+  if (s > 0 && s < 30) return 'under 1 min';
   const mins = Math.round(s / 60);
   if (mins < 60) return `${mins} min`;
   return `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m`;
 }
 
 /**
- * The Stats page's headline cards. While the four periods are all the same (a new listener: everything so far is this
- * week), four identical cards say nothing, so they become the one: "Listened so far".
+ * The Stats page's headline cards, above the year in review. The review owns this year's total, so a period is left
+ * out when it would only say that again (no listening this year before it), or say the shorter period inside it again;
+ * so is a zero, which the daily map already shows. All time waits for listening from an earlier year (`earlier`):
+ * until then it is this year too. A new listener gets no cards at all, and the review says it once.
  */
-export function statCards(totals: { week: number; month: number; year: number }, allTime: number): { label: string; value: string }[] {
+export function statCards(
+  totals: { week: number; month: number; year: number },
+  allTime: number,
+  earlier: boolean
+): { label: string; value: string }[] {
   const { week, month, year } = totals;
-  if (week === month && month === year && year === allTime) return [{ label: 'Listened so far', value: fmtListened(allTime) }];
-  return [
-    { label: 'This week', value: fmtListened(week) },
-    { label: 'This month', value: fmtListened(month) },
-    { label: 'This year', value: fmtListened(year) },
-    { label: 'All time', value: fmtListened(allTime) },
-  ];
+  const cards: { label: string; value: string }[] = [];
+  if (week > 0 && week !== year) cards.push({ label: 'This week', value: fmtListened(week) });
+  if (month > 0 && month !== week && month !== year) cards.push({ label: 'This month', value: fmtListened(month) });
+  if (earlier && allTime > 0) cards.push({ label: 'All time', value: fmtListened(allTime) });
+  return cards;
+}
+
+/** True when any listening fell before 1 January of today's year, so all time is more than this year. */
+export function listenedBeforeThisYear(days: Record<string, number>, todayKey: string): boolean {
+  const jan1 = `${todayKey.slice(0, 4)}-01-01`;
+  return Object.entries(days).some(([k, v]) => v > 0 && k < jan1);
 }
 
 /**
@@ -95,27 +108,48 @@ export function chapterRange(chapters: Chapter[], startTime: number, endTime: nu
   const last = chapters.length - 1;
   const lastEnd = chapters[last]!.end;
   const from =
-    startTime >= lastEnd ? last : Math.max(0, chapters.findIndex((c) => startTime >= c.start && startTime < c.end));
+    startTime >= lastEnd
+      ? last
+      : Math.max(
+          0,
+          chapters.findIndex((c) => startTime >= c.start && startTime < c.end)
+        );
   const hit = chapters.findIndex((c) => endTime > c.start && endTime <= c.end);
   const to = endTime <= startTime ? from : hit >= 0 ? hit : endTime > lastEnd ? last : from;
   return from === to ? `Ch ${from + 1}` : `Ch ${from + 1} → Ch ${to + 1}`;
 }
 
-/** Hardware first (a phone's model, else its OS), then the app. "iPhone · Storyshelf". Missing fields are skipped. */
-export function deviceLabel(info?: {
+type DeviceInfo = {
   clientName?: string | null;
   model?: string | null;
   osName?: string | null;
   deviceType?: string | null;
   browserName?: string | null;
-} | null): string {
-  if (!info) return '';
+} | null;
+
+/** The hardware (a phone's model, else its OS) and the app of a session's device; '' for what is missing. */
+function deviceParts(info?: DeviceInfo): { hardware: string; app: string } {
+  if (!info) return { hardware: '', app: '' };
   const os =
-    info.osName === 'iOS' ? (info.deviceType === 'tablet' ? 'iPad' : info.deviceType === 'mobile' ? 'iPhone' : 'iOS') : info.osName;
-  const hardware = info.model || os;
+    info.osName === 'iOS'
+      ? info.deviceType === 'tablet'
+        ? 'iPad'
+        : info.deviceType === 'mobile'
+          ? 'iPhone'
+          : 'iOS'
+      : info.osName;
   // ABS names its own clients "Abs Web", "Abs iOS": the browser is the more useful name there.
-  const app = info.clientName && !/^abs /i.test(info.clientName) ? info.clientName : info.browserName || info.clientName;
-  return [hardware, app].filter((x, i, a): x is string => !!x && a.indexOf(x) === i).join(' · ');
+  const app =
+    info.clientName && !/^abs /i.test(info.clientName) ? info.clientName : info.browserName || info.clientName;
+  return { hardware: info.model || os || '', app: app || '' };
+}
+
+const joinParts = (parts: string[]) => parts.filter((x, i, a) => !!x && a.indexOf(x) === i).join(' · ');
+
+/** Hardware first, then the app. "iPhone · Storyshelf". Missing fields are skipped. */
+export function deviceLabel(info?: DeviceInfo): string {
+  const { hardware, app } = deviceParts(info);
+  return joinParts([hardware, app]);
 }
 
 /** The Monday of the week holding `key`. */
@@ -152,13 +186,13 @@ export function heatGrid(days: Record<string, number>, todayKey: string, weeks =
   const names = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' });
   const columns = mondays.map((m, i) =>
     // The first column stays blank: its name would hang off the left edge.
-    i > 0 && monthOf(m) !== monthOf(mondays[i - 1]!) ? names.format(Date.parse(`${m}T12:00:00Z`)) : '',
+    i > 0 && monthOf(m) !== monthOf(mondays[i - 1]!) ? names.format(Date.parse(`${m}T12:00:00Z`)) : ''
   );
   const rows: HeatCell[][] = Array.from({ length: 7 }, (_, dow) =>
     mondays.map((m) => {
       const key = addDays(m, dow);
       return { key, seconds: key > todayKey ? null : (days[key] ?? 0) };
-    }),
+    })
   );
   return { columns, rows };
 }
@@ -269,9 +303,22 @@ export function fmtTimeRange(startMs: number, endMs: number, tz?: string): strin
   return a === b ? a : `${a}–${b}`;
 }
 
-/** True when the sessions come from at most one device, so naming it on every row would only repeat it. */
-export function fromOneDevice(sessions: { deviceInfo?: SessionDevice | null }[]): boolean {
-  return new Set(sessions.map((s) => deviceLabel(s.deviceInfo))).size <= 1;
+/**
+ * The note for each row's device, naming only what tells the rows in view apart: the hardware when there is more than
+ * one, the app when there is more than one. A device on every row ("· Storyshelf" six times) says nothing. A row with no
+ * device is not a difference, and gets no note.
+ */
+export function deviceNotes(
+  sessions: { deviceInfo?: SessionDevice | null }[]
+): (info?: SessionDevice | null) => string | undefined {
+  const parts = sessions.map((s) => deviceParts(s.deviceInfo));
+  const varies = (key: 'hardware' | 'app') => new Set(parts.map((p) => p[key]).filter(Boolean)).size > 1;
+  const hardware = varies('hardware');
+  const app = varies('app');
+  return (info) => {
+    const p = deviceParts(info);
+    return joinParts([hardware ? p.hardware : '', app ? p.app : '']) || undefined;
+  };
 }
 
 /** The last `n` days, today first: the days map has no entry for a day with no listening, so it is 0. */

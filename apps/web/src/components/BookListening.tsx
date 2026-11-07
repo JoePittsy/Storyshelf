@@ -5,12 +5,11 @@ import { useItemSessions, useListeningStats } from '../api/history';
 import {
   chapterRange,
   dayLabel,
-  deviceLabel,
   dayKey,
   fmtDate,
   fmtListened,
   fmtTimeOfDay,
-  fromOneDevice,
+  deviceNotes,
 } from '../screens/historyHelpers';
 import { useNow } from '../screens/useNow';
 import styles from './BookListening.module.css';
@@ -48,7 +47,7 @@ export function BookListening({ item }: { item: BookItem }) {
     .filter(Boolean)
     .join(' · ');
   const shown = all ? list : list.slice(0, LATEST_SESSIONS);
-  const oneDevice = fromOneDevice(list);
+  const note = deviceNotes(list);
 
   return (
     <SectionCard title="Your listening" className={styles.section}>
@@ -69,7 +68,7 @@ export function BookListening({ item }: { item: BookItem }) {
                 showArt={false}
                 title={`${dayLabel(dayKey(s.startedAt), now)} · ${fmtTimeOfDay(s.startedAt)}`}
                 detail={chapterRange(item.media.chapters, s.startTime, s.currentTime)}
-                note={oneDevice ? undefined : deviceLabel(s.deviceInfo) || undefined}
+                note={note(s.deviceInfo)}
                 trailing={fmtListened(s.timeListening)}
               />
             ))}
@@ -82,7 +81,9 @@ export function BookListening({ item }: { item: BookItem }) {
         </div>
       )}
       {list.length === 0 && total === 0 && (
-        <EmptyState title="No sessions recorded">Sessions appear here once you listen in Storyshelf or another app.</EmptyState>
+        <EmptyState title="No sessions recorded">
+          Sessions appear here once you listen in Storyshelf or another app.
+        </EmptyState>
       )}
     </SectionCard>
   );

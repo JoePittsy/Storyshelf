@@ -23,7 +23,11 @@
   margin-bottom: 0.3em;
 }
 .sub {
-  max-width: 100ch;
+  /* A readable measure, 65 to 75 characters. A ch is the width of a "0", wider than the average letter of Manrope
+     prose, so 50ch holds about 70. */
+  max-width: 50ch;
+  /* No one-word last line now that it wraps sooner. */
+  text-wrap: pretty;
   margin-bottom: 1.1em;
   font-size: var(--fs-label);
   color: var(--text-3);
