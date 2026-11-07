@@ -89,6 +89,12 @@ const box = (el: Element | null | undefined) => {
   if (!el) throw new Error('missing element');
   return el.getBoundingClientRect();
 };
+/** The band's em in px, to size against. */
+const emOf = (root: HTMLElement) => {
+  const header = root.querySelector('header');
+  if (!header) throw new Error('missing header');
+  return parseFloat(getComputedStyle(header).fontSize);
+};
 
 /**
  * A phone: the art steps down and sits beside the title, and the lines under the title (credits, the action) run the
@@ -108,7 +114,7 @@ export const Phone: Story = {
     const heading = canvas.getByRole('heading', { level: 1 });
     const title = box(heading);
     const button = box(canvas.getByRole('button', { name: 'Resume · 51m left' }));
-    const em = parseFloat(getComputedStyle(canvasElement.querySelector('header')!).fontSize);
+    const em = emOf(canvasElement);
     await expect(art.width).toBeLessThanOrEqual(8 * em);
     // Beside the title, which is centred against it.
     await expect(title.left).toBeGreaterThan(art.right);
@@ -143,8 +149,6 @@ export const Wide: Story = {
     const art = box(canvasElement.querySelector('[data-testid="art"]')?.parentElement);
     const button = box(canvas.getByRole('button', { name: 'Resume · 51m left' }));
     await expect(button.left).toBeGreaterThan(art.right);
-    await expect(art.width).toBeGreaterThanOrEqual(
-      12 * parseFloat(getComputedStyle(canvasElement.querySelector('header')!).fontSize)
-    );
+    await expect(art.width).toBeGreaterThanOrEqual(12 * emOf(canvasElement));
   },
 };
