@@ -113,8 +113,10 @@ export const Phone: Story = {
     // Beside the title, which is centred against it.
     await expect(title.left).toBeGreaterThan(art.right);
     await expect(Math.abs(title.top + title.height / 2 - (art.top + art.height / 2))).toBeLessThan(em);
-    // The whole title shows: it may take up to four lines here.
-    await expect(heading.scrollHeight).toBeLessThanOrEqual(heading.clientHeight + 1);
+    // The whole title shows: it may take up to four lines here. A clamped line would overflow by a whole line; a
+    // descender overhanging the tight line height only by a pixel or two.
+    const line = parseFloat(getComputedStyle(heading).lineHeight);
+    await expect(heading.scrollHeight - heading.clientHeight).toBeLessThan(line / 2);
     // The rest below the art, from the band's left edge.
     await expect(button.top).toBeGreaterThanOrEqual(art.bottom);
     await expect(Math.abs(button.left - art.left)).toBeLessThan(1);
