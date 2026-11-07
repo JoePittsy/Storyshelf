@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { BarList, ChartRow, ColumnChart, EmptyState, PillButton, SectionCard, Select, StatGrid } from '@joepittsy/ui';
+import { ActivityRow, BarList, ColumnChart, EmptyState, PillButton, SectionCard, Select, StatGrid } from '@joepittsy/ui';
 import type { BarListRow, Column } from '@joepittsy/ui';
 import { useYearSessions, useYearStats } from '../api/history';
 import { coverUrl } from '../api/libraries';
@@ -125,22 +125,31 @@ export function YearInReview({ days }: { days: Record<string, number> }) {
         <StatGrid items={cards} />
         <SectionCard
           title={review.books.length === 1 ? 'Your book' : 'Most listened'}
-          sub={review.books.length > TOP ? `Your top ${TOP} of ${review.books.length} books, by time listened` : 'By time listened'}
+          sub={
+            review.books.length > TOP
+              ? `Your top ${TOP} of ${review.books.length} books, by time listened`
+              : review.books.length > 1
+                ? 'By time listened'
+                : undefined
+          }
         >
+          {/* In order, most first: an ordered list says so without a rank column. */}
           <ol className={styles.chart}>
-            {books.map((b, i) => (
-              <ChartRow
-                key={b.id ?? b.title}
-                rank={i + 1}
-                title={b.title}
-                credit={b.author ?? ''}
-                imageUrl={b.id ? coverUrl({ id: b.id, updatedAt: 0 }) : null}
-                meta={fmtListened(b.seconds)}
-                onOpen={() => {
-                  if (b.id) void navigate(`/book/${b.id}`);
-                }}
-              />
-            ))}
+            {books.map((b) => {
+              const open = b.id ? `/book/${b.id}` : undefined;
+              return (
+                <ActivityRow
+                  key={b.id ?? b.title}
+                  title={b.title}
+                  detail={b.author ?? undefined}
+                  imageUrl={b.id ? coverUrl({ id: b.id, updatedAt: 0 }) : undefined}
+                  artFit="contain"
+                  trailing={fmtListened(b.seconds)}
+                  href={open}
+                  onOpen={open ? () => void navigate(open) : undefined}
+                />
+              );
+            })}
           </ol>
         </SectionCard>
         <div className={styles.pair}>

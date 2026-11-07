@@ -3,6 +3,9 @@ import { ChartTooltip, TipRow, TipTitle } from './ChartTooltip';
 import type { Tip } from './ChartTooltip';
 import styles from './ColumnChart.module.css';
 
+/** About the readout's width (ChartTooltip's 11em minimum), for placing it clear of the column. */
+const TIP_WIDTH = 170;
+
 export interface Column {
   key: string;
   /** Under the column ("Jan"). */
@@ -44,8 +47,10 @@ export function ColumnChart({ columns, label, nameHeading, valueHeading, tableLa
     const box = frame.current?.getBoundingClientRect();
     const slot = (e.currentTarget as HTMLElement).getBoundingClientRect();
     if (!box) return;
+    // Beside the column, never over it: to its right, or to its left near the right edge.
+    const right = slot.right - box.left + 6;
     setTip({
-      x: Math.max(0, Math.min(slot.left - box.left + slot.width / 2 - 80, box.width - 180)),
+      x: right + TIP_WIDTH <= box.width ? right : Math.max(0, slot.left - box.left - TIP_WIDTH - 6),
       y: slot.top - box.top,
       content: (
         <>
