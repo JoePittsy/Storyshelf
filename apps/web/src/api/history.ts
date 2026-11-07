@@ -8,7 +8,12 @@ import type { LibraryItem } from './libraries';
 // Only the ABS fields the history screens use (server v2.37.2: MeController, PlaybackSession, ApiRouter).
 
 export interface SessionDevice {
+  /** The client's own id for the device: Storyshelf's is per browser (see player/session.ts). */
+  deviceId?: string | null;
   clientName?: string | null;
+  /** From the ABS apps. ABS makes up `deviceName` for browsers too ("Windows 10 Chrome"). */
+  manufacturer?: string | null;
+  deviceName?: string | null;
   model?: string | null;
   osName?: string | null;
   deviceType?: string | null;
