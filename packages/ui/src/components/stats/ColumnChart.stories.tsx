@@ -19,9 +19,9 @@ const NAMES = [
 const months = (hours: number[]): Column[] =>
   hours.map((h, i) => ({
     key: String(i),
-    label: NAMES[i]!.slice(0, 3),
-    short: NAMES[i]!.slice(0, 1),
-    name: NAMES[i]!,
+    label: (NAMES[i] ?? '').slice(0, 3),
+    short: (NAMES[i] ?? '').slice(0, 1),
+    name: NAMES[i] ?? '',
     value: h,
     valueLabel: h ? `${Math.floor(h)}h ${String(Math.round((h % 1) * 60)).padStart(2, '0')}m` : 'Nothing',
   }));
