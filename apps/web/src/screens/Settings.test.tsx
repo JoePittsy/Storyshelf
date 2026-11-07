@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('../api/auth', async (orig) => ({
   ...(await orig<typeof import('../api/auth')>()),
   restoreSession: vi.fn(),
+  getStatus: vi.fn(() => Promise.resolve({ serverVersion: '2.37.2', isInit: true, authMethods: ['local'] })),
   logout: vi.fn(() => Promise.resolve()),
 }));
 const setSkip = vi.fn();
@@ -62,11 +63,22 @@ function renderSettings() {
           <Settings />
         </MemoryRouter>
       </ToastProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
 describe('Settings', () => {
+  it('says which version of Storyshelf this is, and which Audiobookshelf it talks to', async () => {
+    renderSettings();
+    const about = screen.getByRole('region', { name: 'About' });
+    expect(within(about).getByText('9.9.9 (abc1234)')).toBeInTheDocument();
+    expect(await within(about).findByText('2.37.2')).toBeInTheDocument();
+    expect(within(about).getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/JoePittsy/Storyshelf'
+    );
+  });
+
   it('names who is signed in and signs out through the same confirmation as the account menu', async () => {
     renderSettings();
     expect(await screen.findByText('joe')).toBeInTheDocument();

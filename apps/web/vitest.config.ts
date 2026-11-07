@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 // Separate from vite.config.ts so tests do not need ABS_URL.
 export default defineConfig({
   plugins: [react()],
+  // Fixed build stamps, so a test can name them.
+  define: { __APP_VERSION__: JSON.stringify('9.9.9'), __APP_COMMIT__: JSON.stringify('abc1234') },
   resolve: { conditions: ['@joepittsy/source'] },
   // Node-environment tests of pure helpers reach the design system's formatters from source too.
   ssr: { resolve: { conditions: ['@joepittsy/source'] } },

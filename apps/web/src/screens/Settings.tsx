@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
-import { PillButton, SectionCard, Select, UserAvatar, useToast } from '@joepittsy/ui';
-import { restoreSession } from '../api/auth';
+import { DetailList, PillButton, SectionCard, Select, UserAvatar, useToast } from '@joepittsy/ui';
+import { getStatus, restoreSession } from '../api/auth';
 import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
 import { ShortcutList } from '../frame/ShortcutList';
 import { useSignOut } from '../frame/useSignOut';
@@ -16,16 +16,26 @@ const speedOptions = Array.from({ length: 26 }, (_, i) => (5 + i) / 10).map((r) 
   value: r.toFixed(1),
   label: `${r.toFixed(1)}×`,
 }));
+const appVersion = __APP_COMMIT__ ? `${__APP_VERSION__} (${__APP_COMMIT__})` : __APP_VERSION__;
 const rewindOptions = [
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
 ];
 
-/** Settings: the account, how playback skips, and the keyboard shortcuts. A route in the frame, so it has its own tab. */
+/** Settings: the account, how playback skips, the keyboard shortcuts, and which versions are running. A route in the frame, so it has its own tab. */
 export function Settings() {
   const { data: user } = useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
-  const { skipBack, skipForward, setSkip, defaultRate, setDefaultRate, resetBookSpeeds, rewindOnResume, setRewindOnResume } =
-    usePlayer();
+  const { data: server } = useQuery({ queryKey: ['status'], queryFn: getStatus, staleTime: Infinity });
+  const {
+    skipBack,
+    skipForward,
+    setSkip,
+    defaultRate,
+    setDefaultRate,
+    resetBookSpeeds,
+    rewindOnResume,
+    setRewindOnResume,
+  } = usePlayer();
   const bookSpeeds = useBookSpeedCount();
   const { showToast } = useToast();
   const resetSpeeds = () => {
@@ -70,31 +80,76 @@ export function Settings() {
         </SectionCard>
       )}
 
-      <SectionCard title="Playback" sub="Speed, the skip buttons and the Left and Right keys, and picking up after a pause.">
+      <SectionCard
+        title="Playback"
+        sub="Speed, the skip buttons and the Left and Right keys, and picking up after a pause."
+      >
         <div className={styles.fields}>
-          <Select label="Default speed" value={defaultRate.toFixed(1)} options={speedOptions} onChange={(v) => setDefaultRate(Number(v))} />
+          <Select
+            label="Default speed"
+            value={defaultRate.toFixed(1)}
+            options={speedOptions}
+            onChange={(v) => setDefaultRate(Number(v))}
+          />
           <Select
             label="Rewind after a pause"
             value={rewindOnResume ? 'on' : 'off'}
             options={rewindOptions}
             onChange={(v) => setRewindOnResume(v === 'on')}
           />
-          <Select label="Skip back" value={String(skipBack)} options={skipOptions} onChange={(v) => setSkip(Number(v), skipForward)} />
-          <Select label="Skip forward" value={String(skipForward)} options={skipOptions} onChange={(v) => setSkip(skipBack, Number(v))} />
+          <Select
+            label="Skip back"
+            value={String(skipBack)}
+            options={skipOptions}
+            onChange={(v) => setSkip(Number(v), skipForward)}
+          />
+          <Select
+            label="Skip forward"
+            value={String(skipForward)}
+            options={skipOptions}
+            onChange={(v) => setSkip(skipBack, Number(v))}
+          />
         </div>
         <div className={styles.notes}>
-          <p className={styles.note}>A speed you set on the player stays with that book on this device. Other books play at the default.</p>
+          <p className={styles.note}>
+            A speed you set on the player stays with that book on this device. Other books play at the default.
+          </p>
           {bookSpeeds > 0 && (
             <PillButton className={styles.noteAction} onClick={resetSpeeds}>
               Reset all book speeds
             </PillButton>
           )}
-          <p className={styles.note}>After a pause, playback goes back a few seconds, up to 30 after a long one, so you can pick up the thread.</p>
+          <p className={styles.note}>
+            After a pause, playback goes back a few seconds, up to 30 after a long one, so you can pick up the thread.
+          </p>
         </div>
       </SectionCard>
 
       <SectionCard title="Keyboard shortcuts">
         <ShortcutList />
+      </SectionCard>
+
+      <SectionCard title="About">
+        <DetailList
+          className={styles.about}
+          items={[
+            { label: 'Storyshelf', value: appVersion },
+            ...(server ? [{ label: 'Audiobookshelf', value: server.serverVersion }] : []),
+            {
+              label: 'Source code',
+              value: (
+                <a
+                  className={styles.link}
+                  href="https://github.com/JoePittsy/Storyshelf"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GitHub
+                </a>
+              ),
+            },
+          ]}
+        />
       </SectionCard>
       {dialog}
     </main>

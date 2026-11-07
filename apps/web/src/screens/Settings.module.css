@@ -58,3 +58,10 @@
 .noteAction {
   margin-top: -0.2em;
 }
+.about {
+  font-variant-numeric: tabular-nums;
+}
+.link {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
