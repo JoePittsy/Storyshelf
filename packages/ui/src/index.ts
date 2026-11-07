@@ -1,5 +1,6 @@
 // The public surface of @joepittsy/ui. Import the CSS once in the consuming app: `@joepittsy/ui/styles.css`.
 export { AddButton } from './components/AddButton';
+export { AirPlayButton } from './components/AirPlayButton';
 export { ArtCard } from './components/ArtCard';
 export { Artwork } from './components/Artwork';
 export { Carousel } from './components/Carousel';

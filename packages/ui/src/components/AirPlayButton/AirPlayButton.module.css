@@ -1,0 +1,32 @@
+/* Quiet like the sheet's close chevron: no fill until hovered. Lit while playing over AirPlay. */
+.button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-fast),
+    background var(--dur-fast) var(--ease-fast);
+}
+.button:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.active,
+.active:hover {
+  color: var(--text);
+  background: rgba(var(--tint), 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
