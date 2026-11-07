@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router';
 import {
   Artwork,
   GrabSheet,
+  IconButton,
   IconTray,
   InfoTip,
   ExpandableText,
@@ -170,6 +171,7 @@ export function NowPlaying() {
   const hasChapters = p.chapters.length > 0;
   const playing = p.status === 'playing';
   const close = () => void (hasHistory ? navigate(-1) : navigate('/'));
+  const toCar = () => void navigate('/car');
   const done = p.duration > 0 ? Math.min(100, Math.floor((p.position / p.duration) * 100)) : null;
   const row = chapter ? chapterRowText(chapter.title, p.chapterIndex, p.chapters.length) : null;
 
@@ -207,7 +209,17 @@ export function NowPlaying() {
   if (phone)
     return (
       <main className={styles.sheetRoot} style={wash ? ({ '--wash': wash } as CSSProperties) : undefined}>
-        <GrabSheet onDismiss={close} closeLabel="Close player" end={<AirPlayControl />} className={styles.sheet}>
+        <GrabSheet
+          onDismiss={close}
+          closeLabel="Close player"
+          end={
+            <>
+              <IconButton icon="car" label="Car mode" onClick={toCar} />
+              <AirPlayControl />
+            </>
+          }
+          className={styles.sheet}
+        >
           <div className={styles.phoneArt}>
             <div className={styles.cover}>
               <Artwork src={p.item.coverUrl} fit="contain" lazy={false} placeholderClassName={styles.ph} />
@@ -376,6 +388,9 @@ export function NowPlaying() {
               <PillButton onClick={() => void bookmarkHere()}>Add bookmark</PillButton>
               <PillButton onClick={() => setSheet('bookmarks')}>Bookmarks</PillButton>
               <PillButton onClick={() => setSheet('history')}>History</PillButton>
+              <PillButton onClick={toCar} title="Car mode (C)" aria-keyshortcuts="C">
+                Car mode
+              </PillButton>
               {hasChapters && !wide && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
             </div>
           </div>

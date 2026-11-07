@@ -81,6 +81,12 @@ describe('appKeyAction', () => {
     expect(appKeyAction({ key: '/', ctrlKey: true, target: body })).toBeNull();
     expect(appKeyAction({ key: '?', metaKey: true, target: body })).toBeNull();
   });
+  it('maps C to car mode, in either case, but not while typing or with a modifier', () => {
+    expect(appKeyAction({ key: 'c', target: body })).toBe('car');
+    expect(appKeyAction({ key: 'C', target: body })).toBe('car');
+    expect(appKeyAction({ key: 'c', target: on('INPUT') })).toBeNull();
+    expect(appKeyAction({ key: 'c', ctrlKey: true, target: body })).toBeNull();
+  });
   it('still takes / and ? from a focused button or link', () => {
     expect(appKeyAction({ key: '/', target: on('BUTTON') })).toBe('search');
     expect(appKeyAction({ key: ' ', target: on('A') })).toBeNull();

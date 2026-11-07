@@ -7,6 +7,7 @@ import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
 import { Debug } from './screens/Debug';
 import { Book } from './screens/Book';
+import { CarMode } from './screens/CarMode';
 import { play } from './player/engine';
 import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
@@ -89,6 +90,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/sign-in" element={<SignIn />} />
       <Route element={<RequireSession />}>
+        <Route path="/car" element={<CarMode />} />
         <Route element={<Frame />}>
           <Route path="/" element={<PlayableLibrary />} />
           <Route path="/authors" element={<AuthorList />} />

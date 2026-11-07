@@ -78,7 +78,7 @@ export function Frame() {
         Skip to content
       </a>
       <RestoreLastBook libraryId={current} librariesPending={libsPending} />
-      <GlobalKeys onSearch={focusSearch} onHelp={() => setHelp('key')} />
+      <GlobalKeys onSearch={focusSearch} onHelp={() => setHelp('key')} onCar={() => void navigate('/car')} />
       <TopBar
         className={`${styles.bar}${immersive ? ' ' + styles.hidden : ''}`}
         start={
@@ -164,24 +164,25 @@ function useSearchFocus(goToLibrary: () => void, onLibrary: boolean) {
  * of them fire while a sheet or dialog is open, which has its own keys. Its own component, so the frame doesn't
  * re-render with the player.
  */
-function GlobalKeys({ onSearch, onHelp }: { onSearch: () => void; onHelp: () => void }) {
+function GlobalKeys({ onSearch, onHelp, onCar }: { onSearch: () => void; onHelp: () => void; onCar: () => void }) {
   const p = usePlayer();
   const { showToast } = useToast();
   const { previousChapter, nextChapter } = usePlayerJump();
   const bookmarkHere = useBookmarkHere();
-  const latest = useRef({ p, onSearch, onHelp, previousChapter, nextChapter, showToast, bookmarkHere });
+  const latest = useRef({ p, onSearch, onHelp, onCar, previousChapter, nextChapter, showToast, bookmarkHere });
   useEffect(() => {
-    latest.current = { p, onSearch, onHelp, previousChapter, nextChapter, showToast, bookmarkHere };
+    latest.current = { p, onSearch, onHelp, onCar, previousChapter, nextChapter, showToast, bookmarkHere };
   });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
       const action = appKeyAction(e);
       if (!action) return;
-      const { p, onSearch, onHelp, previousChapter, nextChapter, showToast, bookmarkHere } = latest.current;
+      const { p, onSearch, onHelp, onCar, previousChapter, nextChapter, showToast, bookmarkHere } = latest.current;
       if (action === 'search') onSearch();
       else if (action === 'help') onHelp();
       else if (!p.item) return;
+      else if (action === 'car') onCar();
       else if (action === 'toggle') {
         // A restored book has no session: a bare key never starts one, a play button or the lock screen does.
         if (p.restored) showToast('Press Play to resume', 'info', { replaceKey: 'restore-hint' });

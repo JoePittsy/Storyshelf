@@ -30,10 +30,10 @@ const OWNS_SPACE = new Set(['BUTTON', 'A', 'SUMMARY']);
 const OWNS_SPACE_ROLES = new Set(['button', 'link', 'checkbox']);
 
 /** What a key press means anywhere in the app: a player action, or one of the app's own. */
-export type AppKeyAction = PlayerKeyAction | 'search' | 'help';
+export type AppKeyAction = PlayerKeyAction | 'search' | 'help' | 'car';
 
 /**
- * The app-wide keys: the player's, plus "/" (search) and "?" (the shortcuts list). Like the player's keys they are
+ * The app-wide keys: the player's, plus "/" (search), "?" (the shortcuts list) and "c" (car mode). Like the player's keys they are
  * ignored while typing in a field, with a modifier held, and where a native control owns the key. `u` (Undo) is not
  * here: the Toast offering Undo owns it, for as long as it shows.
  */
@@ -45,6 +45,7 @@ export function appKeyAction(e: KeyInput): AppKeyAction | null {
   if (TYPING.has(t?.tagName?.toUpperCase() ?? '') || t?.isContentEditable) return null;
   if (e.key === '/') return 'search';
   if (e.key === '?') return 'help';
+  if (e.key === 'c' || e.key === 'C') return 'car';
   return null;
 }
 
