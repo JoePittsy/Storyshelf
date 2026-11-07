@@ -6,7 +6,8 @@ import {
   dayKey,
   dayLabel,
   daysOfHistory,
-  fromOneDevice,
+  deviceNotes,
+  listenedBeforeThisYear,
   fmtTimeRange,
   mergeSessions,
   recentDays,
@@ -58,7 +59,11 @@ describe('REQ-50 grouping sessions by local day', () => {
 
   it('groups only neighbours, in the order given', () => {
     expect(groupByDay([], (t: number) => t, TZ)).toEqual([]);
-    const g = groupByDay([at('2026-11-05T10:00:00Z'), at('2026-11-05T08:00:00Z'), at('2026-11-04T08:00:00Z')], (t) => t, TZ);
+    const g = groupByDay(
+      [at('2026-11-05T10:00:00Z'), at('2026-11-05T08:00:00Z'), at('2026-11-04T08:00:00Z')],
+      (t) => t,
+      TZ
+    );
     expect(g.map((x) => x.items.length)).toEqual([2, 1]);
   });
 
@@ -107,7 +112,8 @@ describe('REQ-56 dates and times', () => {
     expect(fmtListened(3600 + 5 * 60)).toBe('1h 05m');
     expect(fmtListened(6 * 3600 + 40 * 60)).toBe('6h 40m');
     expect(fmtListened(0)).toBe('0 min');
-    expect(fmtListened(20)).toBe('<1 min');
+    // Written out: a "<" reads as a back chevron to a low-vision reader. Non-breaking spaces keep it on one line.
+    expect(fmtListened(20)).toBe('under 1 min');
     expect(fmtListened(3599.9)).toBe('1h 00m');
     expect(fmtListened(-4)).toBe('0 min');
   });
@@ -153,7 +159,7 @@ describe('REQ-50 chapter range of a session', () => {
 describe('REQ-50 device label', () => {
   it('joins hardware and app', () => {
     expect(deviceLabel({ osName: 'iOS', deviceType: 'mobile', clientName: 'Storyshelf', browserName: 'Safari' })).toBe(
-      'iPhone · Storyshelf',
+      'iPhone · Storyshelf'
     );
     expect(deviceLabel({ osName: 'iOS', deviceType: 'tablet', clientName: 'Storyshelf' })).toBe('iPad · Storyshelf');
   });
@@ -225,7 +231,11 @@ describe('REQ-53 top books and authors', () => {
   const items = {
     a: { id: 'a', timeListening: 600, mediaMetadata: { title: 'Mythos', authors: [{ name: 'Stephen Fry' }] } },
     b: { id: 'b', timeListening: 1800, mediaMetadata: { title: 'Heroes', authors: [{ name: 'Stephen Fry' }] } },
-    c: { id: 'c', timeListening: 1200, mediaMetadata: { title: 'Good Omens', authors: [{ name: 'Terry Pratchett' }, { name: 'Neil Gaiman' }] } },
+    c: {
+      id: 'c',
+      timeListening: 1200,
+      mediaMetadata: { title: 'Good Omens', authors: [{ name: 'Terry Pratchett' }, { name: 'Neil Gaiman' }] },
+    },
     d: { id: 'd', timeListening: 0, mediaMetadata: { title: 'Unplayed' } },
     e: { id: 'e', timeListening: 30, mediaMetadata: null },
   };
@@ -272,8 +282,20 @@ describe('mergeSessions', () => {
   it('folds neighbours of the same book and device within ten minutes into one sitting', () => {
     // Newest first, as the log arrives: 18:13, then 18:05, then 18:00.
     const log = [
-      mk('c', { startedAt: T0 + 13 * MIN, updatedAt: T0 + 21 * MIN, startTime: 300, currentTime: 700, timeListening: 480 }),
-      mk('b', { startedAt: T0 + 5 * MIN, updatedAt: T0 + 9 * MIN, startTime: 120, currentTime: 300, timeListening: 200 }),
+      mk('c', {
+        startedAt: T0 + 13 * MIN,
+        updatedAt: T0 + 21 * MIN,
+        startTime: 300,
+        currentTime: 700,
+        timeListening: 480,
+      }),
+      mk('b', {
+        startedAt: T0 + 5 * MIN,
+        updatedAt: T0 + 9 * MIN,
+        startTime: 120,
+        currentTime: 300,
+        timeListening: 200,
+      }),
       mk('a', { startedAt: T0, updatedAt: T0 + 2 * MIN, startTime: 0, currentTime: 120, timeListening: 120 }),
     ];
     const [one, ...rest] = mergeSessions(log);
@@ -313,11 +335,35 @@ describe('fmtTimeRange', () => {
   });
 });
 
-describe('fromOneDevice', () => {
-  it('is true for none, one or a repeated device, false for two', () => {
-    expect(fromOneDevice([])).toBe(true);
-    expect(fromOneDevice([{ deviceInfo: { model: 'iPhone' } }, { deviceInfo: { model: 'iPhone' } }])).toBe(true);
-    expect(fromOneDevice([{ deviceInfo: { model: 'iPhone' } }, { deviceInfo: { model: 'Pixel' } }])).toBe(false);
+describe('deviceNotes', () => {
+  const iphone = { osName: 'iOS', deviceType: 'mobile', clientName: 'Storyshelf' };
+  const windows = { osName: 'Windows', clientName: 'Storyshelf' };
+  const absApp = { osName: 'iOS', deviceType: 'mobile', clientName: 'Abs iOS' };
+  it('says nothing when every row is the same device', () => {
+    const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: iphone }]);
+    expect(note(iphone)).toBeUndefined();
+    expect(deviceNotes([])(iphone)).toBeUndefined();
+  });
+  it('names only the hardware when the app is always the same', () => {
+    const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: windows }]);
+    expect(note(iphone)).toBe('iPhone');
+    expect(note(windows)).toBe('Windows');
+  });
+  it('names only the app when the hardware is always the same', () => {
+    const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: absApp }]);
+    expect(note(iphone)).toBe('Storyshelf');
+    expect(note(absApp)).toBe('Abs iOS');
+  });
+  it('names both when both differ', () => {
+    const chrome = { osName: 'Windows', clientName: 'Abs Web', browserName: 'Chrome' };
+    const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: chrome }]);
+    expect(note(iphone)).toBe('iPhone · Storyshelf');
+    expect(note(chrome)).toBe('Windows · Chrome');
+  });
+  it('does not count a row with no device as a difference, and says nothing on it', () => {
+    const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: null }, { deviceInfo: windows }]);
+    expect(note(null)).toBeUndefined();
+    expect(deviceNotes([{ deviceInfo: iphone }, { deviceInfo: null }])(iphone)).toBeUndefined();
   });
 });
 
@@ -337,15 +383,48 @@ describe('recentDays and daysOfHistory', () => {
 });
 
 describe('statCards', () => {
-  it('shows the four periods when they differ', () => {
-    const cards = statCards({ week: 1800, month: 3600, year: 7200, }, 36000);
-    expect(cards.map((c) => c.label)).toEqual(['This week', 'This month', 'This year', 'All time']);
-    expect(cards.map((c) => c.value)).toEqual(['30 min', '1h 00m', '2h 00m', '10h 00m']);
+  // The year in review below owns this year's total, so the cards only add what it doesn't say.
+  it('shows this week, this month and all time when each adds something', () => {
+    const cards = statCards({ week: 1800, month: 3600, year: 7200 }, 36000, true);
+    expect(cards.map((c) => [c.label, c.value])).toEqual([
+      ['This week', '30 min'],
+      ['This month', '1h 00m'],
+      ['All time', '10h 00m'],
+    ]);
   });
-  it('collapses to one card while every period is the same', () => {
-    expect(statCards({ week: 1800, month: 1800, year: 1800 }, 1800)).toEqual([{ label: 'Listened so far', value: '30 min' }]);
+  it('never repeats this year, which the year in review shows', () => {
+    expect(statCards({ week: 1800, month: 3600, year: 7200 }, 36000, true).map((c) => c.label)).not.toContain(
+      'This year'
+    );
   });
-  it('keeps all four when only some are equal', () => {
-    expect(statCards({ week: 1800, month: 1800, year: 3600 }, 3600)).toHaveLength(4);
+  it('shows nothing for a new listener, whose every period is the year so far', () => {
+    expect(statCards({ week: 1800, month: 1800, year: 1800 }, 1800, false)).toEqual([]);
+  });
+  it('leaves out all time until there is listening from an earlier year', () => {
+    expect(statCards({ week: 1800, month: 3600, year: 7200 }, 7200, false).map((c) => c.label)).toEqual([
+      'This week',
+      'This month',
+    ]);
+  });
+  it('leaves out a month that is only this week again', () => {
+    expect(statCards({ week: 1800, month: 1800, year: 3600 }, 9000, true).map((c) => c.label)).toEqual([
+      'This week',
+      'All time',
+    ]);
+  });
+  it('leaves out a zero', () => {
+    expect(statCards({ week: 0, month: 3600, year: 7200 }, 9000, true).map((c) => c.label)).toEqual([
+      'This month',
+      'All time',
+    ]);
+  });
+});
+
+describe('listenedBeforeThisYear', () => {
+  it('is true only with listening on a day before 1 January', () => {
+    expect(listenedBeforeThisYear({ '2026-01-01': 60, '2026-11-06': 60 }, '2026-11-06')).toBe(false);
+    expect(listenedBeforeThisYear({ '2025-12-31': 60, '2026-11-06': 60 }, '2026-11-06')).toBe(true);
+    expect(listenedBeforeThisYear({ '2025-12-31': 0 }, '2026-11-06')).toBe(false);
+    expect(listenedBeforeThisYear({}, '2026-11-06')).toBe(false);
   });
 });

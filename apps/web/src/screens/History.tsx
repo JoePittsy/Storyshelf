@@ -26,14 +26,14 @@ import {
   dayKey,
   dayLabel,
   daysOfHistory,
-  deviceLabel,
   fmtDate,
   fmtListened,
   fmtTimeRange,
-  fromOneDevice,
+  deviceNotes,
   groupByDay,
   heatGrid,
   heatLevel,
+  listenedBeforeThisYear,
   mergeSessions,
   periodTotals,
   recentDays,
@@ -95,11 +95,14 @@ const NOTHING_YET = (
 function SessionList({ sessions }: { sessions: ListeningSession[] }) {
   const navigate = useNavigate();
   const now = useNow();
-  const ids = useMemo(() => [...new Set(sessions.flatMap((s) => (s.libraryItemId ? [s.libraryItemId] : [])))], [sessions]);
+  const ids = useMemo(
+    () => [...new Set(sessions.flatMap((s) => (s.libraryItemId ? [s.libraryItemId] : [])))],
+    [sessions]
+  );
   const chapters = useChapters(ids);
-  // A pause and a resume is one sitting; and a device named on every row says nothing when there is only one.
+  // A pause and a resume is one sitting; and a device names only what differs between the rows, if anything.
   const sittings = useMemo(() => mergeSessions(sessions), [sessions]);
-  const oneDevice = useMemo(() => fromOneDevice(sessions), [sessions]);
+  const note = useMemo(() => deviceNotes(sessions), [sessions]);
   const days = useMemo(() => groupByDay(sittings, (s) => s.startedAt), [sittings]);
 
   return (
@@ -122,8 +125,12 @@ function SessionList({ sessions }: { sessions: ListeningSession[] }) {
                   artFit="contain"
                   when={fmtTimeRange(s.startedAt, s.endedAt)}
                   // Hold the line back until the chapters arrive, so it doesn't flip from a time range to chapters.
-                  detail={info?.state === 'pending' ? undefined : chapterRange(info?.chapters ?? [], s.startTime, s.currentTime)}
-                  note={oneDevice ? undefined : deviceLabel(s.deviceInfo) || undefined}
+                  detail={
+                    info?.state === 'pending'
+                      ? undefined
+                      : chapterRange(info?.chapters ?? [], s.startTime, s.currentTime)
+                  }
+                  note={note(s.deviceInfo)}
                   trailing={fmtListened(s.timeListening)}
                   href={open}
                   onOpen={open ? () => void navigate(open) : undefined}
@@ -161,10 +168,11 @@ export function HistoryLog() {
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = log;
   const more = useMemo(
     () => (hasNextPage && !isFetchingNextPage ? () => void fetchNextPage() : undefined),
-    [hasNextPage, isFetchingNextPage, fetchNextPage],
+    [hasNextPage, isFetchingNextPage, fetchNextPage]
   );
 
-  if (log.isError && !log.data) return <LoadFailed error={log.error} noun="listening history" onRetry={() => void log.refetch()} />;
+  if (log.isError && !log.data)
+    return <LoadFailed error={log.error} noun="listening history" onRetry={() => void log.refetch()} />;
   if (log.isPending) return <div className={`skeleton ${styles.loading}`} role="status" aria-label="Loading" />;
   if (sessions.length === 0 && !hasNextPage) return NOTHING_YET;
 
@@ -178,9 +186,7 @@ export function HistoryLog() {
           </p>
         )}
         {more && <EndSentinel onEnd={more} />}
-        {log.isError && (
-          <LoadFailed error={log.error} noun="listening history" onRetry={() => void fetchNextPage()} />
-        )}
+        {log.isError && <LoadFailed error={log.error} noun="listening history" onRetry={() => void fetchNextPage()} />}
       </div>
       <LogSummary />
     </div>
@@ -207,7 +213,13 @@ export function HistoryFinished() {
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = finished;
   if (libs.isError || finished.isError)
-    return <LoadFailed error={finished.error ?? libs.error} noun="finished books" onRetry={() => void (libs.isError ? libs.refetch() : finished.refetch())} />;
+    return (
+      <LoadFailed
+        error={finished.error ?? libs.error}
+        noun="finished books"
+        onRetry={() => void (libs.isError ? libs.refetch() : finished.refetch())}
+      />
+    );
   if (libs.isPending || (!!library && finished.isPending)) return <BookGridSkeleton />;
   if (tiles.length === 0)
     return (
@@ -249,12 +261,15 @@ export function HistoryStats() {
     const rows: HeatRow[] = grid.rows.map((r, i) => ({
       key: String(i),
       label: WEEKDAYS[i],
-      cells: r.map((c) => (c.seconds ? RAMP[heatLevel(c.seconds, max, RAMP.length)] ?? null : null)),
+      cells: r.map((c) => (c.seconds ? (RAMP[heatLevel(c.seconds, max, RAMP.length)] ?? null) : null)),
     }));
     const bars = (list: { key: string; name: string; seconds: number }[]): BarListRow[] =>
       list.map((x) => ({ key: x.key, name: x.name, value: x.seconds, label: fmtListened(x.seconds) }));
+    // With no listening before this year, all time is this year, and the year in review owns that.
+    const earlier = listenedBeforeThisYear(days, today);
     return {
-      totals: periodTotals(days, today),
+      cards: statCards(periodTotals(days, today), totalTime, earlier),
+      earlier,
       allTime: totalTime,
       grid,
       max,
@@ -264,14 +279,23 @@ export function HistoryStats() {
         key: d.key,
         name: dayLabel(d.key, now),
         value: d.seconds,
-        label: d.seconds ? fmtListened(d.seconds) : 'Nothing',
+        // An empty day is a quiet dash, not "Nothing" six times over; a screen reader still hears what it means.
+        label: d.seconds ? (
+          fmtListened(d.seconds)
+        ) : (
+          <>
+            <span aria-hidden="true">–</span>
+            <span className={styles.srOnly}>No listening</span>
+          </>
+        ),
       })),
       books: bars(topBooks(items, TOP).map((b) => ({ key: b.id, name: b.title, seconds: b.seconds }))),
       authors: bars(topAuthors(items, TOP).map((a) => ({ key: a.name, name: a.name, seconds: a.seconds }))),
     };
   }, [stats.data, today, now]);
 
-  if (stats.isError) return <LoadFailed error={stats.error} noun="listening stats" onRetry={() => void stats.refetch()} />;
+  if (stats.isError)
+    return <LoadFailed error={stats.error} noun="listening stats" onRetry={() => void stats.refetch()} />;
   if (!view) return <div className={`skeleton ${styles.loading}`} role="status" aria-label="Loading" />;
   if (view.allTime <= 0) return NOTHING_YET;
 
@@ -280,14 +304,21 @@ export function HistoryStats() {
     const x = cell(r, c);
     if (!x) return '';
     const label = dayLabel(x.key, now);
-    return x.seconds === null ? `${label}: not yet` : x.seconds ? `${label}: ${fmtListened(x.seconds)}` : `${label}: no listening`;
+    return x.seconds === null
+      ? `${label}: not yet`
+      : x.seconds
+        ? `${label}: ${fmtListened(x.seconds)}`
+        : `${label}: no listening`;
   };
 
   return (
     <div className={styles.stats}>
-      <StatGrid items={statCards(view.totals, view.allTime)} />
+      {view.cards.length > 0 && <StatGrid items={view.cards} />}
       {view.young ? (
-        <SectionCard title="Your listening year starts here" sub="The map of the whole year fills in as you listen. Until then, these are your last seven days.">
+        <SectionCard
+          title="Your listening year starts here"
+          sub="The map of the whole year fills in as you listen. Until then, these are your last seven days."
+        >
           <BarList rows={view.recent} />
         </SectionCard>
       ) : (
@@ -303,21 +334,27 @@ export function HistoryStats() {
             renderTip={(r, c) => (
               <>
                 <TipTitle>{dayLabel(cell(r, c)?.key ?? today, now)}</TipTitle>
-                <TipRow name="Listened" value={cell(r, c)?.seconds ? fmtListened(cell(r, c)?.seconds ?? 0) : 'Nothing'} />
+                <TipRow
+                  name="Listened"
+                  value={cell(r, c)?.seconds ? fmtListened(cell(r, c)?.seconds ?? 0) : 'Nothing'}
+                />
               </>
             )}
             legend={{ lo: 'Less', hi: `More (${fmtListened(view.max)} in a day)`, empty: 'nothing' }}
           />
         </SectionCard>
       )}
-      <div className={styles.pair}>
-        <SectionCard title="Top books" sub="By time listened">
-          <BarList rows={view.books} ranked nameMax={NAME_MAX} />
-        </SectionCard>
-        <SectionCard title="Top authors" sub="By time listened">
-          <BarList rows={view.authors} ranked nameMax={NAME_MAX} />
-        </SectionCard>
-      </div>
+      {/* Until there is an earlier year these are the year in review's books and authors over again. */}
+      {view.earlier && (
+        <div className={styles.pair}>
+          <SectionCard title="Top books" sub="All time, by time listened">
+            <BarList rows={view.books} ranked nameMax={NAME_MAX} />
+          </SectionCard>
+          <SectionCard title="Top authors" sub="All time, by time listened">
+            <BarList rows={view.authors} ranked nameMax={NAME_MAX} />
+          </SectionCard>
+        </div>
+      )}
       <YearInReview days={stats.data?.days ?? {}} />
     </div>
   );

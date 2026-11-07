@@ -25,14 +25,28 @@ const book = (id: string, title: string, chs = chapters) => ({
   id,
   updatedAt: 1,
   media: {
-    metadata: { title, subtitle: null, authors: [{ id: 'a1', name: 'Stephen Fry' }], narrators: [], series: [], description: null, publishedYear: null },
+    metadata: {
+      title,
+      subtitle: null,
+      authors: [{ id: 'a1', name: 'Stephen Fry' }],
+      narrators: [],
+      series: [],
+      description: null,
+      publishedYear: null,
+    },
     duration: 10800,
     chapters: chs,
   },
-  userMediaProgress: { currentTime: 100, progress: 0.14, isFinished: false, startedAt: Date.parse('2026-11-01T09:00:00Z') },
+  userMediaProgress: {
+    currentTime: 100,
+    progress: 0.14,
+    isFinished: false,
+    startedAt: Date.parse('2026-11-01T09:00:00Z'),
+  },
 });
 
 const iphone = { osName: 'iOS', deviceType: 'mobile', clientName: 'Storyshelf' };
+const windows = { osName: 'Windows', clientName: 'Storyshelf' };
 const session = (id: string, libraryItemId: string, title: string, startedAt: string, extra: object = {}) => ({
   id,
   libraryItemId,
@@ -59,7 +73,12 @@ const page = (sessions: object[], extra: object = {}) => ({
 
 const SESSIONS = [
   session('s1', 'm', 'Mythos', '2026-11-06T10:40:00Z'),
-  session('s2', 'h', 'Heroes', '2026-11-05T19:15:00Z', { startTime: 0, currentTime: 600, timeListening: 600 }),
+  session('s2', 'h', 'Heroes', '2026-11-05T19:15:00Z', {
+    startTime: 0,
+    currentTime: 600,
+    timeListening: 600,
+    deviceInfo: windows,
+  }),
   session('s3', 'm', 'Mythos', '2026-11-02T08:00:00Z', { deviceInfo: null }),
 ];
 
@@ -86,10 +105,15 @@ function serve(f: Fixture = {}) {
   absFetch.mockImplementation((path: string) => {
     if (f.fail?.test(path)) return Promise.reject(new auth.AbsError(500, 'boom'));
     const u = new URL(path, 'http://x');
-    if (path === '/api/libraries') return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
+    if (path === '/api/libraries')
+      return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
     if (path === '/api/me')
       return Promise.resolve(
-        f.me ?? { mediaProgress: [{ libraryItemId: 'sand', progress: 1, isFinished: true, finishedAt: Date.parse('2026-10-03T12:00:00Z') }] },
+        f.me ?? {
+          mediaProgress: [
+            { libraryItemId: 'sand', progress: 1, isFinished: true, finishedAt: Date.parse('2026-10-03T12:00:00Z') },
+          ],
+        }
       );
     if (u.pathname === '/api/me/listening-sessions') return Promise.resolve(f.sessions ?? page(SESSIONS));
     if (u.pathname.startsWith('/api/me/item/listening-sessions'))
@@ -100,11 +124,17 @@ function serve(f: Fixture = {}) {
     if (u.pathname === '/api/libraries/L1/items')
       return Promise.resolve(
         f.finished ?? {
-          results: [{ id: 'sand', updatedAt: 1, media: { metadata: { title: 'The Sandman: Act II', authorName: 'Neil Gaiman' } } }],
+          results: [
+            {
+              id: 'sand',
+              updatedAt: 1,
+              media: { metadata: { title: 'The Sandman: Act II', authorName: 'Neil Gaiman' } },
+            },
+          ],
           total: 1,
           limit: 48,
           page: 0,
-        },
+        }
       );
     return Promise.reject(new Error(`unexpected ${path}`));
   });
@@ -130,7 +160,7 @@ function renderAt(url: string) {
         </Routes>
         <Where />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
@@ -139,7 +169,13 @@ beforeAll(() => {
 });
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'], now: NOW });
-  vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} });
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  );
 });
 afterEach(() => {
   cleanup();
@@ -167,7 +203,7 @@ describe('REQ-49 the History page and its tabs', () => {
 });
 
 describe('REQ-50 REQ-51 REQ-56 the log', () => {
-  it('groups by local day, newest first, with chapter range, time listened and device', async () => {
+  it('groups by local day, newest first, with chapter range, time listened and the device where it differs', async () => {
     serve();
     renderAt('/history');
     const today = (await screen.findByRole('heading', { name: /^Today/ })).closest('section') as HTMLElement;
@@ -175,7 +211,9 @@ describe('REQ-50 REQ-51 REQ-56 the log', () => {
     await waitFor(() => expect(row).toHaveTextContent('Ch 2 → Ch 3'));
     expect(row).toHaveTextContent('10:40');
     expect(row).toHaveTextContent('48 min');
-    expect(row).toHaveTextContent('iPhone · Storyshelf');
+    // Every row is Storyshelf, so only the hardware tells the rows apart.
+    expect(row).toHaveTextContent('iPhone');
+    expect(row).not.toHaveTextContent('Storyshelf');
 
     const heads = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
     expect(heads.slice(0, 3)).toEqual(['Today48 min', 'Yesterday10 min', 'Mon 2 Nov48 min']);
@@ -188,7 +226,7 @@ describe('REQ-50 REQ-51 REQ-56 the log', () => {
     const row = await within(yesterday).findByRole('link', { name: /Heroes/ });
     await waitFor(() => expect(row).toHaveTextContent('0:00:00 → 0:10:00'));
     const old = (await screen.findByRole('heading', { name: /^Mon 2 Nov/ })).closest('section') as HTMLElement;
-    expect(within(old).getByRole('link', { name: /Mythos/ })).not.toHaveTextContent('Storyshelf');
+    expect(within(old).getByRole('link', { name: /Mythos/ })).not.toHaveTextContent('iPhone');
   });
 
   it('opens the book when a row is clicked', async () => {
@@ -200,7 +238,12 @@ describe('REQ-50 REQ-51 REQ-56 the log', () => {
   });
 
   it('asks for sessions a page at a time and lists only books', async () => {
-    serve({ sessions: page([...SESSIONS, session('p1', 'pod', 'A podcast', '2026-11-06T09:00:00Z', { mediaType: 'podcast' })]) });
+    serve({
+      sessions: page([
+        ...SESSIONS,
+        session('p1', 'pod', 'A podcast', '2026-11-06T09:00:00Z', { mediaType: 'podcast' }),
+      ]),
+    });
     renderAt('/history');
     await screen.findByText('Today');
     expect(absFetch.mock.calls.map((c) => c[0])).toContain('/api/me/listening-sessions?itemsPerPage=30&page=0');
@@ -246,7 +289,7 @@ describe('REQ-52 finished books', () => {
     const qs = new URL(url ?? '', 'http://x').searchParams;
     expect(qs.get('sort')).toBe('progress.finishedAt');
     expect(qs.get('desc')).toBe('1');
-    expect(qs.get('filter')).toBe('progress.ZmluaXNoZWQ%3D') // pre-encoded, as ABS decodes it once before the base64;
+    expect(qs.get('filter')).toBe('progress.ZmluaXNoZWQ%3D'); // pre-encoded, as ABS decodes it once before the base64;
   });
 
   it('REQ-51 opens the book from its tile', async () => {
@@ -262,8 +305,17 @@ describe('log rows', () => {
     const s = (id: string, at: string, over: object) => session(id, 'm', 'Mythos', at, { timeListening: 240, ...over });
     serve({
       sessions: page([
-        s('b', '2026-11-06T18:13:00Z', { startTime: 5000, currentTime: 8000, updatedAt: Date.parse('2026-11-06T18:21:00Z'), timeListening: 480 }),
-        s('a', '2026-11-06T18:05:00Z', { startTime: 3700, currentTime: 5000, updatedAt: Date.parse('2026-11-06T18:09:00Z') }),
+        s('b', '2026-11-06T18:13:00Z', {
+          startTime: 5000,
+          currentTime: 8000,
+          updatedAt: Date.parse('2026-11-06T18:21:00Z'),
+          timeListening: 480,
+        }),
+        s('a', '2026-11-06T18:05:00Z', {
+          startTime: 3700,
+          currentTime: 5000,
+          updatedAt: Date.parse('2026-11-06T18:09:00Z'),
+        }),
       ]),
     });
     renderAt('/history');
@@ -285,26 +337,27 @@ describe('REQ-52 finished, empty', () => {
 });
 
 describe('REQ-53 stats', () => {
-  it('totals this week with a Monday start, plus month, year and all time', async () => {
-    serve();
+  it('totals this week with a Monday start and all time, leaving this year to the year in review', async () => {
+    serve({ stats: { ...STATS, days: { ...STATS.days, '2025-12-01': 3600 } } });
     renderAt('/history/stats');
     const stat = async (label: string) => (await screen.findByText(label)).closest('div') as HTMLElement;
     expect(await stat('This week')).toHaveTextContent('6h 12m');
-    // The 31 Oct session is last week, but in the year and not in November.
-    expect(await stat('This month')).toHaveTextContent('6h 12m');
-    expect(await stat('This year')).toHaveTextContent('11h 12m');
     expect(await stat('All time')).toHaveTextContent('27h 47m');
+    // November so far is only this week again, and the year's total is the review's.
+    expect(screen.queryByText('This month')).not.toBeInTheDocument();
+    expect(screen.queryByText('This year')).not.toBeInTheDocument();
   });
 
-  it('draws the heatmap and ranks top books and authors by time listened', async () => {
-    // A listening history older than a fortnight earns the year-long map.
-    serve({ stats: { ...STATS, days: { ...STATS.days, '2026-01-05': 600 } } });
+  it('draws the heatmap and ranks top books and authors of all time, once there is an earlier year', async () => {
+    // A listening history older than a fortnight earns the year-long map; one from last year, the all-time lists.
+    serve({ stats: { ...STATS, days: { ...STATS.days, '2025-12-01': 600 } } });
     renderAt('/history/stats');
     const map = await screen.findByRole('img', { name: 'Time listened each day over the last year' });
     // 365 cells: look them up by label directly; role queries over every cell take seconds in jsdom.
     expect(map.querySelector('[aria-label="Mon 2 Nov: 4h 00m"]')).not.toBeNull();
     expect(map.querySelector('[aria-label="Today: no listening"]')).not.toBeNull();
     const books = (await screen.findByRole('heading', { name: 'Top books' })).closest('section') as HTMLElement;
+    expect(within(books).getByText('All time, by time listened')).toBeInTheDocument();
     expect(within(books).getByText('Mythos')).toBeInTheDocument();
     expect(within(books).getByText('2h 00m')).toBeInTheDocument();
     const authors = screen.getByRole('heading', { name: 'Top authors' }).closest('section') as HTMLElement;
@@ -318,6 +371,42 @@ describe('REQ-53 stats', () => {
     expect(await screen.findByRole('heading', { name: 'Your listening year starts here' })).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'Time listened each day over the last year' })).not.toBeInTheDocument();
     expect(screen.getByText('Mon 2 Nov')).toBeInTheDocument();
+  });
+
+  it('marks a day with no listening quietly, with a name a screen reader can say', async () => {
+    serve();
+    renderAt('/history/stats');
+    await screen.findByRole('heading', { name: 'Your listening year starts here' });
+    expect(screen.queryByText('Nothing')).not.toBeInTheDocument();
+    // Today, Wed 4, Tue 3 and Sun 1 Nov had none.
+    expect(screen.getAllByText('No listening')).toHaveLength(4);
+  });
+
+  it('says each fact once: the year in review owns a year of listening, not the cards and lists above it', async () => {
+    serve();
+    renderAt('/history/stats');
+    const review = await screen.findByRole('region', { name: '2026 in review' });
+    expect(await within(review).findByRole('heading', { name: 'Most listened' })).toBeInTheDocument();
+    expect(
+      within(review)
+        .getAllByRole('term')
+        .map((t) => t.textContent)
+    ).toContain('Listened');
+    expect(screen.queryByText('Listened so far')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Top books' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Top authors' })).not.toBeInTheDocument();
+  });
+
+  it('leaves out a finished count it does not have, and says a one-month year in words', async () => {
+    serve();
+    renderAt('/history/stats');
+    const review = await screen.findByRole('region', { name: '2026 in review' });
+    const months = (await within(review).findByRole('heading', { name: 'Month by month' })).closest(
+      'section'
+    ) as HTMLElement;
+    expect(within(months).getByText('All in November so far.')).toBeInTheDocument();
+    expect(within(months).queryByRole('table')).not.toBeInTheDocument();
+    expect(within(review).queryByText('Finished')).not.toBeInTheDocument();
   });
 
   it('shows the nothing-yet state when nothing has been listened to', async () => {
@@ -343,7 +432,9 @@ describe('REQ-55 Your listening on a book page', () => {
   });
 
   it('shows the latest five and a Show all for the rest', async () => {
-    const many = Array.from({ length: 9 }, (_, i) => session(`n${i}`, 'm', 'Mythos', `2026-10-${String(20 - i).padStart(2, '0')}T09:00:00Z`));
+    const many = Array.from({ length: 9 }, (_, i) =>
+      session(`n${i}`, 'm', 'Mythos', `2026-10-${String(20 - i).padStart(2, '0')}T09:00:00Z`)
+    );
     serve({ sessions: page(many) });
     renderAt('/book/m');
     const section = (await screen.findByRole('heading', { name: 'Your listening' })).closest('section') as HTMLElement;
@@ -356,7 +447,8 @@ describe('REQ-55 Your listening on a book page', () => {
   it('has no section for a book that was never played', async () => {
     serve({ sessions: page([], { total: 0, numPages: 0 }) });
     absFetch.mockImplementation((path: string) => {
-      if (path.startsWith('/api/me/item/listening-sessions')) return Promise.resolve(page([], { total: 0, numPages: 0 }));
+      if (path.startsWith('/api/me/item/listening-sessions'))
+        return Promise.resolve(page([], { total: 0, numPages: 0 }));
       if (path === '/api/me/listening-stats') return Promise.resolve(STATS);
       return Promise.resolve({ ...book('m', 'Mythos'), userMediaProgress: null });
     });

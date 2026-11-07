@@ -113,6 +113,7 @@ export function YearInReview({ days }: { days: Record<string, number> }) {
     );
   } else {
     const longest = stats.data?.longestAudiobookFinished;
+    // Finished is left out when it is 0 or not yet known, so the longest book only rides on a real count.
     const cards = reviewCards(review, stats.data?.numBooksFinished).map((c) =>
       c.label === 'Finished' && longest ? { ...c, sub: `Longest: ${longest.title}` } : c
     );
@@ -162,14 +163,24 @@ export function YearInReview({ days }: { days: Record<string, number> }) {
           <People title="Authors" people={review.authors} none="These books have no author recorded." />
           <People title="Narrators" people={review.narrators} none="These books have no narrator recorded." />
         </div>
-        <SectionCard title="Month by month" sub="Time listened in each month">
-          <ColumnChart
-            columns={columns}
-            label={`Time listened each month of ${year}.${busy !== null ? ` Most in ${monthName(busy)}, ${fmtListened(review.months[busy] ?? 0)}.` : ''}`}
-            nameHeading="Month"
-            valueHeading="Listened"
-          />
-        </SectionCard>
+        {/* One month is a sentence, not a lone column that reads like an alert, as one name is for People. */}
+        {busy !== null && review.months.filter((s) => s > 0).length === 1 ? (
+          <SectionCard title="Month by month">
+            <p className={styles.note}>
+              All in {monthName(busy)}
+              {year === current ? ' so far' : ''}.
+            </p>
+          </SectionCard>
+        ) : (
+          <SectionCard title="Month by month" sub="Time listened in each month">
+            <ColumnChart
+              columns={columns}
+              label={`Time listened each month of ${year}.${busy !== null ? ` Most in ${monthName(busy)}, ${fmtListened(review.months[busy] ?? 0)}.` : ''}`}
+              nameHeading="Month"
+              valueHeading="Listened"
+            />
+          </SectionCard>
+        )}
       </>
     );
   }
