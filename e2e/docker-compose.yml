@@ -14,4 +14,6 @@ services:
       - ./data/config:/config
     environment:
       - TZ=Europe/London
+      # No login rate limit: screenshot and test runs sign in far more than 40 times in 10 minutes.
+      - RATE_LIMIT_AUTH_MAX=0
     restart: unless-stopped
