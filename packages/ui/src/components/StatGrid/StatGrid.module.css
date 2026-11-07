@@ -39,3 +39,18 @@
     padding: 1.2em 1.5em;
   }
 }
+/*
+ * auto-fit leaves a last card alone in a half-empty row: "Finished 0" by itself under two cards on a phone. While the
+ * grid is two across (narrower than three 9em columns and their gaps) or three across (narrower than four), a card
+ * that would sit alone at the end spans the row instead.
+ */
+@container (width < 28.6em) {
+  .stat:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+@container (28.6em <= width < 38.4em) {
+  .stat:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+}
