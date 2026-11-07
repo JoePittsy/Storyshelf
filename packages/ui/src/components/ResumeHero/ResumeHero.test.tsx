@@ -55,4 +55,13 @@ describe('ResumeHero', () => {
     expect(fireEvent.click(link)).toBe(false);
     expect(onOpen).toHaveBeenCalledOnce();
   });
+
+  it('puts a menu after the action, inside the section', () => {
+    cleanup();
+    render(<ResumeHero {...base} menu={<button type="button">More for The Velveteen Rabbit</button>} />);
+    const action = screen.getByRole('button', { name: 'Resume: The Velveteen Rabbit' });
+    const more = screen.getByRole('button', { name: 'More for The Velveteen Rabbit' });
+    expect(screen.getByRole('region', { name: 'Resume listening' }).contains(more)).toBe(true);
+    expect(action.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

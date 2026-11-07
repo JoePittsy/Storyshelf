@@ -16,6 +16,8 @@ interface Props {
   items: MoreMenuItem[];
   /** The work started by an item is still running: the button says so (aria-busy). */
   busy?: boolean;
+  /** `ghost` (default): the tonal circle beside a primary pill. `quiet`: no fill until hovered, in tertiary label, for a tile's caption. */
+  variant?: 'ghost' | 'quiet';
   className?: string;
 }
 
@@ -25,14 +27,14 @@ interface Props {
  * The popover is in the top layer, closes on Esc and outside click, returns focus to the button, and is placed under the
  * button with CSS anchor positioning, flipping to stay on screen. Choosing a row closes it, then calls `onSelect`.
  */
-export function MoreMenu({ label, items, busy, className }: Props) {
+export function MoreMenu({ label, items, busy, variant = 'ghost', className }: Props) {
   const id = useId();
   const pop = useRef<HTMLDivElement>(null);
   return (
     <span className={[styles.root, className].filter(Boolean).join(' ')}>
       <button
         type="button"
-        className={styles.trigger}
+        className={[styles.trigger, variant === 'quiet' && styles.quiet].filter(Boolean).join(' ')}
         popoverTarget={id}
         aria-label={label}
         aria-busy={busy || undefined}

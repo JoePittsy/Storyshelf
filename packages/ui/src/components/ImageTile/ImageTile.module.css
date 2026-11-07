@@ -166,7 +166,42 @@
   background: var(--overlay-strong);
 }
 
+/* The menu: a 44px quiet circle at the caption's top right, its glyph centred on the title's first line. The caption
+   makes room for the glyph; the rest of the 44px target overlaps the link's padding-free edge. */
+.hasMenu .title,
+.hasMenu .sub {
+  padding-right: 2.3em;
+}
+.menuSlot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.6em + 0.65em - 22px);
+  z-index: 2;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-fast);
+}
+.sm .menu {
+  top: calc(100% + 0.55em + 0.6em - 22px);
+}
+.tile:hover .menu,
+.tile:focus-within .menu,
+.menu:has(:popover-open) {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .menu {
+    transition: none;
+  }
   .play {
     transition: none;
   }
@@ -181,10 +216,13 @@
   }
 }
 
-/* Touch and phone widths: the play disc is a 44px target. */
+/* Touch and phone widths: the play disc is a 44px target, and the menu is always there (nothing hovers). */
 @media (pointer: coarse), (width < 40em) {
   .play {
     width: 44px;
     height: 44px;
+  }
+  .menu {
+    opacity: 1;
   }
 }

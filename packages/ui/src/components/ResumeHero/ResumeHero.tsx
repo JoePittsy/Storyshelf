@@ -29,6 +29,8 @@ interface Props {
   onAction: () => void;
   /** `r, g, b` of the artwork's dominant colour, washed in from the top left. Falls back to the tint. */
   wash?: string | null;
+  /** Secondary actions beside the main one, usually a `<MoreMenu />`. */
+  menu?: ReactNode;
   /** The section's accessible name. */
   label?: string;
   className?: string;
@@ -53,6 +55,7 @@ export function ResumeHero({
   actionLabel,
   onAction,
   wash,
+  menu,
   label = 'Resume listening',
   className,
 }: Props) {
@@ -68,7 +71,11 @@ export function ResumeHero({
     onOpen();
   };
   return (
-    <section className={[styles.hero, className].filter(Boolean).join(' ')} style={style} aria-label={label}>
+    <section
+      className={[styles.hero, menu && styles.hasMenu, className].filter(Boolean).join(' ')}
+      style={style}
+      aria-label={label}
+    >
       <div className={styles.art}>{art}</div>
       <div className={styles.text}>
         {href ? (
@@ -100,6 +107,7 @@ export function ResumeHero({
         )}
         <span>{text}</span>
       </button>
+      {menu && <div className={styles.menu}>{menu}</div>}
     </section>
   );
 }

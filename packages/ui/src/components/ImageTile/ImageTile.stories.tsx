@@ -66,3 +66,20 @@ export const WithPlayButton: Story = {
     overlay: <ProgressBar value={0.14} label="Progress through Golden Hour" variant="overlay" />,
   },
 };
+/** A menu of the tile's own actions: a quiet … beside the caption, always there on touch, revealed on hover with a mouse. */
+export const WithMenu: Story = {
+  args: {
+    onPlay: fn(),
+    href: '/book/1',
+    overlay: <ProgressBar value={0.14} label="Progress through Golden Hour" variant="overlay" />,
+    menu: { label: 'More for Golden Hour', items: [{ label: 'Remove from Continue listening', onSelect: fn() }] },
+  },
+};
+/** The menu beside a two-line title and a long credit: the caption wraps short of the button. */
+export const WithMenuLongTitle: Story = {
+  args: {
+    ...WithMenu.args,
+    title: 'The Extraordinarily Long Title of a Collection That Will Not Fit on One Line',
+    sub: 'A Band With A Very Long Name',
+  },
+};

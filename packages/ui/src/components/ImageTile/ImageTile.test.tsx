@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ImageTile } from './ImageTile';
 
 describe('ImageTile', () => {
@@ -15,5 +16,25 @@ describe('ImageTile', () => {
     render(<ImageTile title="A very long title" sub="Someone" meta="Yesterday" onOpen={() => {}} />);
     expect(screen.getByText('A very long title')).toHaveAttribute('title', 'A very long title');
     expect(screen.getByText('Someone')).toHaveAttribute('title', 'Someone');
+  });
+
+  it("puts the menu outside the tile's link, and choosing from it never opens the tile", async () => {
+    cleanup();
+    const onOpen = vi.fn();
+    const remove = vi.fn();
+    render(
+      <ImageTile
+        title="The Hobbit"
+        href="/book/1"
+        onOpen={onOpen}
+        menu={{ label: 'More for The Hobbit', items: [{ label: 'Remove from Continue listening', onSelect: remove }] }}
+      />
+    );
+    const trigger = screen.getByRole('button', { name: 'More for The Hobbit' });
+    expect(screen.getByRole('link').contains(trigger)).toBe(false);
+    await userEvent.click(trigger);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from Continue listening', hidden: true }));
+    expect(remove).toHaveBeenCalledOnce();
+    expect(onOpen).not.toHaveBeenCalled();
   });
 });

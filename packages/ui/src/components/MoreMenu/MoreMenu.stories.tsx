@@ -19,3 +19,5 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 export const Busy: Story = { args: { busy: true } };
+/** No fill until hovered: for a tile's caption, where a shelf of them should stay quiet. */
+export const Quiet: Story = { args: { variant: 'quiet', label: 'More for The Hobbit' } };

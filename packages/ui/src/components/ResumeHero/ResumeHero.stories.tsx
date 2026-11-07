@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { covers, portraitCover } from '../../../.storybook/fixtures';
 import { Artwork } from '../Artwork';
+import { MoreMenu } from '../MoreMenu';
 import { ResumeHero } from './ResumeHero';
 
 const art = (src: string) => <Artwork src={src} fit="contain" lazy={false} />;
@@ -57,3 +58,13 @@ export const LongTitle: Story = {
 };
 export const PortraitCover: Story = { args: { art: art(portraitCover), wash: '217, 164, 65' } };
 export const NoArt: Story = { args: { art: <Artwork src={null} fit="contain" />, wash: null } };
+const menu = (
+  <MoreMenu
+    label="More for The Velveteen Rabbit"
+    items={[{ label: 'Remove from Continue listening', onSelect: fn() }]}
+  />
+);
+/** Secondary actions beside Resume: after it when wide. */
+export const WithMenu: Story = { args: { menu } };
+/** At phone width the menu shares the action's row. */
+export const WithMenuPhone: Story = { args: { menu }, decorators: Phone.decorators };

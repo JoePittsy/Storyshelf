@@ -92,6 +92,18 @@
 .action:hover {
   opacity: 0.8;
 }
+/* A menu sits at the end of the action's row: beside the full-width action when stacked, after it when wide. */
+.hasMenu {
+  grid-template-columns: 6.5em minmax(0, 1fr) auto;
+  grid-template-areas:
+    'art text text'
+    'bar bar bar'
+    'action action menu';
+}
+.menu {
+  grid-area: menu;
+  display: flex;
+}
 .spinner {
   animation: spin 0.9s linear infinite;
 }
@@ -118,6 +130,17 @@
     letter-spacing: -0.02em;
     line-height: 1.15;
   }
+  .hasMenu {
+    grid-template-columns: 11em minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'art text action menu'
+      'art bar action menu';
+  }
+  /* Close to the action, not a column gap away: the two read as one group. */
+  .menu {
+    align-self: center;
+    margin-inline-start: -1.1em;
+  }
   .action {
     align-self: center;
     min-height: 3.2em;
@@ -128,6 +151,9 @@
 @container (min-width: 72em) {
   .hero {
     grid-template-columns: 13em minmax(0, 1fr) auto;
+  }
+  .hasMenu {
+    grid-template-columns: 13em minmax(0, 1fr) auto auto;
   }
 }
 

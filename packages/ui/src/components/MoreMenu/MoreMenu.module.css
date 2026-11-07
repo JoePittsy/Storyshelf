@@ -24,6 +24,17 @@
 .trigger[aria-expanded='true'] {
   background: rgba(var(--tint), 0.22);
 }
+/* On a tile's caption: no fill until hovered, so a shelf of them stays quiet. */
+.quiet {
+  background: none;
+  color: var(--text-3);
+}
+.quiet:hover,
+.root:has(:popover-open) .quiet,
+.quiet[aria-expanded='true'] {
+  background: var(--row-hover);
+  color: var(--text);
+}
 .trigger[aria-busy='true'] {
   cursor: progress;
 }

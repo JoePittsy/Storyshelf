@@ -2,6 +2,7 @@ import { Play } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { AddButton } from '../AddButton';
 import { Artwork } from '../Artwork';
+import { MoreMenu, type MoreMenuItem } from '../MoreMenu';
 import styles from './ImageTile.module.css';
 
 interface Props {
@@ -29,6 +30,11 @@ interface Props {
   /** Adds a round play button over the art's bottom-right corner, always visible. It never opens the tile. */
   onPlay?: () => void;
   playLabel?: string;
+  /**
+   * The tile's own secondary actions, behind a quiet … at the top right of the caption (a MoreMenu). It is always shown
+   * on touch and at phone widths, and revealed on hover or focus with a mouse. It never opens the tile.
+   */
+  menu?: { label: string; items: MoreMenuItem[]; busy?: boolean };
 }
 
 /** Artwork over a caption. The tile rises 2px on hover or focus and its art picks up the lifted shadow. */
@@ -48,6 +54,7 @@ export function ImageTile({
   addLabel,
   onPlay,
   playLabel,
+  menu,
 }: Props) {
   const Main = href ? 'a' : 'button';
   const mainProps = href
@@ -61,7 +68,10 @@ export function ImageTile({
       }
     : { type: 'button' as const, onClick: onOpen };
   return (
-    <div className={`${styles.tile} ${size === 'sm' ? styles.sm : styles.md}`} onMouseEnter={onHover}>
+    <div
+      className={[styles.tile, size === 'sm' ? styles.sm : styles.md, menu && styles.hasMenu].filter(Boolean).join(' ')}
+      onMouseEnter={onHover}
+    >
       {/* The caption lines are stacked blocks, so "Title" and "Author" would be read run together. The separator that
           keeps them apart is generated content in the CSS (.title::after), which assistive tech reads but which is not
           text in the page, so it never shows up in the visible title or in copied text. */}
@@ -100,6 +110,11 @@ export function ImageTile({
           >
             <Play size={18} fill="currentColor" aria-hidden="true" />
           </button>
+        </span>
+      )}
+      {menu && (
+        <span className={styles.menuSlot}>
+          <MoreMenu variant="quiet" className={styles.menu} label={menu.label} items={menu.items} busy={menu.busy} />
         </span>
       )}
     </div>
