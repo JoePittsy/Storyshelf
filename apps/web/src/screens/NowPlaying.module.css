@@ -95,10 +95,11 @@
   color: var(--text-3);
   overflow-wrap: anywhere;
 }
-/* "Chapter 7 of 18" over the chapter's own title. */
+/* "· 7 of 18" after the chapter's own title, on the same line, a step quieter. */
 .chapterCount {
-  display: block;
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 /* Seek, transport and options as one group, pushed to the bottom of the phone column. */
 .controls {

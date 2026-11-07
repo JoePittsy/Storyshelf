@@ -3,6 +3,10 @@
   margin: 0;
   padding: 0;
 }
+/* Bookmarking where you are leads the sheet, above the rows it adds to. */
+.add {
+  margin-bottom: 0.9em;
+}
 .loading {
   height: 8em;
   border-radius: var(--r-row);
