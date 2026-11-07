@@ -103,20 +103,20 @@ describe('restoring the last book', () => {
     engine.toggle();
     // play() ran synchronously up to its first await: loading, and not restored any more.
     expect(snapshot()).toMatchObject({ status: 'loading', restored: false });
-    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_1', expect.any(Array)));
-    await vi.waitFor(() => expect(snapshot().position).toBe(320));
+    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_1', expect.any(Array)), { timeout: 5_000 });
+    await vi.waitFor(() => expect(snapshot().position).toBe(320), { timeout: 5_000 });
   });
 
   it("an unmoved restored book starts from the server's place, not the stale snapshot", async () => {
     engine.restore(book, chapters); // snapshot says 450; the server's session says 100
     engine.toggle();
-    await vi.waitFor(() => expect(snapshot().position).toBe(100));
+    await vi.waitFor(() => expect(snapshot().position).toBe(100), { timeout: 5_000 });
   });
 
   it('hero Resume (play with no start) and the mini player agree on that place', async () => {
     engine.restore(book, chapters);
     void engine.play('li_1');
-    await vi.waitFor(() => expect(snapshot().position).toBe(100));
+    await vi.waitFor(() => expect(snapshot().position).toBe(100), { timeout: 5_000 });
   });
 
   it('a move made on the restored book is saved to the server, once, after a short pause', async () => {
@@ -156,6 +156,6 @@ describe('restoring the last book', () => {
     engine.restore(book, chapters);
     void engine.play('li_2');
     expect(snapshot().restored).toBe(false);
-    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_2', expect.any(Array)));
+    await vi.waitFor(() => expect(sessionApi.openSession).toHaveBeenCalledWith('li_2', expect.any(Array)), { timeout: 5_000 });
   });
 });

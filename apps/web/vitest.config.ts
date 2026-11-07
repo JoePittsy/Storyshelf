@@ -8,5 +8,10 @@ export default defineConfig({
   // Node-environment tests of pure helpers reach the design system's formatters from source too.
   ssr: { resolve: { conditions: ['@joepittsy/source'] } },
   // jsdom screen tests take a few seconds each when the suite runs in parallel; the 5s default flakes.
-  test: { environment: 'node', include: ['src/**/*.{test,spec}.{ts,tsx}'], testTimeout: 15_000 },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    testTimeout: 15_000,
+    setupFiles: ['src/test-setup.ts'],
+  },
 });
