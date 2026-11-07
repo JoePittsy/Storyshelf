@@ -56,6 +56,26 @@
   font-size: var(--fs-body);
   color: var(--text-2);
 }
+/* A group of hero lines: a line each where there is room. */
+.run {
+  display: contents;
+}
+/* Phone width: each group runs on as one line, its parts joined by a dot the screen reader skips. */
+@container (max-width: 30em) {
+  .run {
+    display: block;
+    font-size: var(--fs-body);
+    color: var(--text-2);
+  }
+  .run > .line {
+    display: inline;
+    font-size: inherit;
+  }
+  .run > .line + .line::before {
+    content: ' · ';
+    content: ' · ' / '';
+  }
+}
 .sub {
   margin: 0;
   font-size: var(--fs-title-card);
@@ -94,14 +114,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 2em;
+  /* One column: Details comes last, and the page's bottom space comes after it, not between the cards. */
+  padding-bottom: 4em;
 }
 .main {
   display: flex;
   flex-direction: column;
   gap: 2em;
   min-width: 0;
-  /* The page's bottom space lives inside the column, so the sticky details card has room to end clear of the top bar. */
-  padding-bottom: 4em;
 }
 /* Wide: description and chapters on the left, the details list beside them. */
 @container (min-width: 800px) {
@@ -109,10 +129,13 @@
     grid-template-columns: minmax(0, 1fr) 19em;
     gap: 2.4em;
     align-items: start;
+    padding-bottom: 0;
   }
   .main {
     grid-column: 1;
     grid-row: 1;
+    /* The page's bottom space lives inside the column, so the sticky details card has room to end clear of the top bar. */
+    padding-bottom: 4em;
   }
   .side {
     grid-column: 2;
@@ -141,13 +164,10 @@
 .state {
   padding-top: 3em;
 }
+/* A link in the Details list: the list's own text colour, underlined so it reads as one. */
 .source {
-  margin: 0;
-  font-size: var(--fs-label);
-  color: var(--text-2);
-}
-.source a {
-  color: var(--text);
+  color: inherit;
+  text-underline-offset: 0.18em;
   /* A 44px target for a link in a line of text, drawn outward so the line keeps its height. */
   display: inline-block;
   padding: 13px 0;

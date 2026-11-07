@@ -124,9 +124,9 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
     ? 'Finished'
     : started
       ? [
-          // Always the chapter first, then the time left: the button carries the time left, except while it reads Pause.
+          // The chapter, then the time left only when the button doesn't carry it (while it reads Pause): never twice.
           chapterIdx >= 0 && `Chapter ${chapterIdx + 1} of ${chapters.length}`,
-          (playingHere || chapterIdx < 0) && fmtLeft((duration - now.currentTime) * 1000),
+          (playingHere || !left) && duration > 0 && fmtLeft((duration - now.currentTime) * 1000),
         ]
           .filter(Boolean)
           .join(' · ')
@@ -164,6 +164,16 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         : d
   );
   if (authors) details.unshift({ label: m.authors.length > 1 ? 'Authors' : 'Author', value: authors });
+  // Where a description that is only a link points: a fact about the book, so it sits with the others.
+  if (source)
+    details.push({
+      label: 'Source',
+      value: (
+        <a className={styles.source} href={source.href} target="_blank" rel="noopener noreferrer">
+          {source.host}
+        </a>
+      ),
+    });
 
   return (
     <main className={styles.page} ref={setPageEl}>
@@ -179,21 +189,36 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         wash={wash}
       >
         {m.subtitle && <p className={styles.sub}>{m.subtitle}</p>}
-        {authors && <p className={styles.line}>{authors}</p>}
-        {m.narrators.length > 0 && (
-          <p className={styles.line}>
-            Narrated by <PeopleLinks people={heroNarrators.join(', ')} onOpenPerson={openNarrator} />
-            {moreNarrators > 0 && ` and ${moreNarrators} more`}
-          </p>
+        {/* A line each when there is room; on a phone each group runs on as one line (who, then what), so the
+            action stays on the first screen. */}
+        {(authors || m.narrators.length > 0) && (
+          <div className={styles.run}>
+            {authors && <p className={styles.line}>{authors}</p>}
+            {m.narrators.length > 0 && (
+              <p className={styles.line}>
+                Narrated by <PeopleLinks people={heroNarrators.join(', ')} onOpenPerson={openNarrator} />
+                {moreNarrators > 0 && ` and ${moreNarrators} more`}
+              </p>
+            )}
+          </div>
         )}
-        {series && <p className={styles.line}>{series}</p>}
-        <p className={styles.line}>{meta}</p>
+        {(series || meta) && (
+          <div className={styles.run}>
+            {series && <p className={styles.line}>{series}</p>}
+            {meta && <p className={styles.line}>{meta}</p>}
+          </div>
+        )}
         <div className={styles.progress}>
           <ProgressBar value={now.isFinished ? 1 : now.progress} label={`Progress through ${m.title}`} />
-          <p className={styles.line}>{status}</p>
+          {status && <p className={styles.line}>{status}</p>}
         </div>
         <div className={styles.actions}>
-          <PillButton variant="primary" className={styles.action} onClick={() => (playingHere ? player.toggle() : onPlay(playLabel(resume) === 'Resume' ? undefined : 0))}>
+          <PillButton
+            variant="primary"
+            icon={playingHere ? 'pause' : 'play'}
+            className={styles.action}
+            onClick={() => (playingHere ? player.toggle() : onPlay(playLabel(resume) === 'Resume' ? undefined : 0))}
+          >
             {label}
           </PillButton>
           <BookProgressMenu
@@ -235,14 +260,6 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
                 <div dangerouslySetInnerHTML={{ __html: description }} />
               </ExpandableText>
             </SectionCard>
-          )}
-          {source && (
-            <p className={styles.source}>
-              Source:{' '}
-              <a href={source.href} target="_blank" rel="noopener noreferrer">
-                {source.host}
-              </a>
-            </p>
           )}
 
           <BookBookmarks item={item} onOpen={(b) => jump(b.time, b.title, started ? now.currentTime : null)} />

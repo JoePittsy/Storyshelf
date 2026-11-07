@@ -258,7 +258,7 @@ Put `.page-scale` on a page root and size everything inside it in `em`. Page roo
 - **Grids:** asymmetric fr grids, stacking to one column below 1100px.
 - **Auto-fill grids** for repeated tiles: `minmax(8.5em, 1fr)` for tiles; people use `minmax(min(100%, 22em), 1fr)`.
 - **Inside cards:** 1.1em under a section head, 0.9em between row items, row padding 0.45em × 0.6em.
-- **Heroes:** a HeroBand is 16em art (12.5em under 1100px, stacked under 700px) beside a feature title, on Lit Wall with the wash.
+- **Heroes:** a HeroBand is 16em art (12.5em under 1100px, stacked under 700px, 7em beside the title under 30em) beside a feature title, on Lit Wall with the wash.
 - **Shelves:** a Carousel scrolls a row of cards of `--card-size`, with arrows only when it overflows. Untitled, it has no header row until it overflows, so it can sit straight under a SectionCard's title.
 
 ## Elevation & Depth
@@ -287,7 +287,7 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 ## Components
 
 ### Buttons
-- **Pill (PillButton):** sentence case, weight 600 at 0.92em, padding 0.55em × 1.1em on a full pill. *Primary* is the room inverted (Gallery Light fill, After-Hours Navy text, hover to 0.78 opacity), one per view. *Ghost* is tonal (tint 0.12, hover 0.22) for secondary actions. *Danger* is tonal red (0.16, hover 0.28) for destructive ones. Disabled drops to 0.4.
+- **Pill (PillButton):** sentence case, weight 600 at 0.92em, padding 0.55em × 1.1em on a full pill. *Primary* is the room inverted (Gallery Light fill, After-Hours Navy text, hover to 0.78 opacity), one per view. *Ghost* is tonal (tint 0.12, hover 0.22) for secondary actions. *Danger* is tonal red (0.16, hover 0.28) for destructive ones. Disabled drops to 0.4. A play action carries a filled play glyph before its words (pause while playing), the same glyph as the ResumeHero action, and reads one way everywhere: "Resume · 51m left" where there is a place to resume, "Play" where there isn't, "Play again" for a finished book; a series names the book ("Resume book 2 · 51m left").
 - **Add (AddButton):** the one + button, borderless, and its click never bubbles. *Quiet* is a 2.2em circle in tertiary label colour, revealed when its row is hovered or focused within, filling with Tint Fill on hover. *Art* is a 2.6em translucent white circle on image cards. *Corner* is a dark circle on tile corners, revealed on hover. The parent owns position and reveal.
 - **More (MoreMenu):** a surface's secondary actions behind one quiet 44px circle (an ellipsis on the ghost tint, 0.12, hover 0.22), beside the primary pill. It opens a native popover on solid Raised Navy, in the top layer and anchored under the button (flipping to stay on screen), of 44px rows in label weight 600; a place- or data-losing row is Danger text with a tonal red hover. A disclosure, not an ARIA menu: the rows are plain buttons, Esc and an outside click close it, and choosing a row closes it first. Pair anything it changes with an Undo toast rather than a confirm. Its *quiet* variant has no fill until hovered and sits in tertiary label colour, for a tile's caption (ImageTile `menu`).
 - **Text link ("See all", TitleButton, PeopleLinks):** no chrome. Secondary label colour, which turns full label with an underline on hover or focus.
@@ -309,7 +309,7 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **Border:** none.
 - **Internal Padding:** 1.5em (section), 1.7em (featured), 1.4em (HeroBand), 0.9em (person).
 - **SectionCard** is the shared card (`featured` for the lit wall and wash), labelled by its title, with an optional **SeeAll** link. **PersonCard** is avatar, name and caption, with the photo's colour washed across the header (`100deg`, 0.3, gone by 75%).
-- **HeroBand:** a detail page's header: hero art (12.5em to 19em, 22% of the container) beside a feature title and vertically centred against it, on Lit Wall with the wash, with an optional corner chip. Below 700px of container the band stacks, with the art centred.
+- **HeroBand:** a detail page's header: hero art (12.5em to 19em, 22% of the container) beside a feature title and vertically centred against it, on Lit Wall with the wash, with an optional corner chip. Below 700px of container the band stacks, with the art centred. Under 30em (a phone) the art steps down to 7em beside the title (section-title size, up to four lines) and the lines under the title run the band's full width beneath, so a page's primary action is on the first screen.
 - **DetailList:** label and value pairs as a `<dl>`: a small tertiary label over a body-size value, stacked, so it fits a narrow side column. It has no surface of its own; put it on a card.
 
 ### Image card (signature)

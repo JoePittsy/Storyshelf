@@ -20,7 +20,10 @@ const book = (id: string, title: string, series?: { name: string; sequence: stri
   libraryId: 'L1',
   mediaType: 'book',
   progressLastUpdate: 1,
-  media: { duration: 3600, metadata: { title, authorName: 'Arthur Conan Doyle', series: series && { id: 'S', ...series } } },
+  media: {
+    duration: 3600,
+    metadata: { title, authorName: 'Arthur Conan Doyle', series: series && { id: 'S', ...series } },
+  },
 });
 
 const COPPER = book('b2', 'The Adventure of the Copper Beeches', { name: 'Sherlock Holmes', sequence: '2' });
@@ -31,7 +34,11 @@ function serve({ inProgress, series }: { inProgress: object[]; series: object[] 
     const u = new URL(path, 'http://x');
     if (path === '/api/me')
       return Promise.resolve({
-        mediaProgress: (inProgress as { id: string }[]).map((b) => ({ libraryItemId: b.id, progress: 0.3, isFinished: false })),
+        mediaProgress: (inProgress as { id: string }[]).map((b) => ({
+          libraryItemId: b.id,
+          progress: 0.3,
+          isFinished: false,
+        })),
       });
     if (u.pathname === '/api/me/items-in-progress') return Promise.resolve({ libraryItems: inProgress });
     if (u.pathname === '/api/libraries/L1/personalized')
@@ -52,7 +59,7 @@ function renderHome(onPlay = vi.fn()) {
           <ResumeHome libraryId="L1" onPlay={onPlay} />
         </MemoryRouter>
       </ToastProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
   return { onPlay, view };
 }
@@ -63,7 +70,7 @@ beforeEach(() => {
     class {
       observe() {}
       disconnect() {}
-    },
+    }
   );
 });
 afterEach(() => {
@@ -79,8 +86,17 @@ describe('ResumeHome: Continue series', () => {
     expect(await screen.findByRole('heading', { name: 'Continue series' })).toBeInTheDocument();
     expect(screen.getByText('Book 2 of Sherlock Holmes')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resume listening' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Start The Adventure of the Copper Beeches' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Play The Adventure of the Copper Beeches' }));
     expect(onPlay).toHaveBeenCalledWith('b2');
+  });
+
+  it('says Resume with the time left on the hero action, as the book page does, and not again in the status', async () => {
+    serve({ inProgress: [RABBIT], series: [] });
+    renderHome();
+    const hero = await screen.findByRole('region', { name: 'Resume listening' });
+    const action = within(hero).getByRole('button', { name: /^Resume · 42m left: The Velveteen Rabbit$/ });
+    expect(action.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(within(hero).getAllByText(/left/)).toHaveLength(1);
   });
 
   it('sits below the resume hero when a book is in progress', async () => {
@@ -135,13 +151,16 @@ function serveProgress(inProgress: { id: string }[], series: object[] = []) {
     const one = u.pathname.match(/^\/api\/me\/progress\/(\w+)$/);
     if (one && method === 'GET') return Promise.resolve(record(one[1]));
     if (one && method === 'PATCH') {
-      if ((JSON.parse(init.body as string) as { hideFromContinueListening?: boolean }).hideFromContinueListening === false)
+      if (
+        (JSON.parse(init.body as string) as { hideFromContinueListening?: boolean }).hideFromContinueListening === false
+      )
         hidden.delete(one[1]);
       return Promise.resolve(undefined);
     }
     if (path === '/api/me') return Promise.resolve({ mediaProgress: inProgress.map((b) => record(b.id)) });
     if (u.pathname === '/api/me/items-in-progress') return Promise.resolve({ libraryItems: inProgress });
-    if (u.pathname === '/api/libraries/L1/personalized') return Promise.resolve([{ id: 'continue-series', entities: series }]);
+    if (u.pathname === '/api/libraries/L1/personalized')
+      return Promise.resolve([{ id: 'continue-series', entities: series }]);
     return Promise.reject(new Error(`unexpected ${method} ${path}`));
   });
 }
@@ -163,7 +182,9 @@ describe('ResumeHome: Remove from Continue listening', () => {
     await screen.findByRole('heading', { name: 'Continue series' });
     expect(screen.getByRole('button', { name: 'More for The Velveteen Rabbit' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'More for The Tale of Peter Rabbit' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'More for The Adventure of the Blue Carbuncle' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'More for The Adventure of the Blue Carbuncle' })
+    ).not.toBeInTheDocument();
   });
 
   it('removing the hero puts the next book in its place, with an Undo that brings it back', async () => {
@@ -234,7 +255,7 @@ describe('ResumeHome: Recently added', () => {
     expect(await screen.findByRole('heading', { name: 'Recently added' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resume listening' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Added 3 days ago')).toHaveLength(2);
-    await userEvent.click(screen.getByRole('button', { name: 'Start The Velveteen Rabbit' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Play The Velveteen Rabbit' }));
     expect(onPlay).toHaveBeenCalledWith('r');
   });
 
@@ -249,7 +270,7 @@ describe('ResumeHome: Recently added', () => {
     const recent = await screen.findByRole('heading', { name: 'Recently added' });
     const series = screen.getByRole('heading', { name: 'Continue series' });
     expect(series.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Start The Adventure of the Blue Carbuncle' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Play The Adventure of the Blue Carbuncle' })).toBeInTheDocument();
     expect(screen.getAllByText('Added 3 days ago')).toHaveLength(1);
     expect(screen.queryByText('La Grande Bretèche')).not.toBeInTheDocument();
   });

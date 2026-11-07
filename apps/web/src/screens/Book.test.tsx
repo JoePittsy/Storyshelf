@@ -57,7 +57,7 @@ function renderBook(onPlay = vi.fn(), onChapter = vi.fn()) {
           </Routes>
         </MemoryRouter>
       </ToastProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
   return { onPlay, onChapter };
 }
@@ -75,8 +75,27 @@ describe('Book screen', () => {
     expect(screen.getAllByRole('button', { name: 'Rob Inglis, open' }).length).toBeGreaterThan(0);
     expect(screen.getByText('Chapter 2 of 2')).toBeInTheDocument();
     expect(screen.getByText('There and back again.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Resume · 8h 57m left' }));
+    const resume = screen.getByRole('button', { name: 'Resume · 8h 57m left' });
+    // The same play glyph as the home Resume action: one look for the one action.
+    expect(resume.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    await userEvent.click(resume);
     expect(onPlay).toHaveBeenCalledWith(undefined); // carries on from the server's place
+  });
+
+  it('says the time left once, on the button, for a book with no chapters', async () => {
+    serve({ ...item, media: { ...item.media, chapters: [] } });
+    renderBook();
+    expect(await screen.findByRole('button', { name: 'Resume · 8h 57m left' })).toBeInTheDocument();
+    expect(screen.getAllByText(/left$/)).toHaveLength(1);
+  });
+
+  it('says Play, with the glyph, for a book not yet started', async () => {
+    serve({ ...item, userMediaProgress: undefined });
+    const { onPlay } = renderBook();
+    const play = await screen.findByRole('button', { name: 'Play' });
+    expect(play.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    await userEvent.click(play);
+    expect(onPlay).toHaveBeenCalledWith(0);
   });
 
   it('REQ-15 marks the current chapter and selecting one reports its start', async () => {
@@ -116,7 +135,9 @@ describe('Book screen', () => {
         },
       },
     });
-    const at = (to: string) => () => <p>{`${to}: ${decodeURIComponent(useLocation().pathname + useLocation().search)}`}</p>;
+    const at = (to: string) => () => (
+      <p>{`${to}: ${decodeURIComponent(useLocation().pathname + useLocation().search)}`}</p>
+    );
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const renderAt = () =>
       render(
@@ -129,7 +150,7 @@ describe('Book screen', () => {
               <Route path="/series/:id" element={React.createElement(at('series'))} />
             </Routes>
           </MemoryRouter>
-        </QueryClientProvider>,
+        </QueryClientProvider>
       );
     for (const [name, expected] of [
       ['Neil Gaiman, open', 'author: /author/au 1'],
@@ -158,7 +179,13 @@ describe('Book screen', () => {
   it('drops a chapter number that repeats its position, and hides the number column from assistive tech', async () => {
     serve({
       ...item,
-      media: { ...item.media, chapters: [{ id: 0, start: 0, end: 3600, title: '01 - An Unexpected Party' }, { id: 1, start: 3600, end: 7200, title: '07 - Seven' }] },
+      media: {
+        ...item.media,
+        chapters: [
+          { id: 0, start: 0, end: 3600, title: '01 - An Unexpected Party' },
+          { id: 1, start: 3600, end: 7200, title: '07 - Seven' },
+        ],
+      },
     });
     renderBook();
     const first = await screen.findByRole('button', { name: /An Unexpected Party/ });
@@ -169,11 +196,20 @@ describe('Book screen', () => {
     expect(screen.getByRole('button', { name: /07 - Seven/ })).toBeInTheDocument();
   });
 
-  it('shows a description that is only a link as its source', async () => {
-    serve({ ...item, media: { ...item.media, metadata: { ...item.media.metadata, description: 'https://www.archive.org/details/hobbit' } } });
+  it('shows a description that is only a link as its source, in Details', async () => {
+    serve({
+      ...item,
+      media: {
+        ...item.media,
+        metadata: { ...item.media.metadata, description: 'https://www.archive.org/details/hobbit' },
+      },
+    });
     renderBook();
     const link = await screen.findByRole('link', { name: 'archive.org' });
     expect(link).toHaveAttribute('href', 'https://www.archive.org/details/hobbit');
+    // A row of the Details list, not a loose line between the cards.
+    const row = link.closest('dd')?.parentElement;
+    expect(row?.querySelector('dt')).toHaveTextContent('Source');
     expect(screen.queryByRole('heading', { name: 'About this book' })).not.toBeInTheDocument();
   });
 

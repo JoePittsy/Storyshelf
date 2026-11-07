@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InProgressItem } from '../api/history';
 import { progressByItem } from '../api/libraries';
-import { continueBooks, resumeStatus, splitResume } from './resume';
+import { continueBooks, resumeLabel, resumeStatus, splitResume } from './resume';
 
 const item = (id: string, extra: Partial<InProgressItem> = {}): InProgressItem => ({
   id,
@@ -85,5 +85,25 @@ describe('resumeStatus', () => {
   });
   it('reads under a minute left at the very end', () => {
     expect(resumeStatus({ duration: 300, currentTime: 280, chapters: [] })).toBe('under a minute left');
+  });
+});
+describe('resumeStatus with the time left on the action', () => {
+  const chapters = [
+    { start: 0, end: 100 },
+    { start: 100, end: 200 },
+  ];
+  it('keeps the chapter and leaves the time left to the button', () => {
+    expect(resumeStatus({ duration: 300, currentTime: 150, chapters, leftOnAction: true })).toBe('Chapter 2 of 2');
+    expect(resumeStatus({ duration: 300, currentTime: 150, chapters: [], leftOnAction: true })).toBe('');
+  });
+});
+
+describe('resumeLabel', () => {
+  it('says Resume and how much is left', () => {
+    expect(resumeLabel(7200, 4100)).toBe('Resume · 51m left');
+    expect(resumeLabel(300, 280)).toBe('Resume · under a minute left');
+  });
+  it('says Resume alone while the length is unknown', () => {
+    expect(resumeLabel(0, 0)).toBe('Resume');
   });
 });

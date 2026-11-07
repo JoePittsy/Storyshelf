@@ -29,7 +29,13 @@ const B1 = book('b1', 'Velveteen');
 const B2 = book('b2', 'Copper Beeches');
 const B3 = book('b3', 'Peter Rabbit');
 
-const COLLECTION = { id: 'c1', libraryId: 'L1', name: 'Bedtime stories', description: 'Short ones.', books: [B3, B1, B2] };
+const COLLECTION = {
+  id: 'c1',
+  libraryId: 'L1',
+  name: 'Bedtime stories',
+  description: 'Short ones.',
+  books: [B3, B1, B2],
+};
 const PLAYLIST = {
   id: 'p1',
   libraryId: 'L1',
@@ -57,7 +63,8 @@ function mockAbs({ collections = [], playlists = [], progress = [] }: Setup = {}
       const p = Number(u.searchParams.get('page') ?? 0);
       return { results: limit ? all.slice(p * limit, p * limit + limit) : all, total: all.length, limit, page: p };
     };
-    if (path === '/api/libraries') return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
+    if (path === '/api/libraries')
+      return Promise.resolve({ libraries: [{ id: 'L1', name: 'Fiction', mediaType: 'book' }] });
     if (path === '/api/me') return Promise.resolve({ mediaProgress: progress });
     if (u.pathname === '/api/libraries/L1/collections') return Promise.resolve(page(collections));
     if (u.pathname === '/api/libraries/L1/playlists') return Promise.resolve(page(playlists));
@@ -89,7 +96,7 @@ function renderAt(url: string, onPlay = vi.fn()) {
         </Routes>
         <Where />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
   return onPlay;
 }
@@ -102,7 +109,7 @@ beforeEach(() => {
     class {
       observe() {}
       disconnect() {}
-    },
+    }
   );
   vi.mocked(usePlayer).mockReturnValue({ item: null, status: 'idle', toggle: vi.fn() } as unknown as ReturnType<
     typeof usePlayer
@@ -232,10 +239,9 @@ describe('Collection page', () => {
     const links = (await screen.findAllByRole('link')).filter((l) => l.getAttribute('href')?.startsWith('/book/'));
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['/book/b3', '/book/b1', '/book/b2']);
     await waitFor(() =>
-      expect(screen.getByRole('progressbar', { name: 'Progress through Copper Beeches', hidden: true })).toHaveAttribute(
-        'aria-valuenow',
-        '25',
-      ),
+      expect(
+        screen.getByRole('progressbar', { name: 'Progress through Copper Beeches', hidden: true })
+      ).toHaveAttribute('aria-valuenow', '25')
     );
   });
 
@@ -287,7 +293,7 @@ describe('Playlist page', () => {
   it('Play continues a book already begun', async () => {
     mockAbs({ progress: [{ libraryItemId: 'b2', progress: 0.5, isFinished: false, currentTime: 1800 }] });
     const onPlay = renderAt('/playlist/p1');
-    await userEvent.click(await screen.findByRole('button', { name: 'Continue · 30m left: Copper Beeches' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Resume · 30m left: Copper Beeches' }));
     expect(onPlay).toHaveBeenCalledWith('b2', undefined);
   });
 });

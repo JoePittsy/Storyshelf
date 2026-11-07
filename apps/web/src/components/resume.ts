@@ -31,15 +31,25 @@ interface Where {
   chapters: { start: number; end: number }[];
   /** From the player when it has the book loaded; otherwise found from the chapters. */
   chapterIndex?: number;
+  /** Leave the time left out: the action says it ("Resume · 4h 12m left"). */
+  leftOnAction?: boolean;
 }
 
 /** "Chapter 3 of 12 · 4h 12m left": whichever parts are known. Empty when neither is. */
-export function resumeStatus({ duration, currentTime, chapters, chapterIndex }: Where): string {
+export function resumeStatus({ duration, currentTime, chapters, chapterIndex, leftOnAction }: Where): string {
   const parts: string[] = [];
   const at = chapterIndex ?? chapters.findIndex((c) => currentTime >= c.start && currentTime < c.end);
   if (chapters.length > 0 && at >= 0) parts.push(`Chapter ${at + 1} of ${chapters.length}`);
-  if (duration > 0) {
+  if (duration > 0 && !leftOnAction) {
     parts.push(fmtLeft((duration - currentTime) * 1000));
   }
   return parts.join(' · ');
+}
+
+/**
+ * The resume action, as every Resume button in the app reads: "Resume · 4h 12m left", or "Resume" while the length
+ * isn't known. One tap's worth of context: what it does and how much book is left.
+ */
+export function resumeLabel(duration: number, currentTime: number): string {
+  return duration > 0 ? `Resume · ${fmtLeft((duration - currentTime) * 1000)}` : 'Resume';
 }

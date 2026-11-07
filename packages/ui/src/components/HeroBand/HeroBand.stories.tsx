@@ -1,8 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { expect, fn } from 'storybook/test';
 import { covers, portraitCover } from '../../../.storybook/fixtures';
 import { Artwork } from '../Artwork';
 import { PersonChip } from '../PersonChip';
+import { PillButton } from '../PillButton';
 import { HeroBand } from './HeroBand';
 
 const meta = {
@@ -64,5 +65,90 @@ export const WithCorner: Story = {
 export const LongTitle: Story = {
   args: {
     title: 'The Extraordinarily Long Title of a Collection That Needs to Wrap Without Pushing the Artwork Around',
+  },
+};
+
+/** A container `width` wide, for the layouts the band takes at phone and desk widths. */
+const sized =
+  (width: string): Decorator =>
+  (Story) => (
+    <div style={{ containerType: 'inline-size', width }}>
+      <Story />
+    </div>
+  );
+const bookLines = (
+  <>
+    <p style={{ margin: 0 }}>Arthur Conan Doyle · Narrated by Phil Chenevert</p>
+    <p style={{ margin: 0 }}>Sherlock Holmes #2 · 1h 3m long</p>
+    <PillButton variant="primary" icon="play">
+      Resume · 51m left
+    </PillButton>
+  </>
+);
+const box = (el: Element | null | undefined) => {
+  if (!el) throw new Error('missing element');
+  return el.getBoundingClientRect();
+};
+/** The band's em in px, to size against. */
+const emOf = (root: HTMLElement) => {
+  const header = root.querySelector('header');
+  if (!header) throw new Error('missing header');
+  return parseFloat(getComputedStyle(header).fontSize);
+};
+
+/**
+ * A phone: the art steps down and sits beside the title, and the lines under the title (credits, the action) run the
+ * band's full width beneath them, so the action is on the first screen.
+ */
+export const Phone: Story = {
+  args: {
+    art: <img src={portraitCover} alt="" data-testid="art" />,
+    kind: undefined,
+    title: 'The Adventure of the Copper Beeches',
+    wash: '217, 164, 65',
+    children: bookLines,
+  },
+  decorators: [sized('22em')],
+  play: async ({ canvas, canvasElement }) => {
+    const art = box(canvasElement.querySelector('[data-testid="art"]')?.parentElement);
+    const heading = canvas.getByRole('heading', { level: 1 });
+    const title = box(heading);
+    const button = box(canvas.getByRole('button', { name: 'Resume · 51m left' }));
+    const em = emOf(canvasElement);
+    await expect(art.width).toBeLessThanOrEqual(8 * em);
+    // Beside the title, which is centred against it.
+    await expect(title.left).toBeGreaterThan(art.right);
+    await expect(Math.abs(title.top + title.height / 2 - (art.top + art.height / 2))).toBeLessThan(em);
+    // The whole title shows: it may take up to four lines here. A clamped line would overflow by a whole line; a
+    // descender overhanging the tight line height only by a pixel or two.
+    const line = parseFloat(getComputedStyle(heading).lineHeight);
+    await expect(heading.scrollHeight - heading.clientHeight).toBeLessThan(line / 2);
+    // The rest below the art, from the band's left edge.
+    await expect(button.top).toBeGreaterThanOrEqual(art.bottom);
+    await expect(Math.abs(button.left - art.left)).toBeLessThan(1);
+  },
+};
+/** A kind over a short name, as on an author or series page. */
+export const PhoneWithKind: Story = {
+  args: {
+    kind: 'Series',
+    title: 'Sherlock Holmes',
+    children: <p style={{ margin: 0 }}>Arthur Conan Doyle · 2 books</p>,
+  },
+  decorators: [sized('22em')],
+};
+/** A desk: the art beside everything, the lines in the text column. */
+export const Wide: Story = {
+  args: {
+    art: <img src={covers.ocean} alt="" data-testid="art" />,
+    title: 'The Adventure of the Copper Beeches',
+    children: bookLines,
+  },
+  decorators: [sized('900px')],
+  play: async ({ canvas, canvasElement }) => {
+    const art = box(canvasElement.querySelector('[data-testid="art"]')?.parentElement);
+    const button = box(canvas.getByRole('button', { name: 'Resume · 51m left' }));
+    await expect(button.left).toBeGreaterThan(art.right);
+    await expect(art.width).toBeGreaterThanOrEqual(12 * emOf(canvasElement));
   },
 };

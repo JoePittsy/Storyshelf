@@ -31,16 +31,19 @@ export function Series({ onPlay }: Props) {
   const authorIds = useAuthorIds(libraryId);
 
   const books = useMemo(
-    () => sortSeriesBooks((items.data ?? []).map((item) => ({ item, sequence: item.media.metadata.series?.sequence ?? null }))),
-    [items.data],
+    () =>
+      sortSeriesBooks(
+        (items.data ?? []).map((item) => ({ item, sequence: item.media.metadata.series?.sequence ?? null }))
+      ),
+    [items.data]
   );
   const tiles = useMemo(
     () =>
       mergeProgress(
         books.map((b) => b.item),
-        progress.data ?? new Map(),
+        progress.data ?? new Map()
       ).map((t, i) => ({ item: t.item, progress: t.progress, badge: sequenceBadge(books[i]?.sequence ?? null) })),
-    [books, progress.data],
+    [books, progress.data]
   );
   const next = nextBook(books, progress.data ?? new Map());
   // The art is the book the button continues, not book one.
@@ -50,7 +53,7 @@ export function Series({ onPlay }: Props) {
   const wash = usePanelColor(firstCover);
   const description = useMemo(
     () => (series.data?.description ? sanitiseDescription(series.data.description) : ''),
-    [series.data],
+    [series.data]
   );
 
   const failed = series.isError ? series : items.isError ? items : null;
@@ -74,6 +77,7 @@ export function Series({ onPlay }: Props) {
   const linkable = !!ids && names.length > 0 && names.every((n) => ids.has(n));
   const count = books.length;
   const playingNext = !!next && player.item?.id === next.book.item.id && player.status === 'playing';
+  const nextLabel = next ? nextBookLabel(next, progress.data ?? new Map()) : '';
 
   return (
     <main className={styles.page}>
@@ -97,23 +101,23 @@ export function Series({ onPlay }: Props) {
           </p>
         )}
         {!items.isPending && <p className={styles.line}>{count === 1 ? '1 book' : `${count} books`}</p>}
+        {/* The action before the description, so a long one never pushes it off a phone's first screen. */}
+        {next && (
+          <PillButton
+            variant="primary"
+            icon={playingNext ? 'pause' : 'play'}
+            className={styles.action}
+            // The name says which book by title too: the button may play one partway down the series.
+            aria-label={playingNext ? undefined : `${nextLabel}: ${next.book.item.media.metadata.title}`}
+            onClick={() => (playingNext ? player.toggle() : onPlay?.(next.book.item.id, nextBookStart(next)))}
+          >
+            {playingNext ? 'Pause' : nextLabel}
+          </PillButton>
+        )}
         {description && (
           <ExpandableText lines={4} className={styles.bio}>
             <div dangerouslySetInnerHTML={{ __html: description }} />
           </ExpandableText>
-        )}
-        {next && (
-          <PillButton
-            variant="primary"
-            className={styles.action}
-            onClick={() =>
-              playingNext
-                ? player.toggle()
-                : onPlay?.(next.book.item.id, nextBookStart(next))
-            }
-          >
-            {playingNext ? 'Pause' : nextBookLabel(next, progress.data ?? new Map())}
-          </PillButton>
         )}
       </HeroBand>
 
