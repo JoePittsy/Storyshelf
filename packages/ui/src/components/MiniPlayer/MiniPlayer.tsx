@@ -15,8 +15,10 @@ interface Props {
   /** How the art sits in its square: `cover` crops (default); `contain` shows the whole cover over a blurred copy. */
   artFit?: 'cover' | 'contain';
   title: string;
-  /** Under the title: usually the current chapter. */
+  /** Under the title: usually the current chapter. Truncates first. */
   subtitle?: string;
+  /** Time left ("12m left"), after the subtitle on the same line and never cut short. */
+  remaining?: string;
   /** A quieter third line on wide containers. */
   author?: string;
   /** Milliseconds. */
@@ -84,6 +86,7 @@ export function MiniPlayer({
   artFit = 'cover',
   title,
   subtitle,
+  remaining,
   author,
   position,
   duration,
@@ -152,7 +155,17 @@ export function MiniPlayer({
           </span>
           <span className={styles.text} aria-hidden="true">
             <span className={styles.title}>{title}</span>
-            {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
+            {(subtitle || remaining) && (
+              // The time first in the source: laid out reversed, so the chapter is the one that wraps out of sight.
+              <span className={styles.subline}>
+                {remaining && <span className={styles.remaining}>{remaining}</span>}
+                {subtitle && (
+                  <span className={styles.chapter}>
+                    <span>{subtitle}</span>
+                  </span>
+                )}
+              </span>
+            )}
             {author && <span className={`${styles.subtitle} ${styles.author}`}>{author}</span>}
           </span>
         </button>
@@ -185,7 +198,7 @@ export function MiniPlayer({
                 <rect x="8" y="1" width="4" height="12" rx="1" />
               </svg>
             ) : (
-              <Play size="1em" aria-hidden="true" />
+              <Play size="1em" fill="currentColor" aria-hidden="true" />
             )}
           </button>
           {onSkipForward && (

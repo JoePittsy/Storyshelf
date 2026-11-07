@@ -48,4 +48,23 @@ describe('MiniPlayer names and readout', () => {
     expect(container.textContent).not.toContain(' left');
     expect(container.textContent).not.toContain('−');
   });
+
+  it('keeps the time left whole after the subtitle, which is the part that truncates', () => {
+    cleanup();
+    const { container } = render(<MiniPlayer {...base} subtitle="Part I" remaining="12m left" onOpen={() => {}} />);
+    const left = screen.getByText('12m left');
+    // Its own element on the chapter's line, so CSS can keep it whole while the chapter gives way.
+    expect(left.parentElement).toHaveTextContent('Part I');
+    expect(left).not.toHaveTextContent('Part I');
+    expect(container.textContent).toContain('Part I');
+  });
+});
+
+describe('MiniPlayer play glyph', () => {
+  it('is filled, like every other play glyph', () => {
+    cleanup();
+    render(<MiniPlayer {...base} onOpen={() => {}} />);
+    const svg = screen.getByRole('button', { name: 'Play' }).querySelector('svg');
+    expect(svg).toHaveAttribute('fill', 'currentColor');
+  });
 });

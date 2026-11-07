@@ -145,6 +145,41 @@
 .author {
   color: var(--text-3);
 }
+/* The chapter, then the time left, on one line. The time always shows whole. The chapter truncates, and when it can't
+   keep a few letters it wraps onto a second line that is clipped away, rather than leaving a lone "P…". The source
+   order is time then chapter; row-reverse shows the chapter first and makes it the item that wraps. */
+.subline {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  height: 1lh;
+  overflow: hidden;
+  font-size: var(--fs-small);
+  color: var(--text-2);
+}
+.chapter {
+  display: flex;
+  flex: 1 1 4em;
+  min-width: 0;
+  max-width: max-content;
+  white-space: nowrap;
+}
+.chapter > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chapter:not(:only-child)::after {
+  content: '·';
+  flex: none;
+  margin-inline: 0.4em;
+}
+.remaining {
+  flex: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 @container (max-width: 71.99em) {
   .author {
     display: none;

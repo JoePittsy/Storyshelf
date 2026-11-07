@@ -12,7 +12,7 @@ interface Props {
   step?: number;
   /** Quick picks under the slider. */
   presets?: number[];
-  /** Always one decimal on the button ("1.0×"), so its width holds as the rate changes. */
+  /** Always one decimal ("1.0×") on the button, the readout and the presets, so its width holds as the rate changes. */
   fixedDecimal?: boolean;
   className?: string;
 }
@@ -66,7 +66,7 @@ export function SpeedControl({
               aria-pressed={snapSpeed(p, min, max, step) === current}
               onClick={() => set(p)}
             >
-              {fmtSpeed(p)}×
+              {fixedDecimal ? p.toFixed(1) : fmtSpeed(p)}×
             </button>
           ))}
         </div>
