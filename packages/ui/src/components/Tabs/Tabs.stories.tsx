@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 import { Tabs } from './Tabs';
 
 const items = [
@@ -37,4 +37,24 @@ export const Narrow: Story = {
       </div>
     ),
   ],
+};
+/** An iPhone SE's row: the destinations scroll under an edge fade, and Settings stays pinned at the end, in reach. */
+export const NarrowWithSettings: Story = {
+  args: { items: withSettings },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 240 }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    const nav = c.getByRole('navigation').getBoundingClientRect();
+    const settings = c.getByRole('link', { name: 'Settings' }).getBoundingClientRect();
+    await expect(settings.width).toBeGreaterThan(0);
+    await expect(settings.right).toBeLessThanOrEqual(nav.right + 0.5);
+    await expect(settings.left).toBeGreaterThanOrEqual(nav.left);
+    await expect(canvasElement.querySelector('ul')).toHaveAttribute('data-overflow', 'true');
+  },
 };

@@ -11,7 +11,10 @@ export interface TabItem {
    * in the markup (visually hidden there), so the link keeps its name; from 30em up the icon is dropped and the word shows.
    */
   icon?: 'settings';
-  /** Sits after a thin vertical divider, apart from the destinations before it (Settings, say). */
+  /**
+   * Sits after a thin vertical divider, apart from the destinations before it (Settings, say). It and anything after it
+   * stay pinned at the row's end, outside the part that scrolls, so a narrow screen never scrolls it out of reach.
+   */
   separated?: boolean;
 }
 
@@ -28,7 +31,10 @@ interface Props {
   className?: string;
 }
 
-/** Navigation tabs: real links, the current one marked `aria-current="page"`. Scrolls sideways when it can't fit. */
+/**
+ * Navigation tabs: real links, the current one marked `aria-current="page"`. Scrolls sideways when it can't fit, apart
+ * from the separated destinations at the end, which stay put.
+ */
 export function Tabs({ label, items, current, onNavigate, className }: Props) {
   const listRef = useRef<HTMLUListElement>(null);
   const overflowing = useOverflow(listRef);
@@ -37,26 +43,33 @@ export function Tabs({ label, items, current, onNavigate, className }: Props) {
     e.preventDefault();
     onNavigate(href);
   };
+  // The destinations from the first separated one on sit in a list of their own after the scrolling one, so on a
+  // narrow phone they stay in reach while the rest scroll under the edge fade.
+  const split = items.findIndex((t) => t.separated);
+  const scrolling = split === -1 ? items : items.slice(0, split);
+  const pinned = split === -1 ? [] : items.slice(split);
+  const tab = (t: TabItem) => {
+    const Icon = t.icon && ICONS[t.icon];
+    return (
+      <li key={t.key}>
+        <a
+          href={t.href}
+          className={`${styles.tab}${t.key === current ? ' ' + styles.on : ''}${Icon ? ' ' + styles.hasIcon : ''}`}
+          aria-current={t.key === current ? 'page' : undefined}
+          onClick={(e) => click(e, t.href)}
+        >
+          {Icon && <Icon className={styles.icon} size="1.25em" aria-hidden="true" />}
+          <span className={Icon ? styles.label : undefined}>{t.label}</span>
+        </a>
+      </li>
+    );
+  };
   return (
     <nav aria-label={label} className={[styles.nav, className].filter(Boolean).join(' ')}>
       <ul ref={listRef} className={styles.list} data-overflow={overflowing || undefined}>
-        {items.map((t) => {
-          const Icon = t.icon && ICONS[t.icon];
-          return (
-          <li key={t.key} className={t.separated ? styles.separated : undefined}>
-            <a
-              href={t.href}
-              className={`${styles.tab}${t.key === current ? ' ' + styles.on : ''}${Icon ? ' ' + styles.hasIcon : ''}`}
-              aria-current={t.key === current ? 'page' : undefined}
-              onClick={(e) => click(e, t.href)}
-            >
-              {Icon && <Icon className={styles.icon} size="1.25em" aria-hidden="true" />}
-              <span className={Icon ? styles.label : undefined}>{t.label}</span>
-            </a>
-          </li>
-          );
-        })}
+        {scrolling.map(tab)}
       </ul>
+      {pinned.length > 0 && <ul className={styles.pinned}>{pinned.map(tab)}</ul>}
     </nav>
   );
 }

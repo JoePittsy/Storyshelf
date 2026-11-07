@@ -10,7 +10,7 @@
   color: var(--text-2);
 }
 
-/* The field look, shared with SearchField: --glass-faint fill, --border stroke, --border-2 on hover and focus, --r-row radius. */
+/* The field look, shared with SearchField: --glass-faint fill, --border stroke, --border-2 on hover, --r-row radius. */
 .input {
   width: 100%;
   font: inherit;
@@ -28,11 +28,17 @@
 .input:hover:not(:disabled) {
   border-color: var(--border-2);
 }
+/* One focus mark: the global ring drawn over the stroke rather than 2px outside it, so focus never reads as a double
+   outline. */
 .input:focus-visible {
-  border-color: var(--text-2);
+  outline-offset: -1px;
 }
 .input[aria-invalid='true'] {
   border-color: rgb(var(--danger));
+}
+/* The ring covers the stroke while focused, so it carries the error colour itself. */
+.input[aria-invalid='true']:focus-visible {
+  outline-color: rgb(var(--danger));
 }
 .input:disabled {
   opacity: 0.4;

@@ -35,7 +35,7 @@ function renderSignIn() {
           <Route path="/" element={<p>Home</p>} />
         </Routes>
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
@@ -54,10 +54,10 @@ afterEach(cleanup);
 
 describe('SignIn', () => {
   it.each([
-    [new AbsError(401, "x"), 'Wrong username or password.'],
-    [new AbsError(429, "x"), 'Too many sign-in attempts. Try again in a few minutes.'],
+    [new AbsError(401, 'x'), 'Wrong username or password.'],
+    [new AbsError(429, 'x'), 'Too many sign-in attempts. Try again in a few minutes.'],
     [new Error('fetch failed'), "Can't reach the server. Check your connection and try again."],
-    [new AbsError(500, "x"), "Can't reach the server. Check your connection and try again."],
+    [new AbsError(500, 'x'), "Can't reach the server. Check your connection and try again."],
   ])('shows the message for a failed login (%#)', async (err, text) => {
     mocked.login.mockRejectedValue(err);
     renderSignIn();
@@ -83,6 +83,15 @@ describe('SignIn', () => {
     await screen.findByLabelText('Username');
     await new Promise((r) => setTimeout(r, 50)); // let the status query settle
     expect(screen.getByRole('alert')).toHaveTextContent('');
+  });
+
+  it('carries the wordmark and says which server it signs in to', async () => {
+    renderSignIn();
+    await screen.findByLabelText('Username');
+    expect(screen.getByText('Storyshelf')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument();
+    // Same-origin mode talks to the Audiobookshelf behind this page's own address.
+    expect(screen.getByText(location.host)).toBeInTheDocument();
   });
 
   it('navigates away on success', async () => {

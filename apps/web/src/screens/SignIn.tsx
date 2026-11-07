@@ -18,8 +18,7 @@ function CopyOrigin() {
   const origin = location.origin;
   return (
     <>
-      <code className={styles.origin}>{origin}</code>
-      {' '}
+      <code className={styles.origin}>{origin}</code>{' '}
       <PillButton
         className={styles.copy}
         onClick={() => {
@@ -39,14 +38,28 @@ function messageFor(err: unknown): ReactNode {
     if (err.kind === 'not-abs') return "That doesn't look like an Audiobookshelf server. Check the address.";
     return (
       <>
-        Your server needs to allow Storyshelf. In Audiobookshelf go to Settings → Security → CORS allowed origins and add{' '}
-        <CopyOrigin />. If that is already done, check the address and your connection.
+        Your server needs to allow Storyshelf. In Audiobookshelf go to Settings → Security → CORS allowed origins and
+        add <CopyOrigin />. If that is already done, check the address and your connection.
       </>
     );
   }
   if (err instanceof AbsError && err.status === 401) return 'Wrong username or password.';
   if (err instanceof AbsError && err.status === 429) return 'Too many sign-in attempts. Try again in a few minutes.';
   return "Can't reach the server. Check your connection and try again.";
+}
+
+/** "https://abs.example.com/abs" reads as "abs.example.com/abs": the address as a person types it. */
+const shortAddress = (url: string): string => url.replace(/^https?:\/\//i, '');
+
+/** The wordmark as the top bar sets it, over the screen's title and what it says about the server. */
+function Intro({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div className={styles.intro}>
+      <p className={styles.wordmark}>Storyshelf</p>
+      <h1 className={styles.title}>{title}</h1>
+      {children}
+    </div>
+  );
 }
 
 export function SignIn() {
@@ -115,54 +128,72 @@ export function SignIn() {
   if (hosted && picking) {
     return (
       <main className={styles.page}>
-        <h1 className={styles.title}>Connect to your server</h1>
-        <div role="alert" className={styles.alert}>
-          {error}
+        <div className={styles.panel}>
+          <Intro title="Connect to your server" />
+          <div role="alert" className={styles.alert}>
+            {error}
+          </div>
+          <form className={styles.form} onSubmit={(e) => void onPick(e)} noValidate>
+            <TextField
+              label="Server address"
+              name="server"
+              inputMode="url"
+              autoComplete="url"
+              autoCapitalize="none"
+              spellCheck={false}
+              required
+              defaultValue={server ?? ''}
+              hint="Your Audiobookshelf address, like abs.example.com"
+            />
+            <PillButton variant="primary" type="submit" disabled={busy} aria-busy={busy}>
+              {busy ? 'Connecting…' : 'Connect'}
+            </PillButton>
+            {server && <PillButton onClick={() => setPicking(false)}>Cancel</PillButton>}
+          </form>
         </div>
-        <form className={styles.form} onSubmit={(e) => void onPick(e)} noValidate>
-          <TextField
-            label="Server address"
-            name="server"
-            inputMode="url"
-            autoComplete="url"
-            autoCapitalize="none"
-            spellCheck={false}
-            required
-            defaultValue={server ?? ''}
-            hint="Your Audiobookshelf address, like abs.example.com"
-          />
-          <PillButton variant="primary" type="submit" disabled={busy} aria-busy={busy}>
-            {busy ? 'Connecting…' : 'Connect'}
-          </PillButton>
-          {server && <PillButton onClick={() => setPicking(false)}>Cancel</PillButton>}
-        </form>
       </main>
     );
   }
 
-  const shown = unsupported ? messageFor(support.error) : (error ?? (support.isError ? messageFor(support.error) : undefined));
+  const shown = unsupported
+    ? messageFor(support.error)
+    : (error ?? (support.isError ? messageFor(support.error) : undefined));
+  // Same-origin mode signs in to the Audiobookshelf behind this page's own address; hosted mode to the one chosen.
+  const address = hosted ? server && shortAddress(server) : location.host;
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.title}>Sign in to Storyshelf</h1>
-      {hosted && (
-        <p className={styles.server}>
-          <span className={styles.serverUrl}>Server: {server}</span>
-          <PillButton onClick={() => setPicking(true)}>Change server</PillButton>
-        </p>
-      )}
-      <div role="alert" className={styles.alert}>
-        {shown}
+      <div className={styles.panel}>
+        <Intro title="Sign in">
+          {address && (
+            <p className={styles.server}>
+              <span className={styles.serverUrl}>
+                Audiobookshelf at <span className={styles.address}>{address}</span>
+              </span>
+              {hosted && <PillButton onClick={() => setPicking(true)}>Change server</PillButton>}
+            </p>
+          )}
+        </Intro>
+        <div role="alert" className={styles.alert}>
+          {shown}
+        </div>
+        {!unsupported && (
+          <form className={styles.form} onSubmit={(e) => void onSubmit(e)}>
+            <TextField
+              label="Username"
+              name="username"
+              autoComplete="username"
+              required
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+            <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
+            <PillButton variant="primary" type="submit" disabled={busy} aria-busy={busy}>
+              {busy ? 'Signing in…' : 'Sign in'}
+            </PillButton>
+          </form>
+        )}
       </div>
-      {!unsupported && (
-        <form className={styles.form} onSubmit={(e) => void onSubmit(e)}>
-          <TextField label="Username" name="username" autoComplete="username" required autoCapitalize="none" spellCheck={false} />
-          <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
-          <PillButton variant="primary" type="submit" disabled={busy} aria-busy={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
-          </PillButton>
-        </form>
-      )}
     </main>
   );
 }

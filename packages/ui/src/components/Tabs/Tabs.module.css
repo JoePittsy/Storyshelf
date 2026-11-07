@@ -1,20 +1,28 @@
 .nav {
+  display: flex;
   min-width: 0;
   box-shadow: inset 0 -1px 0 var(--separator);
 }
-.list {
+.list,
+.pinned {
   display: flex;
   gap: 0.4em;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+/* The destinations scroll; the pinned ones after them (Settings) keep their width and stay in view. */
+.list {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .list::-webkit-scrollbar {
   display: none;
 }
-.list > li {
+.list > li,
+.pinned > li {
   flex: none;
 }
 .tab {
@@ -47,13 +55,14 @@
   }
 }
 
-/* A divider before the trailing destination: a short hairline, not a full-height rule. */
-.list > .separated {
+/* A divider before the pinned destinations: a short hairline, not a full-height rule. */
+.pinned {
   position: relative;
+  flex: none;
   margin-inline-start: 0.4em;
   padding-inline-start: 0.4em;
 }
-.separated::before {
+.pinned::before {
   content: '';
   position: absolute;
   inset-block: 25%;
@@ -69,14 +78,15 @@
 
 /* Five destinations must fit a 375px phone without a sideways scroll hiding the last one. */
 @media (width <= 30em) {
-  .list {
+  .list,
+  .pinned {
     gap: 0;
   }
   .tab {
     padding-inline: 0.4em;
     font-size: var(--fs-label);
   }
-  .list > .separated {
+  .pinned {
     margin-inline-start: 0.1em;
     padding-inline-start: 0.1em;
   }

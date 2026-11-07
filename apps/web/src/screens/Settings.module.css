@@ -1,9 +1,30 @@
 .page {
-  display: flex;
-  flex-direction: column;
+  container-type: inline-size;
+  padding-bottom: 3em;
+}
+/* One column on a phone, in reading order: Account first, Playback after the library picker. */
+.cards {
+  display: grid;
   gap: 1.2em;
   max-width: 40em;
-  padding-bottom: 3em;
+}
+/* Wide: Playback, the biggest card, on the left; Account, Library, the shortcuts and About stacked on the right.
+   --side-rows (set in Settings.tsx) is one fewer than the right column's cards; the last row is 1fr so any height
+   Playback has over them lands below the last card rather than between them. */
+@container (min-width: 60em) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--side-rows), auto) 1fr;
+    align-items: start;
+    max-width: none;
+  }
+  .playback {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+  .side {
+    grid-column: 2;
+  }
 }
 .srOnly {
   position: absolute;
@@ -36,9 +57,10 @@
 .who strong {
   color: var(--text);
 }
+/* Two across at most, so the four settings make a square rather than a row of three and an orphan. */
 .fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(12em, calc(50% - 0.5em)), 1fr));
   gap: 1em;
 }
 .notes {

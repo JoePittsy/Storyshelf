@@ -44,8 +44,10 @@
 .input:hover:not(:disabled) {
   border-color: var(--border-2);
 }
+/* One focus mark: the global ring drawn over the stroke rather than 2px outside it, so focus never reads as a double
+   outline. */
 .input:focus-visible {
-  border-color: var(--text-2);
+  outline-offset: -1px;
 }
 .input:disabled {
   opacity: 0.4;

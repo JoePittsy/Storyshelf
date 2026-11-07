@@ -13,37 +13,56 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-/* One row of tools: search, sort, then LibraryFilters' controls (its root is display: contents, so they join this
-   row). The "More filters" button takes the free space before it, so it sits at the far end, never alone. */
-.toolbar {
+/* The grid's head: the heading, then search and sort level with it at the far end; the filters (LibraryFilters, whose
+   root is display: contents) take a row of their own beneath, "More filters" at its far end. */
+.head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.8em;
-}
-.toolbar > :first-child {
-  flex: 1 1 14em;
-  max-width: 28em;
-}
-.toolbar > :nth-child(2) {
-  flex: 0 1 13em;
-}
-/* Phone: search takes the full row; sort and the Filters button share the next. */
-@container (max-width: 40em) {
-  .toolbar > :first-child {
-    flex: 1 1 100%;
-    max-width: none;
-  }
-  .toolbar > :nth-child(2) {
-    flex: 1 1 0;
-  }
+  margin-top: 0.4em;
 }
 .heading {
-  margin: 0.4em 0 -0.4em;
+  flex: 1 1 auto;
+  /* Sits on the controls' centre line rather than their bottom edge. */
+  margin: 0 0 0.3em;
   font-size: var(--fs-title);
   font-weight: 600;
   letter-spacing: -0.015em;
   overflow-wrap: anywhere;
+}
+.search {
+  flex: 0 1 22em;
+}
+.sort {
+  flex: 0 1 13em;
+}
+.filters {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.8em;
+}
+/* Without the inline filters there is only the "Filters" button, which joins the row beside Sort. Matches WIDE in
+   LibraryFilters.tsx. */
+@media (width < 48em) {
+  .filters {
+    display: contents;
+  }
+}
+/* Phone: the heading, then search across the full width; sort and the Filters button share the next row. */
+@container (max-width: 40em) {
+  .heading,
+  .search {
+    flex: 1 1 100%;
+  }
+  .heading {
+    margin-bottom: 0;
+  }
+  .sort {
+    flex: 1 1 0;
+  }
 }
 /* Matching authors, narrators and series: a wrapping row of pills above the books. */
 .chips {

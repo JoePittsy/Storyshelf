@@ -196,7 +196,7 @@ A near-monochrome navy room whose only saturated colour is borrowed, at runtime,
 - **Tint Fill** (`tint-fill`): row hover, quiet icon-button hover, the open menu item and the dialog field (`--bg-2` / `--row-hover`).
 - **Tint Chip** (`tint-chip`): chips.
 - **Separator** (`separator`): the 1px edge on floating surfaces. It isn't used on content cards.
-- **Border / Strong Border** (`border`, `border-strong`): the one control stroke, a search field, at rest and on focus.
+- **Border / Strong Border** (`border`, `border-strong`): the one control stroke, on a field, at rest and on hover; on focus the ring covers it.
 - **Frosted Navy** (`frosted-navy`): floating surfaces (toasts, tooltips, floating bars), the material token `--material-bg`, always paired with `--material-filter` (`blur(30px) saturate(1.8)`).
 - **Label scale** (`label`, `label-secondary`, `label-tertiary`): primary text, secondary meta, tertiary meta and subtitles. `label-tertiary` (`--text-3`) carries real subtitles on cards and washes, so it is held at 4.5:1 or better there.
 - **Title at rest** (`title-rest`): item and chart titles at rest. They brighten to On-Art White on row or tile hover.
@@ -292,14 +292,14 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **More (MoreMenu):** a surface's secondary actions behind one quiet 44px circle (an ellipsis on the ghost tint, 0.12, hover 0.22), beside the primary pill. It opens a native popover on solid Raised Navy, in the top layer and anchored under the button (flipping to stay on screen), of 44px rows in label weight 600; a place- or data-losing row is Danger text with a tonal red hover. A disclosure, not an ARIA menu: the rows are plain buttons, Esc and an outside click close it, and choosing a row closes it first. Pair anything it changes with an Undo toast rather than a confirm. Its *quiet* variant has no fill until hovered and sits in tertiary label colour, for a tile's caption (ImageTile `menu`).
 - **Text link ("See all", TitleButton, PeopleLinks):** no chrome. Secondary label colour, which turns full label with an underline on hover or focus.
 - **Transport (TransportButtons):** previous, play-pause and next, stateless: the caller passes `playing` and the handlers. Previous and next are quiet; play-pause is the inverted circle.
-- **Focus (all):** one global ring, `outline: 2px solid var(--text-2); outline-offset: 2px`. Over art that may be pale (TopResultCard) the ring sits inside, in white with a black edge.
+- **Focus (all):** one global ring, `outline: 2px solid var(--text-2); outline-offset: 2px`. Over art that may be pale (TopResultCard) the ring sits inside, in white with a black edge. A stroked field (TextField, SearchField, Select) draws the same ring at `outline-offset: -1px`, over its own stroke, so focus is one outline, never two.
 
 ### Chips and faces
 - **Person chip (PersonChip):** a toggle for choosing people. Tint Chip fill, a full pill, a round avatar at the leading edge, tonal fill when selected, and an optional series-colour dot. Pair colour with the name, never alone.
 - **Chip (Chip):** a pill link to a person, series or page. Tint Chip fill, an optional round avatar and a muted count after the name; hover steps to the row-hover tint.
 - **Filter chip (FilterChip):** an applied filter. A full pill in the selected tonal fill (tint 0.16) with the label and a round remove button at the trailing edge; the button's name is "Remove filter: {label}".
 - **Person link (PersonLink):** a person as a link. A tonal card (1em radius, no border) with a 3em round avatar, the name and a muted caption; hover steps to the raised surface. It fills its container, so a grid decides single column or cards.
-- **Tabs (Tabs):** navigation links under the top bar. Secondary label colour; the current tab is full label colour with a 2px underline and `aria-current="page"`. A hairline runs beneath, and the row scrolls sideways when it can't fit.
+- **Tabs (Tabs):** navigation links under the top bar. Secondary label colour; the current tab is full label colour with a 2px underline and `aria-current="page"`. A hairline runs beneath, and the row scrolls sideways when it can't fit, under an edge fade. A `separated` destination (Settings) sits after a short divider, pinned outside the scrolling part, so the narrowest phone never scrolls it out of reach.
 - **Avatar (UserAvatar):** a round photo, or the person's initial on a per-name gradient (also when the photo fails to load). It is decorative: the name always sits beside it. Without a class it is a 2em circle; a caller's class sets its own size.
 
 ### Cards / Containers

@@ -26,6 +26,15 @@ describe('Tabs', () => {
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   });
 
+  // A small phone can't fit every tab: the list scrolls, but the destination set apart (Settings) must stay in view.
+  it('keeps a separated destination out of the scrolling list', () => {
+    const { container } = render(<Tabs label="Sections" items={items} current="books" onNavigate={() => {}} />);
+    const settings = screen.getByRole('link', { name: 'Settings' });
+    expect(container.querySelector('ul')).not.toContainElement(settings);
+    expect(container.querySelector('ul')).toContainElement(screen.getByRole('link', { name: 'History' }));
+    expect(screen.getByRole('navigation', { name: 'Sections' })).toContainElement(settings);
+  });
+
   describe('edge fade', () => {
     afterEach(() => vi.restoreAllMocks());
     const size = (scrollWidth: number, clientWidth: number) => {

@@ -106,10 +106,15 @@ export function Frame() {
           />
         </div>
       )}
-      <div className={`${styles.content}${!tab && !immersive ? ' ' + styles.topless : ''}`}>
+      {/* The skip link's target. Each screen renders its own <main> inside, so the hash works without the script. */}
+      <div id="main" className={`${styles.content}${!tab && !immersive ? ' ' + styles.topless : ''}`}>
         <Outlet />
       </div>
-      {pathname === '/now-playing' ? <NowPlayingTitle /> : STATIC_TITLES[pathname] && <StaticTitle title={STATIC_TITLES[pathname]} />}
+      {pathname === '/now-playing' ? (
+        <NowPlayingTitle />
+      ) : (
+        STATIC_TITLES[pathname] && <StaticTitle title={STATIC_TITLES[pathname]} />
+      )}
       <p className={styles.announce} role="status">
         {announcement}
       </p>
@@ -119,7 +124,8 @@ export function Frame() {
         <ShortcutsDialog
           onClose={() => {
             setHelp(null);
-            if (help === 'menu') setTimeout(() => document.querySelector<HTMLElement>('button[aria-label^="Account:"]')?.focus());
+            if (help === 'menu')
+              setTimeout(() => document.querySelector<HTMLElement>('button[aria-label^="Account:"]')?.focus());
           }}
         />
       )}
@@ -127,7 +133,10 @@ export function Frame() {
   );
 }
 
-/** The skip link: focus goes to the page's main (a hash link can't, as the router owns the address). */
+/**
+ * The skip link, with the script: focus goes to the page's main landmark itself, so a screen reader lands on it, and the
+ * address keeps no "#main" for the router to treat as a navigation. Without the script the hash does the same job.
+ */
 function skipToContent(e: MouseEvent) {
   const main = document.querySelector<HTMLElement>('main');
   if (!main) return;
@@ -187,8 +196,7 @@ function GlobalKeys({ onSearch, onHelp, onCar }: { onSearch: () => void; onHelp:
         // A restored book has no session: a bare key never starts one, a play button or the lock screen does.
         if (p.restored) showToast('Press Play to resume', 'info', { replaceKey: 'restore-hint' });
         else p.toggle();
-      }
-      else if (action === 'back') p.skip(-1);
+      } else if (action === 'back') p.skip(-1);
       else if (action === 'forward') p.skip(1);
       else if (action === 'previousChapter') previousChapter();
       else if (action === 'bookmark') bookmarkHere();
