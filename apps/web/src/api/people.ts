@@ -53,6 +53,18 @@ export const NAV_TABS: readonly NavTab[] = [
   { key: 'settings', label: 'Settings', path: '/settings', icon: 'settings', separated: true },
 ];
 
+/** The library's own sections, shown inside the Library tab rather than as tabs of their own (the phone row is full). */
+const LIBRARY_SECTION_PATHS = new Set(['/', '/collections', '/playlists']);
+
+/** The top-level tab a route sits under: a list, or History and its sections. Detail pages (a book) have none. */
+export function navTabFor(pathname: string): NavTab | undefined {
+  if (LIBRARY_SECTION_PATHS.has(pathname)) return NAV_TABS[0];
+  return NAV_TABS.find((t) => (t.key === 'history' ? pathname.startsWith('/history') : t.path === pathname));
+}
+
+/** Whether a route is one of the library's sections (Books, Collections, Playlists). */
+export const isLibrarySection = (pathname: string): boolean => LIBRARY_SECTION_PATHS.has(pathname);
+
 /** A path that keeps the selected library. */
 export const withLibrary = (path: string, libraryId: string | undefined): string =>
   libraryId ? `${path}?library=${encodeURIComponent(libraryId)}` : path;

@@ -9,6 +9,8 @@ import {
   seriesAuthors,
   seriesUrl,
   withLibrary,
+  navTabFor,
+  NAV_TABS,
 } from './people';
 
 describe('REQ-33 list URLs', () => {
@@ -86,5 +88,28 @@ describe('series authors', () => {
   const book = (authorName: string | null) => ({ id: 'x', updatedAt: 1, media: { metadata: { title: 't', authorName } } });
   it('lists each author once', () => {
     expect(seriesAuthors([book('A, B'), book('A'), book(null)])).toBe('A, B');
+  });
+});
+
+describe('navTabFor: the top-level tab a route sits under', () => {
+  it('puts Collections and Playlists under Library, beside its books', () => {
+    expect(navTabFor('/')?.key).toBe('books');
+    expect(navTabFor('/collections')?.key).toBe('books');
+    expect(navTabFor('/playlists')?.key).toBe('books');
+  });
+  it('finds the other lists and History’s own sections', () => {
+    expect(navTabFor('/authors')?.key).toBe('authors');
+    expect(navTabFor('/series')?.key).toBe('series');
+    expect(navTabFor('/history/stats')?.key).toBe('history');
+    expect(navTabFor('/settings')?.key).toBe('settings');
+  });
+  it('has none for a detail page, which has its own back link', () => {
+    expect(navTabFor('/collection/c1')).toBeUndefined();
+    expect(navTabFor('/playlist/p1')).toBeUndefined();
+    expect(navTabFor('/series/s1')).toBeUndefined();
+    expect(navTabFor('/book/b1')).toBeUndefined();
+  });
+  it('still fits a phone: six destinations, none added for collections or playlists', () => {
+    expect(NAV_TABS.map((t) => t.key)).toEqual(['books', 'authors', 'narrators', 'series', 'history', 'settings']);
   });
 });

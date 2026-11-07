@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { Select, Tabs, TopBar } from '@joepittsy/ui';
-import { NAV_TABS, withLibrary } from '../api/people';
+import { NAV_TABS, isLibrarySection, navTabFor, withLibrary } from '../api/people';
 import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
 import { AccountMenu } from './AccountMenu';
 import { pageTitle, useDocumentTitle } from './useDocumentTitle';
@@ -48,8 +48,9 @@ export function Frame() {
   const [help, setHelp] = useState<'menu' | 'key' | null>(null);
   const focusSearch = useSearchFocus(() => void navigate(withLibrary('/', current)), pathname === '/');
 
-  // The tab for this page: a library list, or History and its own sections. Detail pages (a book) have none.
-  const tab = NAV_TABS.find((t) => (t.key === 'history' ? pathname.startsWith('/history') : t.path === pathname));
+  // The tab for this page: a library list (Collections and Playlists sit under Library), or History and its own
+  // sections. Detail pages (a book, a collection) have none.
+  const tab = navTabFor(pathname);
   const immersive = pathname === '/now-playing';
   useRouteTrail();
   // History's own sections share one destination, so moving between them leaves focus on the tab.
@@ -65,8 +66,8 @@ export function Frame() {
       options={libs.map((l) => ({ value: l.id, label: l.name }))}
       onChange={(id) => {
         storeLibrary(id);
-        // Stay on the same tab; a detail page (book, narrator) goes back to the library.
-        void navigate(withLibrary(tab?.path ?? '/', id));
+        // Stay on the same tab (and the same library section); a detail page (book, narrator) goes back to the library.
+        void navigate(withLibrary(isLibrarySection(pathname) ? pathname : (tab?.path ?? '/'), id));
       }}
     />
   );
@@ -205,6 +206,8 @@ const STATIC_TITLES: Record<string, string> = {
   '/authors': 'Authors',
   '/narrators': 'Narrators',
   '/series': 'Series',
+  '/collections': 'Collections',
+  '/playlists': 'Playlists',
   '/settings': 'Settings',
   '/debug': 'Player log',
 };

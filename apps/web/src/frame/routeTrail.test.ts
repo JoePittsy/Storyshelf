@@ -12,6 +12,10 @@ describe('backLabel', () => {
     expect(backLabel('/narrator/Rob%20Inglis')).toBe('Narrator');
     expect(backLabel('/history/stats')).toBe('History');
     expect(backLabel('/book/li_1')).toBe('Book');
+    expect(backLabel('/collections?library=lib_1')).toBe('Collections');
+    expect(backLabel('/collection/co_1')).toBe('Collection');
+    expect(backLabel('/playlists')).toBe('Playlists');
+    expect(backLabel('/playlist/pl_1')).toBe('Playlist');
   });
   it('is Library for the library itself, a first load or anything unknown', () => {
     expect(backLabel('/')).toBe('Library');
@@ -27,6 +31,8 @@ describe('backLabel with a title', () => {
     expect(backLabel('/book/li_1', 'The Tale of Peter Rabbit')).toBe('The Tale of Peter Rabbit');
     expect(backLabel('/author/au_1', 'Arthur Conan Doyle')).toBe('Arthur Conan Doyle');
     expect(backLabel('/series/se_1', 'Sherlock Holmes')).toBe('Sherlock Holmes');
+    expect(backLabel('/collection/co_1', 'Bedtime stories')).toBe('Bedtime stories');
+    expect(backLabel('/playlist/pl_1', 'Road trip')).toBe('Road trip');
   });
   it('falls back to the kind when the title is unknown or blank', () => {
     expect(backLabel('/book/li_1', null)).toBe('Book');

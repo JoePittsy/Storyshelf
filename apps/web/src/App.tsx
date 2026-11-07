@@ -12,6 +12,8 @@ import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { PlayerToasts } from './player/PlayerToasts';
 import { AuthorList } from './screens/AuthorList';
+import { Collection, Playlist } from './screens/BookListDetail';
+import { CollectionList, PlaylistList } from './screens/BookListIndex';
 import { History, HistoryFinished, HistoryLog, HistoryStats } from './screens/History';
 import { Library } from './screens/Library';
 import { NarratorList } from './screens/NarratorList';
@@ -71,6 +73,14 @@ function PlayableSeries() {
   return <Series onPlay={(id, from) => void play(id, from)} />;
 }
 
+/** A collection or playlist with its Play and per-book play buttons wired to the player. */
+function PlayableCollection() {
+  return <Collection onPlay={(id, from) => void play(id, from)} />;
+}
+function PlayablePlaylist() {
+  return <Playlist onPlay={(id, from) => void play(id, from)} />;
+}
+
 function AppRoutes() {
   useScrollRestoration();
   return (
@@ -82,6 +92,10 @@ function AppRoutes() {
           <Route path="/authors" element={<AuthorList />} />
           <Route path="/narrators" element={<NarratorList />} />
           <Route path="/series" element={<SeriesList />} />
+          <Route path="/collections" element={<CollectionList />} />
+          <Route path="/playlists" element={<PlaylistList />} />
+          <Route path="/collection/:id" element={<PlayableCollection />} />
+          <Route path="/playlist/:id" element={<PlayablePlaylist />} />
           <Route path="/narrator/:name" element={<NarratorRedirect />} />
           <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />

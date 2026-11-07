@@ -16,10 +16,12 @@ interface Props {
   tiles: BookTile[];
   /** Called when the end of the grid scrolls near the viewport. Omit when there is nothing more to load. */
   onEndReached?: () => void;
+  /** Gives each tile a play button over its cover, which plays that book from where the listener left it. */
+  onPlay?: (itemId: string) => void;
 }
 
 /** The library's cover grid: cover, title, author, progress, linking to the book. */
-export function BookGrid({ tiles, onEndReached }: Props) {
+export function BookGrid({ tiles, onEndReached, onPlay }: Props) {
   const navigate = useNavigate();
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -43,6 +45,7 @@ export function BookGrid({ tiles, onEndReached }: Props) {
               artFit="contain"
               href={`/book/${item.id}`}
               onOpen={() => void navigate(`/book/${item.id}`)}
+              onPlay={onPlay && (() => onPlay(item.id))}
               overlay={
                 <>
                   {badge && <span className={styles.badge}>{badge}</span>}

@@ -2,9 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Chip, EmptyState, PillButton, SearchField, Select } from '@joepittsy/ui';
 import {
-  SORTS,
   mergeProgress,
-  parseSort,
   pickLibrary,
   storedLibrary,
   useLibraries,
@@ -29,13 +27,16 @@ import {
   writeFilters,
 } from '../api/filters';
 import type { Filters } from '../api/filters';
+import { SORT_CHOICES, choiceOf, resolveSort, sortOfChoice, storeSort, storedSort, writeSort } from '../api/sort';
 import { useInProgress } from '../api/history';
+import { useListCounts } from '../api/bookLists';
+import { LibrarySections } from '../components/LibrarySections';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import { LibraryFilters } from '../components/LibraryFilters';
 import { ResumeHome } from '../components/ResumeHome';
 import styles from './Library.module.css';
 
-const SORT_OPTIONS = SORTS.map((s) => ({ value: s.key, label: s.label }));
+const SORT_OPTIONS = SORT_CHOICES.map((c) => ({ value: c.value, label: c.label }));
 
 interface Props {
   /** Resumes a book from the Continue listening shelf. */
@@ -47,12 +48,13 @@ const noop = () => undefined;
 export function Library({ onPlay = noop }: Props) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const sort = parseSort(params.get('sort'));
   const q = params.get('q')?.trim() ?? '';
   const [text, setText] = useState(params.get('q') ?? '');
 
   const libs = useLibraries();
   const libraryId = libs.data ? pickLibrary(libs.data, params.get('library'), storedLibrary()) : undefined;
+  // The URL's sort, else the one last used in this library (written into the URL below), so ABS is asked once.
+  const sort = resolveSort(params, libraryId);
   const progress = useProgress();
   const searching = q !== '';
 
@@ -64,7 +66,10 @@ export function Library({ onPlay = noop }: Props) {
   const localKey = `${writeFilters(new URLSearchParams(), local).toString()}|${serverFilter ?? ''}`;
   const filterData = useFilterData(libraryId);
 
-  const items = useLibraryItems(libraryId, sort, serverFilter);
+  // Whether to offer Collections and Playlists. The tabs sit above everything, so the shelf and grid wait for the answer
+  // rather than be pushed down by it.
+  const lists = useListCounts(libraryId);
+  const items = useLibraryItems(libraryId, sort.key, serverFilter, sort.desc);
   const search = useLibrarySearch(libraryId, q);
 
   const changeFilters = (next: Filters) => {
@@ -72,14 +77,29 @@ export function Library({ onPlay = noop }: Props) {
     if (libraryId) storeFilters(libraryId, next);
   };
 
-  // Arriving at a library with no filters in the URL: bring back the ones last used here on this device.
+  const changeSort = (value: string) => {
+    const next = sortOfChoice(value);
+    setParams((prev) => writeSort(prev, next), { replace: true });
+    if (libraryId) storeSort(libraryId, next);
+  };
+
+  // Arriving at a library with no filters or sort in the URL: bring back the ones last used here on this device. One
+  // update for both, as the router doesn't chain two in a row.
   const restored = useRef(new Set<string>());
   useEffect(() => {
     if (!libraryId || restored.current.has(libraryId)) return;
     restored.current.add(libraryId);
-    if (hasFilterParams(params)) return;
-    const saved = storedFilters(libraryId);
-    if (countActive(saved) > 0) setParams((prev) => writeFilters(prev, saved), { replace: true });
+    const savedFilters = hasFilterParams(params) ? null : storedFilters(libraryId);
+    const withFilters = !!savedFilters && countActive(savedFilters) > 0;
+    const savedSort = params.has('sort') ? null : storedSort(libraryId);
+    if (!withFilters && !savedSort) return;
+    setParams(
+      (prev) => {
+        const next = withFilters ? writeFilters(prev, savedFilters) : prev;
+        return savedSort ? writeSort(next, savedSort) : next;
+      },
+      { replace: true }
+    );
   }, [libraryId, params, setParams]);
 
   // The box and the URL's q are two copies of one thing. Typing reaches the URL after a pause (below); a change the
@@ -131,7 +151,7 @@ export function Library({ onPlay = noop }: Props) {
   const showShelf = !searching && !filtered && !!libraryId;
   const shelfPending = showShelf && (inProgress.isPending || progress.isPending);
   const loading =
-    libs.isPending || (!!libraryId && active.isPending) || (!!local.progress && progress.isPending) || shelfPending;
+    libs.isPending || (!!libraryId && (active.isPending || !lists.settled)) || (!!local.progress && progress.isPending) || shelfPending;
   const failed = libs.isError || active.isError;
 
   const chips = searching ? (search.data?.chips ?? []) : [];
@@ -168,26 +188,14 @@ export function Library({ onPlay = noop }: Props) {
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Library</h1>
-      {/* Not while searching or filtering: it would sit among narrowed results. */}
-      {showShelf && <ResumeHome libraryId={libraryId} onPlay={onPlay} />}
+      <LibrarySections current="books" libraryId={libraryId} counts={lists.counts} />
+      {/* Not while searching or filtering: it would sit among narrowed results. Mounted once the section tabs are
+          settled, so they never push it down. */}
+      {showShelf && lists.settled && <ResumeHome libraryId={libraryId} onPlay={onPlay} />}
       <div className={styles.toolbar}>
         <SearchField label="Search books" placeholder="Search title or author" value={text} onChange={setText} />
         {!searching && (
-          <Select
-            label="Sort by"
-            value={sort}
-            options={SORT_OPTIONS}
-            onChange={(v) =>
-              setParams(
-                (prev) => {
-                  const next = new URLSearchParams(prev);
-                  next.set('sort', v);
-                  return next;
-                },
-                { replace: true }
-              )
-            }
-          />
+          <Select label="Sort by" value={choiceOf(sort).value} options={SORT_OPTIONS} onChange={changeSort} />
         )}
         <LibraryFilters filters={filters} onChange={changeFilters} data={filterData.data} />
       </div>

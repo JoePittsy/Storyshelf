@@ -53,3 +53,8 @@
     font-size: var(--fs-display-sm);
   }
 }
+/* A collection or playlist's description is plain text from ABS. */
+.prose {
+  margin: 0;
+  white-space: pre-line;
+}

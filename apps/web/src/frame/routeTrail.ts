@@ -25,6 +25,10 @@ export function backLabel(from: string | null | undefined, title?: string | null
   if (path === '/series') return 'Series';
   if (path.startsWith('/series/')) return named('Series');
   if (path.startsWith('/book/')) return named('Book');
+  if (path === '/collections') return 'Collections';
+  if (path.startsWith('/collection/')) return named('Collection');
+  if (path === '/playlists') return 'Playlists';
+  if (path.startsWith('/playlist/')) return named('Playlist');
   return 'Library';
 }
 
