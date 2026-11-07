@@ -12,7 +12,7 @@ import { continueSeriesTiles } from './continueSeries';
 import { recentlyAddedTiles } from './recentlyAdded';
 import { useNow } from '../screens/useNow';
 import { removeMenu } from './removeMenu';
-import { continueBooks, resumeStatus, splitResume } from './resume';
+import { continueBooks, resumeLabel, resumeStatus, splitResume } from './resume';
 import styles from './ResumeHome.module.css';
 
 interface Props {
@@ -54,15 +54,18 @@ function Hero({ tile, onPlay, onRemove, busy: removing }: HeroProps) {
       href={`/book/${item.id}`}
       onOpen={() => void navigate(`/book/${item.id}`)}
       sub={item.media.metadata.authorName}
+      // The action carries the time left, as on the book page, except while it reads Pause.
       status={resumeStatus({
         duration,
         currentTime,
         chapters: here ? player.chapters : chapters,
         chapterIndex: here ? player.chapterIndex : undefined,
+        leftOnAction: !playing,
       })}
       progress={fraction}
       progressLabel={`Progress through ${title}`}
       playing={playing}
+      actionLabel={playing ? undefined : resumeLabel(duration, currentTime)}
       busy={busy}
       onAction={() => (playing ? player.toggle() : onPlay(item.id))}
       wash={wash}
@@ -99,7 +102,7 @@ export function ResumeHome({ libraryId, onPlay }: Props) {
         : continueSeriesTiles(
             continueSeries.data,
             [...tiles.map((t) => t.item.id), ...(playerItem ? [playerItem] : [])],
-            progress.data ?? new Map(),
+            progress.data ?? new Map()
           ),
     [inProgress.isPending, continueSeries.data, tiles, playerItem, progress.data]
   );
@@ -113,7 +116,7 @@ export function ResumeHome({ libraryId, onPlay }: Props) {
             recentlyAdded.data,
             [...tiles, ...seriesTiles].map((t) => t.item.id).concat(playerItem ? [playerItem] : []),
             progress.data ?? new Map(),
-            now,
+            now
           ),
     [inProgress.isPending, progress.isPending, recentlyAdded.data, tiles, seriesTiles, playerItem, progress.data, now]
   );
@@ -123,8 +126,8 @@ export function ResumeHome({ libraryId, onPlay }: Props) {
     <div className={styles.home}>
       {hero && <Hero key={hero.item.id} tile={hero} onPlay={onPlay} onRemove={remove} busy={busy} />}
       <ContinueShelf tiles={rest} onPlay={onPlay} onRemove={remove} busy={busy} />
-      <ContinueShelf tiles={seriesTiles} onPlay={onPlay} title="Continue series" playVerb="Start" />
-      <ContinueShelf tiles={recentTiles} onPlay={onPlay} title="Recently added" playVerb="Start" />
+      <ContinueShelf tiles={seriesTiles} onPlay={onPlay} title="Continue series" playVerb="Play" />
+      <ContinueShelf tiles={recentTiles} onPlay={onPlay} title="Recently added" playVerb="Play" />
     </div>
   );
 }

@@ -83,6 +83,7 @@ function BookListDetail({ kind, onPlay }: Props & { kind: ListKind }) {
         {target && !progress.isPending && (
           <PillButton
             variant="primary"
+            icon={playing ? 'pause' : 'play'}
             className={styles.action}
             // The name says which book: the button may start one partway down the list.
             aria-label={playing ? undefined : `${label}: ${target.item.media.metadata.title}`}

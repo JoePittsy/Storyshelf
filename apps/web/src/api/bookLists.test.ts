@@ -43,7 +43,12 @@ const playlist: PlaylistResponse = {
   description: null,
   items: [
     { libraryItemId: 'b2', episodeId: null, libraryItem: expanded('b2', 'Peter Rabbit') },
-    { libraryItemId: 'pod', episodeId: 'ep1', libraryItem: expanded('pod', 'A podcast', { mediaType: 'podcast' }), episode: {} },
+    {
+      libraryItemId: 'pod',
+      episodeId: 'ep1',
+      libraryItem: expanded('pod', 'A podcast', { mediaType: 'podcast' }),
+      episode: {},
+    },
     { libraryItemId: 'b1', episodeId: null, libraryItem: expanded('b1', 'Copper Beeches') },
     { libraryItemId: 'gone', episodeId: null },
     { libraryItemId: 'pod2', libraryItem: expanded('pod2', 'Another show', { mediaType: 'podcast' }) },
@@ -68,7 +73,13 @@ describe('ABS list URLs', () => {
 describe('fromCollection', () => {
   it('keeps the collection’s own order and the fields the grid needs', () => {
     const list = fromCollection(collection);
-    expect(list).toMatchObject({ id: 'c1', name: 'Bedtime stories', description: 'Short ones.', libraryId: 'L1', skipped: 0 });
+    expect(list).toMatchObject({
+      id: 'c1',
+      name: 'Bedtime stories',
+      description: 'Short ones.',
+      libraryId: 'L1',
+      skipped: 0,
+    });
     expect(list.books.map((b) => b.id)).toEqual(['b3', 'b1', 'b2']);
     expect(list.books[0]).toEqual({
       id: 'b3',
@@ -103,7 +114,11 @@ describe('visibleSections: entry points only when there is something there', () 
   it('shows Books plus whichever exist', () => {
     expect(keys(visibleSections('books', { collections: 2, playlists: 0 }))).toEqual(['books', 'collections']);
     expect(keys(visibleSections('books', { collections: 0, playlists: 1 }))).toEqual(['books', 'playlists']);
-    expect(keys(visibleSections('books', { collections: 3, playlists: 1 }))).toEqual(['books', 'collections', 'playlists']);
+    expect(keys(visibleSections('books', { collections: 3, playlists: 1 }))).toEqual([
+      'books',
+      'collections',
+      'playlists',
+    ]);
   });
   it('leaves out a count that is not known yet (or failed)', () => {
     expect(keys(visibleSections('books', { collections: 2 }))).toEqual(['books', 'collections']);
@@ -140,7 +155,7 @@ describe('playTarget: Play starts the first unfinished book', () => {
       ['b1', { progress: 0.5, currentTime: 1800 }],
     ]);
     const t = playTarget(books, p);
-    expect(t).toMatchObject({ item: { id: 'b1' }, label: 'Continue' });
+    expect(t).toMatchObject({ item: { id: 'b1' }, label: 'Resume' });
     expect(t?.from).toBeUndefined();
   });
   it('takes the first unfinished even when a later one is in progress', () => {
@@ -149,7 +164,7 @@ describe('playTarget: Play starts the first unfinished book', () => {
   });
   it('goes round again from the top when everything is finished', () => {
     const p = prog(books.map((b) => [b.id, { isFinished: true, progress: 1 }]));
-    expect(playTarget(books, p)).toMatchObject({ item: { id: 'b3' }, label: 'Listen again', from: 0 });
+    expect(playTarget(books, p)).toMatchObject({ item: { id: 'b3' }, label: 'Play again', from: 0 });
   });
   it('is nothing for an empty list', () => {
     expect(playTarget([], new Map())).toBeUndefined();
@@ -157,7 +172,7 @@ describe('playTarget: Play starts the first unfinished book', () => {
 
   it('labels the button with the time left when carrying on', () => {
     const p = prog([['b3', { progress: 0.5, currentTime: 1800 }]]);
-    expect(playLabel(playTarget(books, p)!, p)).toBe('Continue · 30m left');
+    expect(playLabel(playTarget(books, p)!, p)).toBe('Resume · 30m left');
     expect(playLabel(playTarget(books, new Map())!, new Map())).toBe('Play');
   });
 });

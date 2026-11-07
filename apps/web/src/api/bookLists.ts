@@ -136,14 +136,15 @@ export const LIBRARY_SECTIONS: readonly Section[] = [
  */
 export function visibleSections(current: SectionKey, counts: { collections?: number; playlists?: number }): Section[] {
   const shown = LIBRARY_SECTIONS.filter(
-    (s) => s.key === 'books' || s.key === current || (counts[s.key as 'collections' | 'playlists'] ?? 0) > 0,
+    (s) => s.key === 'books' || s.key === current || (counts[s.key as 'collections' | 'playlists'] ?? 0) > 0
   );
   return shown.length > 1 ? shown : [];
 }
 
 // --- Play -------------------------------------------------------------------------------------------------------
 
-export type PlayLabel = 'Play' | 'Continue' | 'Listen again';
+/** The app's one play vocabulary: resume a place, play from the top, or play again. */
+export type PlayLabel = 'Play' | 'Resume' | 'Play again';
 
 export interface PlayTarget {
   item: LibraryItem;
@@ -160,17 +161,17 @@ export function playTarget(books: LibraryItem[], progress: Map<string, Progress>
   const first = books[0];
   if (!first) return undefined;
   const next = books.find((b) => !progress.get(b.id)?.isFinished);
-  if (!next) return { item: first, label: 'Listen again', from: 0 };
+  if (!next) return { item: first, label: 'Play again', from: 0 };
   const p = progress.get(next.id);
-  return p && p.progress > 0 ? { item: next, label: 'Continue' } : { item: next, label: 'Play', from: 0 };
+  return p && p.progress > 0 ? { item: next, label: 'Resume' } : { item: next, label: 'Play', from: 0 };
 }
 
-/** "Play", "Listen again", or "Continue · 2h 14m left" when the time left is known. */
+/** "Play", "Play again", or "Resume · 2h 14m left" when the time left is known. */
 export function playLabel(t: PlayTarget, progress: Map<string, Pick<Progress, 'currentTime'>>): string {
-  if (t.label !== 'Continue') return t.label;
+  if (t.label !== 'Resume') return t.label;
   const duration = t.item.media.duration ?? 0;
   const at = progress.get(t.item.id)?.currentTime ?? 0;
-  return duration > 0 && at > 0 ? `Continue · ${fmtLeft((duration - at) * 1000)}` : 'Continue';
+  return duration > 0 && at > 0 ? `Resume · ${fmtLeft((duration - at) * 1000)}` : 'Resume';
 }
 
 // --- Queries -----------------------------------------------------------------------------------------------------

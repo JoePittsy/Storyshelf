@@ -7,8 +7,8 @@ export const RECENT_CAP = 12;
 export type RecentTile = Tile & {
   /** "Added 3 days ago". */
   meta: string | null;
-  /** What the tile's play button does: Start for an unstarted book, Resume for one already begun. */
-  verb: 'Start' | 'Resume';
+  /** What the tile's play button does: Play for an unstarted book, Resume for one already begun. */
+  verb: 'Play' | 'Resume';
 };
 
 const DAY = 86_400_000;
@@ -66,7 +66,7 @@ export function recentlyAddedTiles(
       progress: fraction,
       isFinished: false,
       meta: addedAgo(item.addedAt, now),
-      verb: fraction > 0 ? 'Resume' : 'Start',
+      verb: fraction > 0 ? 'Resume' : 'Play',
     });
   }
   return tiles;

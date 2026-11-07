@@ -68,7 +68,7 @@ function renderAt(path: string, onPlay: (id: string, from?: number) => void = ()
           <Route path="/now-playing" element={<NowPlaying />} />
         </Routes>
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
@@ -97,10 +97,9 @@ describe('Author page', () => {
     expect(within(sandman).getByText('#1')).toBeInTheDocument();
     expect(within(sandman).getByText('#2')).toBeInTheDocument();
     expect(within(sandman).getByRole('link', { name: /^Act I(?!I)/ })).toHaveAttribute('href', '/book/b1');
-    expect(within(sandman).getAllByRole('progressbar', { name: 'Progress through Act I', hidden: true })[0]).toHaveAttribute(
-      'aria-valuenow',
-      '40',
-    );
+    expect(
+      within(sandman).getAllByRole('progressbar', { name: 'Progress through Act I', hidden: true })[0]
+    ).toHaveAttribute('aria-valuenow', '40');
     expect(screen.getByRole('region', { name: 'Other books' })).toHaveTextContent('Solo');
   });
 
@@ -115,7 +114,10 @@ describe('Author page', () => {
     serve({ '/api/authors/a1': { ...author, imagePath: '/x/y.jpg' } });
     renderAt('/author/a1');
     await screen.findByRole('heading', { level: 1 });
-    expect(document.querySelector('header img')).toHaveAttribute('src', '/api/authors/a1/image?width=400&format=webp&ts=5');
+    expect(document.querySelector('header img')).toHaveAttribute(
+      'src',
+      '/api/authors/a1/image?width=400&format=webp&ts=5'
+    );
   });
 
   it('REQ-36 says not found on a 404, with a way back', async () => {
@@ -135,7 +137,9 @@ describe('Author page', () => {
 
 describe('Series page', () => {
   beforeEach(() => {
-    vi.mocked(usePlayer).mockReturnValue({ item: null, status: 'idle', toggle: vi.fn() } as unknown as ReturnType<typeof usePlayer>);
+    vi.mocked(usePlayer).mockReturnValue({ item: null, status: 'idle', toggle: vi.fn() } as unknown as ReturnType<
+      typeof usePlayer
+    >);
   });
   const seriesRoutes = {
     '/api/series/s1': { id: 's1', name: 'The Sandman', description: null, libraryId: 'lib1' },
@@ -151,16 +155,22 @@ describe('Series page', () => {
     const links = (await screen.findAllByRole('link')).filter((l) => l.getAttribute('href')?.startsWith('/book/'));
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['/book/b1', '/book/b2']);
     expect(screen.getByText('#1')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'Progress through Act I', hidden: true })).toHaveAttribute('aria-valuenow', '40');
+    expect(screen.getByRole('progressbar', { name: 'Progress through Act I', hidden: true })).toHaveAttribute(
+      'aria-valuenow',
+      '40'
+    );
     await userEvent.click(await screen.findByRole('button', { name: 'Neil Gaiman, open' }));
     expect(screen.getByTestId('where')).toHaveTextContent('/author/a9');
   });
 
-  it('REQ-30 Continue plays the book in progress from where the server has it', async () => {
+  it('REQ-30 Resume plays the book in progress from where the server has it, naming the book', async () => {
     serve(seriesRoutes);
     const onPlay = vi.fn();
     renderAt('/series/s1', onPlay);
-    await userEvent.click(await screen.findByRole('button', { name: /^Continue #1/ }));
+    const button = await screen.findByRole('button', { name: /^Resume book 1\b.*: Act I$/ });
+    expect(button).toHaveTextContent(/^Resume book 1/);
+    expect(button.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    await userEvent.click(button);
     expect(onPlay).toHaveBeenCalledWith('b1', undefined); // no start named: the player carries on from the server's place
     // It plays; it does not open the book page.
     expect(screen.getByTestId('where')).toHaveTextContent('/series/s1');
@@ -169,7 +179,9 @@ describe('Series page', () => {
   it('says Pause on the button while that book is playing, and pauses it', async () => {
     serve(seriesRoutes);
     const toggle = vi.fn();
-    vi.mocked(usePlayer).mockReturnValue({ item: { id: 'b1' }, status: 'playing', toggle } as unknown as ReturnType<typeof usePlayer>);
+    vi.mocked(usePlayer).mockReturnValue({ item: { id: 'b1' }, status: 'playing', toggle } as unknown as ReturnType<
+      typeof usePlayer
+    >);
     const onPlay = vi.fn();
     renderAt('/series/s1', onPlay);
     await userEvent.click(await screen.findByRole('button', { name: 'Pause' }));

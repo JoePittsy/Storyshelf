@@ -65,13 +65,13 @@ describe('recentlyAddedTiles', () => {
     expect(ids(recentlyAddedTiles(shelf, ['a', 'c'], none, NOW))).toEqual(['b']);
   });
 
-  it('offers an unstarted book to start, and one already begun to resume', () => {
+  it('offers an unstarted book to play, and one already begun to resume', () => {
     const progress = new Map<string, Progress>([['b', { progress: 0.4, isFinished: false }]]);
     const tiles = recentlyAddedTiles(shelf, [], progress, NOW);
     expect(tiles.map((t) => [t.item.id, t.verb, t.progress])).toEqual([
-      ['a', 'Start', 0],
+      ['a', 'Play', 0],
       ['b', 'Resume', 0.4],
-      ['c', 'Start', 0],
+      ['c', 'Play', 0],
     ]);
   });
 
