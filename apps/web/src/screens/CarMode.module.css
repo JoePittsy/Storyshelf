@@ -1,5 +1,8 @@
+/* The whole viewport, edge to edge: clear of the app shell's own padding. */
 .page {
-  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
   background: var(--bg);
 }
 .page:focus {

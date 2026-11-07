@@ -305,6 +305,7 @@ export function NowPlaying() {
       <div className={styles.bar} ref={bar}>
         <PillButton onClick={close}>Close</PillButton>
         <span className={styles.barEnd}>
+          <IconButton icon="car" label="Car mode" shortcut={touch ? undefined : 'C'} onClick={toCar} />
           <AirPlayControl />
           {!touch && (
             <InfoTip label="Keyboard shortcuts">
@@ -388,9 +389,6 @@ export function NowPlaying() {
               <PillButton onClick={() => void bookmarkHere()}>Add bookmark</PillButton>
               <PillButton onClick={() => setSheet('bookmarks')}>Bookmarks</PillButton>
               <PillButton onClick={() => setSheet('history')}>History</PillButton>
-              <PillButton onClick={toCar} title="Car mode (C)" aria-keyshortcuts="C">
-                Car mode
-              </PillButton>
               {hasChapters && !wide && <PillButton onClick={() => setSheet('chapters')}>Chapters</PillButton>}
             </div>
           </div>

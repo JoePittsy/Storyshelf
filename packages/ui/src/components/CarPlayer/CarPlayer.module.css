@@ -184,15 +184,17 @@
   width: var(--car-target);
   height: var(--car-target);
 }
+/* Wide enough that the seconds sit inside the ring, clear of its arrowhead. */
 .ring {
   grid-area: 1 / 1;
-  width: 70%;
-  height: 70%;
+  width: 82%;
+  height: 82%;
 }
 .seconds {
   grid-area: 1 / 1;
-  padding-top: 0.1em;
-  font-size: var(--fs-label);
+  /* Below centre: the ring's gap and arrowhead are at the top. */
+  padding-top: 0.3em;
+  font-size: var(--fs-small);
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
