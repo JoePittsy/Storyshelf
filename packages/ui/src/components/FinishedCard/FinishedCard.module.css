@@ -1,0 +1,74 @@
+/* The outer box is the container; the row inside responds to it. */
+.root {
+  container-type: inline-size;
+  min-width: 0;
+  border-radius: var(--r-card);
+  /* UpNextCard's lit wall; the art's colour is washed in inline from the top left. */
+  background: radial-gradient(120% 160% at 0% 0%, rgba(var(--tint), 0.26), transparent 62%), var(--surface-hi);
+  color: var(--text);
+  text-align: start;
+}
+
+/* Narrow first: the words, then the actions sharing a row of their own, the primary last (at the thumb's side). */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65em;
+  padding: 0.85em 0.9em 0.9em;
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  min-width: 0;
+}
+.title {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.detail {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+}
+/* A full 44px target everywhere, not only on touch: the card sits beside the transport, where the targets are big.
+   Narrow, the pills share the row equally, so neither reads as an afterthought hanging off one end. */
+.pill {
+  flex: 1 1 auto;
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* Roomy: one row, the words at the start and the actions at the end, as UpNextCard's labelled pill sits. */
+@container (min-width: 28em) {
+  .row {
+    flex-direction: row;
+    align-items: center;
+    gap: 1em;
+    padding: 0.9em 0.9em 0.9em 1.1em;
+  }
+  .text {
+    flex: 1;
+  }
+  .title {
+    font-size: var(--fs-title-dialog);
+  }
+  .detail {
+    font-size: var(--fs-label);
+  }
+  .actions {
+    flex: none;
+  }
+  .pill {
+    flex: none;
+  }
+}

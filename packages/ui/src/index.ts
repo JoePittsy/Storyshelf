@@ -41,6 +41,7 @@ export { TopResultCard } from './components/TopResultCard';
 export { TransportButtons } from './components/TransportButtons';
 export { UserAvatar, avatarGradient, initialOf } from './components/UserAvatar';
 export { UpNextCard } from './components/UpNextCard';
+export { FinishedCard } from './components/FinishedCard';
 export { OfferButton } from './components/OfferButton';
 export { WavyProgress } from './components/WavyProgress';
 export { BarList, ChartTooltip, ColumnChart, TipRow, TipTitle, Heatmap, RAMP, RAMP_STEPS } from './components/stats';
