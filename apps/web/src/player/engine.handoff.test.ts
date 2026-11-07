@@ -207,6 +207,7 @@ describe('found while paused: offered, not jumped to', () => {
           id: 'x',
           libraryItemId: 'li_1',
           updatedAt: server!.lastUpdate,
+          currentTime: server!.currentTime,
           deviceInfo: { deviceId: 'phone', model: 'iPhone' },
         },
       ] as never)

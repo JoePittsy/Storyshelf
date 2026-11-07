@@ -79,12 +79,21 @@ export function deviceName(info: SessionDevice | null | undefined): string | nul
   return null;
 }
 
-/** The writer of a place last updated at `lastUpdate`: the session updated nearest then, if one is close enough. */
-export function whoWrote(sessions: ListeningSession[], lastUpdate: number, ourDeviceId: string): Writer {
+/**
+ * The writer of the server's place: a session that stopped at that same place, updated near when the place was. A
+ * session somewhere else didn't write it, however recent (a write with no session behind it, such as another tab's
+ * move before playing, would otherwise be put down to whichever device played last).
+ */
+export function whoWrote(
+  sessions: ListeningSession[],
+  place: { currentTime: number; lastUpdate: number },
+  ourDeviceId: string,
+): Writer {
   let best: ListeningSession | null = null;
   for (const s of sessions) {
-    const d = Math.abs(s.updatedAt - lastUpdate);
-    if (d <= WRITER_WINDOW_MS && (!best || d < Math.abs(best.updatedAt - lastUpdate))) best = s;
+    const d = Math.abs(s.updatedAt - place.lastUpdate);
+    const here = Math.abs(s.currentTime - place.currentTime) <= SAME_PLACE_S;
+    if (here && d <= WRITER_WINDOW_MS && (!best || d < Math.abs(best.updatedAt - place.lastUpdate))) best = s;
   }
   const info = best?.deviceInfo ?? null;
   if (info?.deviceId && info.deviceId === ourDeviceId) return { name: null, sameBrowser: true };

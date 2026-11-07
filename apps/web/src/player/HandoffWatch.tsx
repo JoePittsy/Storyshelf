@@ -47,7 +47,7 @@ export function HandoffWatch() {
             durationMs: 12000,
             replaceKey: 'chapter-jump',
           });
-        showToast(`${who} was playing this book too, at ${fmtClock(n.at, false)}. Carrying on here.`, 'info', {
+        showToast(`${who} was also playing, at ${fmtClock(n.at, false)}. Carrying on here.`, 'info', {
           action: { label: 'Jump there', onClick: () => jumpTo(n.at, writerPlace(n.device)) },
           durationMs: 12000,
           replaceKey: 'handoff-conflict',

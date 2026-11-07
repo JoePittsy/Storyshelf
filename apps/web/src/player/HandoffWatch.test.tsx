@@ -66,7 +66,7 @@ describe('HandoffWatch', () => {
     render(<HandoffWatch />);
     act(() => notify({ kind: 'conflict', itemId: 'b1', at: 3720, device: { name: null, sameBrowser: false } }));
     const [text, , opts] = showToast.mock.calls[0];
-    expect(text).toBe('Another device was playing this book too, at 1:02:00. Carrying on here.');
+    expect(text).toBe('Another device was also playing, at 1:02:00. Carrying on here.');
     opts.action.onClick();
     expect(jumpTo).toHaveBeenCalledWith(3720, "the other device's place");
   });

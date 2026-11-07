@@ -91,24 +91,47 @@ const session = (over: Partial<ListeningSession> & { deviceInfo?: Record<string,
   }) as ListeningSession;
 
 describe('whoWrote: the session behind the newer place', () => {
-  it("is the one last updated nearest the place's update, within a couple of minutes", () => {
+  it('is the one that stopped at that place, updated nearest when the place was, within a couple of minutes', () => {
     const sessions = [
-      session({ id: 'a', updatedAt: 100_000, deviceInfo: { deviceId: 'phone', model: 'iPhone' } }),
-      session({ id: 'b', updatedAt: 40_000, deviceInfo: { deviceId: 'pc', osName: 'Windows' } }),
+      session({ id: 'a', currentTime: 5000, updatedAt: 100_000, deviceInfo: { deviceId: 'phone', model: 'iPhone' } }),
+      session({ id: 'b', currentTime: 900, updatedAt: 40_000, deviceInfo: { deviceId: 'pc', osName: 'Windows' } }),
     ];
-    expect(whoWrote(sessions, 101_000, 'me')).toEqual({ name: 'iPhone', sameBrowser: false });
-    expect(whoWrote(sessions, 41_000, 'me')).toEqual({ name: 'Windows PC', sameBrowser: false });
+    expect(whoWrote(sessions, { currentTime: 5000, lastUpdate: 101_000 }, 'me')).toEqual({
+      name: 'iPhone',
+      sameBrowser: false,
+    });
+    expect(whoWrote(sessions, { currentTime: 901, lastUpdate: 41_000 }, 'me')).toEqual({
+      name: 'Windows PC',
+      sameBrowser: false,
+    });
   });
 
   it('nothing near enough (a write with no session, such as a seek before playing): unknown', () => {
-    const sessions = [session({ updatedAt: 100_000, deviceInfo: { model: 'iPhone' } })];
-    expect(whoWrote(sessions, 100_000 + 10 * 60_000, 'me')).toEqual({ name: null, sameBrowser: false });
-    expect(whoWrote([], 100_000, 'me')).toEqual({ name: null, sameBrowser: false });
+    const sessions = [session({ currentTime: 5000, updatedAt: 100_000, deviceInfo: { model: 'iPhone' } })];
+    expect(whoWrote(sessions, { currentTime: 5000, lastUpdate: 100_000 + 10 * 60_000 }, 'me')).toEqual({
+      name: null,
+      sameBrowser: false,
+    });
+    expect(whoWrote([], { currentTime: 5000, lastUpdate: 100_000 }, 'me')).toEqual({ name: null, sameBrowser: false });
+  });
+
+  it('a session that stopped somewhere else did not write it, however recent', () => {
+    // The iPhone synced 5000 a moment ago; then a write with no session (a PATCH) put 1500 there.
+    const sessions = [session({ currentTime: 5000, updatedAt: 100_000, deviceInfo: { model: 'iPhone' } })];
+    expect(whoWrote(sessions, { currentTime: 1500, lastUpdate: 102_000 }, 'me')).toEqual({
+      name: null,
+      sameBrowser: false,
+    });
   });
 
   it('this browser\'s own device id: another tab or window of this browser, not "your PC"', () => {
-    const sessions = [session({ updatedAt: 100_000, deviceInfo: { deviceId: 'me', osName: 'Windows' } })];
-    expect(whoWrote(sessions, 100_000, 'me')).toEqual({ name: null, sameBrowser: true });
+    const sessions = [
+      session({ currentTime: 5000, updatedAt: 100_000, deviceInfo: { deviceId: 'me', osName: 'Windows' } }),
+    ];
+    expect(whoWrote(sessions, { currentTime: 5000, lastUpdate: 100_000 }, 'me')).toEqual({
+      name: null,
+      sameBrowser: true,
+    });
   });
 });
 

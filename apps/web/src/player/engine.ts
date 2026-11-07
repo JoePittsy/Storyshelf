@@ -910,9 +910,9 @@ function verify(): Promise<CheckResult> {
 }
 
 /** Who wrote the server's newer place, from the book's latest sessions. Best effort: unknown on any failure. */
-async function writerOf(itemId: string, lastUpdate: number): Promise<Writer> {
+async function writerOf(itemId: string, place: ServerPlace): Promise<Writer> {
   try {
-    return whoWrote(await within(recentSessions(itemId), CHECK_TIMEOUT_MS), lastUpdate, ourDeviceId());
+    return whoWrote(await within(recentSessions(itemId), CHECK_TIMEOUT_MS), place, ourDeviceId());
   } catch {
     return { name: null, sameBrowser: false };
   }
@@ -949,7 +949,7 @@ async function check(): Promise<CheckResult> {
     return 'clear';
   }
   const place = server as ServerPlace;
-  const device = await writerOf(item.id, place.lastUpdate);
+  const device = await writerOf(item.id, place);
   if (!still()) return 'stale';
   const h: Handoff = { itemId: item.id, position: place.currentTime, lastUpdate: place.lastUpdate, device };
   diag.log('handoff', { at: Math.round(h.position), here: Math.round(position()), playing: playingHere(), verified });
