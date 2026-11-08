@@ -36,3 +36,14 @@ export function createRetryOnce(): RetryOnce {
     },
   };
 }
+
+/**
+ * A pause this long, or longer, gets a fresh load of the file on resume. iOS drops the stream behind a paused element,
+ * and in a home-screen app it can drop the page's hold on the audio too, so play() on the old one can do nothing.
+ */
+export const FRESH_AFTER_MS = 30_000;
+
+/** True when a resume should reload the file first: paused at `pausedAt` (Date.now()) for at least `limit` ms. */
+export function freshAfterPause(pausedAt: number | null, now: number, limit = FRESH_AFTER_MS): boolean {
+  return pausedAt !== null && now - pausedAt >= limit;
+}
