@@ -6,6 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AbsError,
+  LAUNCH_WAIT_MS,
   absFetch,
   login,
   logout,
@@ -40,7 +41,9 @@ const userBody = (accessToken: string) => ({
 
 let store: Map<string, string>;
 /** What the fake server does: answer, refuse, or be out of reach. */
-let server: 'up' | 'down' | 'signed-out' | 'gateway';
+let server: 'up' | 'down' | 'signed-out' | 'gateway' | 'hang';
+/** While the server hangs: lets the held requests answer as the server now is. */
+let release: () => void = () => undefined;
 let issued: number;
 
 beforeEach(() => {
@@ -55,6 +58,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', async (input: string, init: RequestInit = {}) => {
     const url = input.replace(/^https?:\/\/[^/]+/, ''); // hosted mode prefixes the server
     await Promise.resolve();
+    if (server === 'hang') await new Promise<void>((r) => (release = r));
     if (server === 'down') throw new TypeError('Failed to fetch');
     if (server === 'gateway') return new Response('Bad Gateway', { status: 502 });
     if (url === '/login' || url === '/auth/refresh') {
@@ -223,5 +227,66 @@ describe('absFetch and connectivity', () => {
     markUnreachable();
     await absFetch('/api/me');
     expect(isOffline()).toBe(false);
+  });
+});
+
+describe('restoreSession on a connection that hangs', () => {
+  afterEach(() => vi.useRealTimers());
+
+  /** A new launch with joe remembered, the server not answering. */
+  async function hangingLaunch() {
+    await login('joe', 'correct');
+    resetAuthForTests();
+    server = 'hang';
+    vi.useFakeTimers();
+    const launch = restoreSession();
+    await vi.advanceTimersByTimeAsync(LAUNCH_WAIT_MS);
+    vi.useRealTimers();
+    return launch;
+  }
+
+  it('opens offline as the remembered user after a short wait, instead of waiting on the server', async () => {
+    await expect(hangingLaunch()).resolves.toMatchObject({ username: 'joe', accessToken: '' });
+    expect(isOffline()).toBe(true);
+  });
+
+  it('keeps the renewal going: when the server answers, the session is renewed and the app is online', async () => {
+    await hangingLaunch();
+    const renewed = vi.fn();
+    onSessionRenewed(renewed);
+    server = 'up';
+    release();
+    await vi.waitFor(() => expect(renewed).toHaveBeenCalledWith(expect.objectContaining({ accessToken: 'access-2' })));
+    expect(isOffline()).toBe(false);
+  });
+
+  it('shares that renewal with a retry, so the refresh token is never spent twice', async () => {
+    await hangingLaunch();
+    const retry = renewSession();
+    server = 'up';
+    release();
+    await expect(retry).resolves.toMatchObject({ accessToken: 'access-2' });
+    expect(issued).toBe(2); // the sign-in and one renewal
+  });
+
+  it('signs out if the server finally says the session is over', async () => {
+    await hangingLaunch();
+    const out = vi.fn();
+    onSignedOut(out);
+    server = 'signed-out';
+    release();
+    await vi.waitFor(() => expect(out).toHaveBeenCalledTimes(1));
+    expect(rememberedUser()).toBeNull();
+  });
+
+  it('with nobody remembered, it waits for the server as before', async () => {
+    server = 'hang';
+    vi.useFakeTimers();
+    let settled = false;
+    void restoreSession().finally(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(LAUNCH_WAIT_MS * 3);
+    expect(settled).toBe(false);
+    server = 'up';
+    release();
   });
 });

@@ -47,14 +47,22 @@ const isAbsStatus = (body: unknown): boolean =>
 
 const GATEWAY_ERRORS = new Set([502, 503, 504]);
 
-/** The app waits on the probe to open, so on a connection that hangs it gives up after this long (as if offline). */
-const PROBE_TIMEOUT_MS = 4000;
+/**
+ * The app waits on the probe to open, so on a connection that hangs it gives up after this long (as if offline). With a
+ * mode remembered from before, which is right nearly always, it waits less: a hanging connection must not hold the
+ * installed app on a blank screen.
+ */
+export const PROBE_TIMEOUT_MS = 4000;
+export const PROBE_TIMEOUT_REMEMBERED_MS = 1500;
 
 /** Probes the app's own origin and applies the result. Call once, before rendering. */
 export async function detectMode(fetchFn: typeof fetch = fetch): Promise<Mode> {
   let probe: ModeProbe;
+  const stored = read(MODE_KEY);
+  const remembered = stored === 'hosted' || stored === 'same-origin' ? stored : null;
   try {
-    const signal = typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(PROBE_TIMEOUT_MS) : undefined;
+    const wait = remembered ? PROBE_TIMEOUT_REMEMBERED_MS : PROBE_TIMEOUT_MS;
+    const signal = typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(wait) : undefined;
     const res = await fetchFn('/status', { signal });
     const body: unknown = await res.json().catch(() => null);
     // A gateway error is nginx (or the dev proxy) with ABS down behind it: same-origin, just out of reach.
@@ -62,8 +70,7 @@ export async function detectMode(fetchFn: typeof fetch = fetch): Promise<Mode> {
   } catch {
     probe = 'unreachable';
   }
-  const remembered = read(MODE_KEY);
-  const decided = decideMode(probe, remembered === 'hosted' || remembered === 'same-origin' ? remembered : null);
+  const decided = decideMode(probe, remembered);
   if (probe !== 'unreachable') write(MODE_KEY, decided);
   setMode(decided);
   return decided;

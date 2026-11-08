@@ -105,19 +105,44 @@ async function refresh(): Promise<AbsUser> {
  * connectivity.ts, whose checks renew the session). With no such user it throws, and the app says it needs a connection.
  */
 export async function restoreSession(): Promise<AbsUser | null> {
+  const pending = refreshOnce();
+  const last = rememberedUser();
+  // On a connection that hangs rather than fails (signal but no data, Wi-Fi with no internet) the renewal can take a
+  // minute to give up, with the app blank meanwhile. With a user to fall back on, the app opens offline after a short
+  // wait and leaves the renewal running: it is never cancelled, as ABS replaces the refresh token when it answers, and
+  // a renewal cut off after the server handled it would lose the new one. Its answer still counts when it comes:
+  // refreshOnce hands a new user to onSessionRenewed, a 401 signs out, and connectivity's retries share it.
+  if (last && !(await settlesWithin(pending, LAUNCH_WAIT_MS))) {
+    markUnreachable();
+    pending.catch(() => undefined);
+    return { ...last, accessToken: '' };
+  }
   try {
-    return await refresh();
+    return await pending;
   } catch (e) {
-    if (e instanceof AbsError && e.status === 401) {
-      forget();
-      return null;
-    }
+    // refreshOnce has already signed out and forgotten the user.
+    if (e instanceof AbsError && e.status === 401) return null;
     if (!isNetworkError(e)) throw e;
     markUnreachable();
     const last = rememberedUser();
     if (!last) throw e;
     return { ...last, accessToken: '' };
   }
+}
+
+/** How long launch waits on the session renewal before opening offline as the user last signed in here. */
+export const LAUNCH_WAIT_MS = 3000;
+
+/** True when `p` settles (either way) within `ms`. */
+function settlesWithin(p: Promise<unknown>, ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), ms);
+    const done = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    p.then(done, done);
+  });
 }
 
 export async function logout(): Promise<void> {

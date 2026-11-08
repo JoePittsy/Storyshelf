@@ -20,6 +20,17 @@ import { detectMode } from './api/server';
 import { applyStoredBookColour } from './frame/bookColour';
 import { listenForInstall } from './frame/install';
 import { startServiceWorker } from './pwa/serviceWorker';
+import { diag } from './player/diag';
+
+/** Marks a start-up step: on <html data-boot> for public/boot.js to report, and in the player log (Settings). */
+function step(name: string, detail?: unknown): void {
+  document.documentElement.dataset.boot = name;
+  diag.log(`boot: ${name}`, detail);
+}
+const errorText = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+addEventListener('error', (e) => diag.log('boot: error', { message: e.message, at: `${e.filename}:${e.lineno}` }));
+addEventListener('unhandledrejection', (e) => diag.log('boot: unhandled rejection', errorText(e.reason)));
+step('script started', { online: navigator.onLine, sw: !!navigator.serviceWorker?.controller });
 
 // Chromium offers installing once, early: catch it before anything awaits.
 listenForInstall();
@@ -28,10 +39,13 @@ applyStoredBookColour();
 
 // A new release waiting from last time takes over now, before anything renders (the page reloads onto it).
 if (!(await startServiceWorker())) {
+  step('service worker checked');
   // Decide same-origin or hosted before anything builds an ABS URL.
-  await detectMode();
+  step('finding the server');
+  step('server found', { mode: await detectMode() });
   render();
-}
+  step('rendered');
+} else step('reloading onto a new release');
 
 function render() {
   const queryClient = createQueryClient();

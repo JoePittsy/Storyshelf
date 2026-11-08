@@ -14,3 +14,31 @@ body {
   margin-top: 3em;
   border-radius: var(--r-xs);
 }
+
+/* index.html's placeholder until the app renders: only shows if that takes a moment (see public/boot.js). */
+.boot {
+  display: grid;
+  place-content: center;
+  gap: 0.6em;
+  min-height: 100dvh;
+  padding: 1em;
+  text-align: center;
+  color: var(--text-2);
+  opacity: 0;
+  animation: boot-in var(--dur-fast) 1.5s forwards;
+}
+.bootDetail {
+  max-width: 30em;
+  font-size: var(--fs-small);
+  overflow-wrap: anywhere;
+}
+@keyframes boot-in {
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot {
+    animation-duration: 0s;
+  }
+}
