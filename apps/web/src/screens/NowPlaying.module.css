@@ -260,7 +260,6 @@
    controls pinned to the bottom: mode switch, chapter row, seek, transport and the option tray. The safe areas are
    custom properties so they can be forced in a test where env() has no value. */
 .sheetRoot {
-  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   position: fixed;
   inset: 0;

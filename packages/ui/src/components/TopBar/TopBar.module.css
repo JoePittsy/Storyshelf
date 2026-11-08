@@ -6,7 +6,8 @@
   display: flex;
   align-items: center;
   gap: 0.8em;
-  padding: calc(0.6em + env(safe-area-inset-top)) 1em 0.6em;
+  /* --safe-top: the app's own clearance under the status bar, where it sets one. */
+  padding: calc(0.6em + var(--safe-top, env(safe-area-inset-top))) 1em 0.6em;
   box-shadow: var(--material-edge);
 }
 /* The frost is a layer behind the bar's content, not the bar's own box: iOS Safari can rasterise text inside a

@@ -12,7 +12,7 @@
   white-space: nowrap;
 }
 .launch {
-  padding-top: calc(3em + env(safe-area-inset-top, 0px));
+  padding-top: calc(3em + var(--safe-top, env(safe-area-inset-top, 0px)));
 }
 .announce {
   position: absolute;
