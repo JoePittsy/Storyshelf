@@ -4,7 +4,8 @@ import { Artwork, EmptyState, ItemRow, PillButton, ResumeHero, useDominantColor 
 import { useProgress } from '../api/libraries';
 import { useDownloads, type DownloadedBook } from '../downloads';
 import { usePlayer } from '../player/engine';
-import { downloadLine, jumpBackIn } from './offlineHome';
+import { placeOf } from '../player/places';
+import { downloadLine, jumpBackIn, withPlacesHere } from './offlineHome';
 import { resumeLabel, resumeStatus } from './resume';
 import styles from './OfflineHome.module.css';
 
@@ -22,12 +23,15 @@ export function OfflineHome({ onPlay }: Props) {
   const downloads = useDownloads();
   const progress = useProgress();
   const player = usePlayer();
-  const hero = jumpBackIn(downloads, progress.data ?? new Map(), player.item?.id);
+  const places = withPlacesHere(progress.data ?? new Map(), downloads, placeOf);
+  const hero = jumpBackIn(downloads, places, player.item?.id);
 
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Library</h1>
-      {hero && <Hero key={hero.itemId} book={hero} onPlay={onPlay} />}
+      {hero && (
+        <Hero key={hero.itemId} book={hero} lastPlace={places.get(hero.itemId)?.currentTime ?? 0} onPlay={onPlay} />
+      )}
       <section className={styles.section} aria-labelledby="downloads-heading">
         <h2 id="downloads-heading" className={styles.heading}>
           Downloads
@@ -63,14 +67,21 @@ export function OfflineHome({ onPlay }: Props) {
 }
 
 /** The download to carry on with, from the player's live place when it has the book, else the place last kept here. */
-function Hero({ book, onPlay }: { book: DownloadedBook; onPlay: (itemId: string) => void }) {
+function Hero({
+  book,
+  lastPlace,
+  onPlay,
+}: {
+  book: DownloadedBook;
+  lastPlace: number;
+  onPlay: (itemId: string) => void;
+}) {
   const navigate = useNavigate();
   const player = usePlayer();
-  const progress = useProgress();
   const wash = useDominantColor(book.coverUrl);
   const here = player.item?.id === book.itemId && player.duration > 0;
   const duration = here ? player.duration : book.duration;
-  const currentTime = here ? player.position : (progress.data?.get(book.itemId)?.currentTime ?? 0);
+  const currentTime = here ? player.position : lastPlace;
   const playing = here && player.status === 'playing';
   const open = () => void navigate(`/book/${book.itemId}`);
 

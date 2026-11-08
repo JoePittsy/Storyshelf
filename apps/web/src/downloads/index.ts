@@ -35,6 +35,9 @@ function publish(next: DownloadedBook[]): void {
 /** Every download, newest first. A new array whenever anything about one changes. */
 export const useDownloads = (): DownloadedBook[] => useSyncExternalStore(subscribe, snapshot, snapshot);
 
+/** Calls back whenever anything about the downloads changes (the player hears of a removal this way). Returns the unsubscribe. */
+export const onDownloadsChange = (cb: () => void): (() => void) => subscribe(cb);
+
 /** The download for a book, if any. */
 export const downloadOf = (itemId: string): DownloadedBook | undefined => books.find((b) => b.itemId === itemId);
 

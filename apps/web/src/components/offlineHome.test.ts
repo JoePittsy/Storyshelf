@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DownloadedBook } from '../downloads';
-import { downloadLine, jumpBackIn } from './offlineHome';
+import { downloadLine, jumpBackIn, withPlacesHere } from './offlineHome';
 
 const dl = (itemId: string, over: Partial<DownloadedBook> = {}): DownloadedBook => ({
   itemId,
@@ -55,5 +55,22 @@ describe('downloadLine', () => {
     expect(downloadLine(dl('a', { status: 'failed', error: 'not enough space' }))).toBe(
       "Didn't download: not enough space"
     );
+  });
+});
+
+describe('withPlacesHere', () => {
+  it('puts this device’s newer place over the server’s, so listening done offline counts', () => {
+    const progress = new Map([
+      ['a', { lastUpdate: 10, currentTime: 5, isFinished: false }],
+      ['b', { lastUpdate: 30, currentTime: 9, isFinished: false }],
+    ]);
+    const here = new Map([
+      ['a', { position: 50, updatedAt: 40 }],
+      ['b', { position: 1, updatedAt: 20 }],
+    ]);
+    const out = withPlacesHere(progress, [dl('a'), dl('b')], (id) => here.get(id));
+    expect(out.get('a')).toEqual({ lastUpdate: 40, currentTime: 50, isFinished: false });
+    expect(out.get('b')).toEqual({ lastUpdate: 30, currentTime: 9, isFinished: false });
+    expect(jumpBackIn([dl('a'), dl('b')], out)?.itemId).toBe('a');
   });
 });

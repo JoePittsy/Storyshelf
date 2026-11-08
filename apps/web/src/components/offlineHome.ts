@@ -23,6 +23,25 @@ export function jumpBackIn(
   return [...ready].sort((a, b) => heard(b) - heard(a) || b.addedAt - a.addedAt)[0];
 }
 
+/**
+ * The server's progress as last kept here, with this device's own place on top where it is newer (listening done
+ * offline that the server hasn't heard of yet). `placeOf` is places.ts's.
+ */
+export function withPlacesHere<P extends Place>(
+  progress: Map<string, P>,
+  downloads: DownloadedBook[],
+  placeOf: (itemId: string) => { position: number; updatedAt: number } | undefined
+): Map<string, Place> {
+  const out = new Map<string, Place>(progress);
+  for (const d of downloads) {
+    const here = placeOf(d.itemId);
+    const p = progress.get(d.itemId);
+    if (here && here.updatedAt > (p?.lastUpdate ?? 0))
+      out.set(d.itemId, { ...p, currentTime: here.position, lastUpdate: here.updatedAt });
+  }
+  return out;
+}
+
 /** A download's state in a few words: "Downloaded · 312 MB", "Downloading 42%", "Paused: you left the app". */
 export function downloadLine(d: DownloadedBook): string {
   const pct = d.totalBytes > 0 ? Math.floor((d.bytes / d.totalBytes) * 100) : 0;

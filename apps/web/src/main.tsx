@@ -22,6 +22,9 @@ import { applyStoredBookColour } from './frame/bookColour';
 import { listenForInstall } from './frame/install';
 import { startServiceWorker } from './pwa/serviceWorker';
 import { diag } from './player/diag';
+import { setProgressLookup } from './player/engine';
+import { startListeningSync } from './player/localSessions';
+import type { Progress } from './api/libraries';
 
 /** Marks a start-up step: on <html data-boot> for public/boot.js to report, and in the player log (Settings). */
 function step(name: string, detail?: unknown): void {
@@ -55,6 +58,10 @@ function render() {
   startConnectivity(renewSession);
   // The books kept on the device, for the screens; one left halfway when the app closed carries on.
   void startDownloads();
+  // Listening done offline goes to the server whenever it can be reached (at launch, back online, a renewed session).
+  startListeningSync();
+  // A book opening offline starts from the newest place known: the server's, as last fetched, is one.
+  setProgressLookup((id) => queryClient.getQueryData<Map<string, Progress>>(['me'])?.get(id));
   // Back online, or a 401 renewed: the session query holds the fresh user.
   onSessionRenewed((user) => queryClient.setQueryData(['session'], user));
   // Signed out, or the server no longer knows the session: the device keeps nothing of the user's.
