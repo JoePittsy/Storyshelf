@@ -34,6 +34,8 @@ import { LibrarySections } from '../components/LibrarySections';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
 import { LibraryFilters } from '../components/LibraryFilters';
 import { ResumeHome } from '../components/ResumeHome';
+import { OfflineHome } from '../components/OfflineHome';
+import { useOffline } from '../api/connectivity';
 import styles from './Library.module.css';
 
 const SORT_OPTIONS = SORT_CHOICES.map((c) => ({ value: c.value, label: c.label }));
@@ -45,7 +47,12 @@ interface Props {
 
 const noop = () => undefined;
 
+/** The library; offline, only what can be played without the server (it asks the server for nothing then). */
 export function Library({ onPlay = noop }: Props) {
+  return useOffline() ? <OfflineHome onPlay={onPlay} /> : <OnlineLibrary onPlay={onPlay} />;
+}
+
+function OnlineLibrary({ onPlay }: Required<Props>) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const q = params.get('q')?.trim() ?? '';

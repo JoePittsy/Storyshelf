@@ -18,15 +18,24 @@ export interface Restorable {
 }
 
 /**
- * The most recently played unfinished book of this library, as the Continue shelf chooses it (books only, this
- * library, not hidden), that was really begun. Undefined when there is none.
+ * The most recently played unfinished book of this library, among those the Continue shelf offers (books only, this
+ * library, not hidden), that was really begun. Undefined when there is none. "Most recently" counts this device's own
+ * places (`placeOf`, places.ts) as well as the server's: a book listened to offline, which the server hasn't heard of
+ * yet, is the one to put back, not the one the server last saw.
  */
 export function pickRestorable(
   inProgress: InProgressItem[] | undefined,
   progress: Map<string, Progress>,
-  libraryId: string
+  libraryId: string,
+  placeOf: (itemId: string) => { updatedAt: number } | undefined = () => undefined
 ): Restorable | undefined {
-  const tile = continueBooks(inProgress, progress, libraryId).find((t) => !t.isFinished);
+  const tiles = continueBooks(inProgress, progress, libraryId).filter((t) => !t.isFinished);
+  const latest = (id: string) => Math.max(progress.get(id)?.lastUpdate ?? 0, placeOf(id)?.updatedAt ?? 0);
+  // The server's order breaks ties (and decides for books neither side has a time for).
+  const tile = tiles.reduce<(typeof tiles)[number] | undefined>(
+    (best, t) => (!best || latest(t.item.id) > latest(best.item.id) ? t : best),
+    undefined
+  );
   if (!tile) return undefined;
   const { item } = tile;
   const duration = item.media.duration ?? 0;

@@ -60,6 +60,7 @@ let engine: typeof import('./engine');
 let sessionApi: typeof import('./session');
 
 beforeEach(async () => {
+  localStorage.clear(); // places kept by earlier tests (see places.ts)
   vi.resetModules();
   vi.stubGlobal('Audio', FakeAudio);
   sessionApi = await import('./session');

@@ -18,6 +18,17 @@
   right: 1.4em;
 }
 
+/* A round control pinned top right at every width: half the band's padding in from the corner, so a 44px target sits
+   tight to it. The title keeps out from under it. */
+.action {
+  position: absolute;
+  top: 0.6em;
+  right: 0.6em;
+}
+.withAction .title {
+  padding-inline-end: 2.6em;
+}
+
 .artWrap {
   position: relative;
   flex: none;

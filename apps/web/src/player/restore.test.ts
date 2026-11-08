@@ -23,6 +23,19 @@ const chapters = [
 ];
 
 describe('pickRestorable', () => {
+  it('puts back the book listened to here since, ahead of the one the server last saw', () => {
+    const progress = prog([
+      ['a', { lastUpdate: 5000 }],
+      ['b', { lastUpdate: 3000 }],
+    ]);
+    const here = new Map([['b', { updatedAt: 9000 }]]);
+    const got = pickRestorable([inProgress('a'), inProgress('b')], progress, 'lib1', (id) => here.get(id));
+    expect(got?.id).toBe('b');
+    // An older place here doesn't override the server's newer one.
+    const stale = new Map([['b', { updatedAt: 4000 }]]);
+    expect(pickRestorable([inProgress('a'), inProgress('b')], progress, 'lib1', (id) => stale.get(id))?.id).toBe('a');
+  });
+
   it('takes the most recently played book of this library, with where it was left', () => {
     const got = pickRestorable(
       [inProgress('a'), inProgress('b')],

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { Select, Tabs, TopBar } from '@joepittsy/ui';
-import { NAV_TABS, isLibrarySection, navTabFor, withLibrary } from '../api/people';
+import { isLibrarySection, navTabFor, navTabsFor, withLibrary } from '../api/people';
 import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
 import { AccountMenu } from './AccountMenu';
 import { pageTitle, useDocumentTitle } from './useDocumentTitle';
@@ -14,6 +14,7 @@ import { useToast } from '@joepittsy/ui';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { NeedsConnection, OfflineAnnouncer, OfflineBadge } from './Offline';
 import { useNeedsConnection } from './useNeedsConnection';
+import { useOffline } from '../api/connectivity';
 import { useRouteTrail } from './routeTrail';
 import styles from './Frame.module.css';
 
@@ -58,6 +59,8 @@ export function Frame() {
   // History's own sections share one destination, so moving between them leaves focus on the tab.
   const announcement = useRouteAnnouncement(pathname.startsWith('/history') ? '/history' : pathname);
   const needsConnection = useNeedsConnection();
+  // Offline, only the tabs that work without the server.
+  const offline = useOffline();
 
   // Only worth showing when there's a choice to make.
   const picker = libs.length > 1 && current && (
@@ -102,7 +105,7 @@ export function Frame() {
           <Tabs
             label="Sections"
             current={tab.key}
-            items={NAV_TABS.map((t) => ({
+            items={navTabsFor(offline).map((t) => ({
               key: t.key,
               label: t.label,
               // Settings is the app's, not the library's: no library in its address.

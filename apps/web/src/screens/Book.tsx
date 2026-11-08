@@ -38,6 +38,7 @@ import { BookBookmarks } from '../components/BookBookmarks';
 import { BookNextInSeries } from '../components/UpNext';
 import { BookMoreBy } from '../components/BookMoreBy';
 import { BookProgressMenu } from '../components/BookProgressMenu';
+import { BookDownload, useHasBookDownload } from '../components/BookDownload';
 import styles from './Book.module.css';
 
 interface Props {
@@ -61,6 +62,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const [coverEl, setCoverEl] = useState<HTMLElement | null>(null);
   const cover = item ? coverUrl(item.id, item.updatedAt) : null;
   const wash = usePanelColor(cover);
+  const hasDownload = useHasBookDownload(id);
   useCoverDock(pageEl, coverEl);
   const description = useMemo(() => {
     const raw = item?.media.metadata.description;
@@ -187,6 +189,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         }
         title={m.title}
         wash={wash}
+        action={hasDownload && <BookDownload itemId={item.id} title={m.title} />}
       >
         {m.subtitle && <p className={styles.sub}>{m.subtitle}</p>}
         {/* A line each when there is room; on a phone each group runs on as one line (who, then what), so the

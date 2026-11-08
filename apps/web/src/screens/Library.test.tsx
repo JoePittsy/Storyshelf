@@ -266,3 +266,19 @@ describe('REQ-32 search chips', () => {
     expect(screen.getByRole('searchbox', { name: 'Search books' })).toHaveValue('');
   });
 });
+
+describe('offline', () => {
+  it('shows only what plays without the server, and none of the library', async () => {
+    const { markUnreachable, resetConnectivityForTests } = await import('../api/connectivity');
+    markUnreachable();
+    try {
+      renderAt('/');
+      expect(await screen.findByText('No downloads yet')).toBeInTheDocument();
+      expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+      // Only progress (what Jump back in reads, from what's kept here); none of the library's own requests.
+      expect(absFetch.mock.calls.map((c) => c[0])).toEqual(['/api/me']);
+    } finally {
+      resetConnectivityForTests();
+    }
+  });
+});
