@@ -39,3 +39,65 @@
   font-size: var(--fs-prose);
   line-height: 1.5;
 }
+
+/* The icon picker: the app icon in every book colour, as a radio group. The ring marks the choice; the name under
+   each says it in words too, so colour is never the only cue. */
+.picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.legend {
+  margin-bottom: 0.9em;
+  padding: 0;
+  color: var(--text-2);
+}
+.legend strong {
+  color: var(--text);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.6em, 1fr));
+  gap: 0.9em 0.6em;
+}
+.swatch {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.35em;
+  cursor: pointer;
+}
+.radio {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.preview {
+  width: 3.6em;
+  height: 3.6em;
+  border-radius: var(--r-tile);
+  box-shadow: 0 0 0 1px var(--border);
+  transition: box-shadow var(--dur-fast) var(--ease-fast);
+}
+.swatch:hover .preview {
+  box-shadow: 0 0 0 2px var(--border-2);
+}
+.radio:checked ~ .preview {
+  box-shadow:
+    0 0 0 2px var(--bg-1),
+    0 0 0 4px var(--text);
+}
+.radio:focus-visible ~ .preview {
+  outline: var(--focus-width) solid var(--focus-color);
+  outline-offset: 6px;
+}
+.name {
+  color: var(--text-2);
+  font-size: var(--fs-small);
+}
+.radio:checked ~ .name {
+  color: var(--text);
+}

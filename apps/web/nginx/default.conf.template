@@ -15,7 +15,8 @@ server {
     proxy_buffering off;
   }
 
-  location = /manifest.webmanifest { default_type application/manifest+json; }
+  # The root manifest and each icon colour's (public/book/<colour>/manifest.webmanifest).
+  location ~ \.webmanifest$ { default_type application/manifest+json; }
 
   # Cloudflare Pages config files (public/_headers, public/_redirects) end up in dist; nginx does not use them, so don't serve them.
   location = /_headers { return 404; }

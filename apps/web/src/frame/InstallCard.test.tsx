@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 import type { InstallRoute } from './install';
@@ -25,20 +25,33 @@ HTMLDialogElement.prototype.close ||= function (this: HTMLDialogElement) {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  localStorage.clear();
 });
 
 describe('InstallCard', () => {
-  it("opens the browser's own install dialog where there is one", async () => {
+  it("offers the icon colour first, then opens the browser's own install dialog", async () => {
     route = 'prompt';
     render(<InstallCard />);
     await userEvent.click(screen.getByRole('button', { name: 'Install Storyshelf' }));
+    expect(promptInstall).not.toHaveBeenCalled();
+    const picker = screen.getByRole('group', { name: /Book colour/ });
+    expect(within(picker).getAllByRole('radio').length).toBeGreaterThanOrEqual(16);
+    expect(within(picker).getByRole('radio', { name: 'Paper' })).toBeChecked();
+
+    await userEvent.click(within(picker).getByRole('radio', { name: 'Amber' }));
+    expect(within(picker).getByRole('radio', { name: 'Amber' })).toBeChecked();
+    expect(screen.getByRole('group', { name: 'Book colour: Amber' })).toBeInTheDocument();
+    expect(localStorage.getItem('storyshelf.bookColour')).toBe('amber');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Install' }));
     expect(promptInstall).toHaveBeenCalledTimes(1);
   });
 
-  it('walks an iPhone through Share, then Add to Home Screen', async () => {
+  it('walks an iPhone through choosing the icon, then Share, then Add to Home Screen', async () => {
     route = 'ios';
     render(<InstallCard />);
     await userEvent.click(screen.getByRole('button', { name: 'Add to Home Screen' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     const steps = screen.getAllByRole('listitem').map((li) => li.textContent);
     expect(steps).toEqual([
       "Tap  Share in the browser's toolbar.",
@@ -48,11 +61,12 @@ describe('InstallCard', () => {
     expect(screen.getByText(/sign in once more there/)).toBeInTheDocument();
   });
 
-  it("names Mac Safari's menu, with nothing to press", () => {
+  it("names Mac Safari's menu, and lets the icon be chosen first", async () => {
     route = 'mac-safari';
     render(<InstallCard />);
     expect(screen.getByText('File › Add to Dock')).toBeInTheDocument();
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Choose the icon' }));
+    expect(screen.getByRole('group', { name: /Book colour/ })).toBeInTheDocument();
   });
 
   it('is not there when installed, or when the browser cannot install', () => {

@@ -8,10 +8,13 @@ import '@joepittsy/ui/styles.css';
 import './app.css';
 import { App } from './App';
 import { detectMode } from './api/server';
+import { applyStoredBookColour } from './frame/bookColour';
 import { listenForInstall } from './frame/install';
 
 // Chromium offers installing once, early: catch it before anything awaits.
 listenForInstall();
+// The chosen icon colour's links, before Chromium reads the manifest.
+applyStoredBookColour();
 
 // Decide same-origin or hosted before anything builds an ABS URL.
 await detectMode();

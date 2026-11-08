@@ -30,11 +30,14 @@ The hosted site (Cloudflare Pages) is the same build with no proxy: the browser 
 
 ## Icons
 
-Book spines on a shelf, their heights a sound wave. The templates are in `icons/`: `app-icon.svg` (the full icon, full bleed; iOS and Android round the corners) and `favicon.svg` (a simpler three-spine version for browser tabs, which stays legible at 16px). `render.cjs` builds everything in `public/` from them: `icon.svg`, `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, and `icon-maskable-512.png` (the art at 80%, inside Android's safe zone).
+Book spines on a shelf, their heights a sound wave. The tallest spine ("the book") is the one element with a colour of its own, and users choose it.
+
+- `icons/app-icon.svg` is the full icon (full bleed; iOS and Android round the corners) and `icons/favicon.svg` a simpler three-spine version for browser tabs, legible at 16px. In both, the book is class `book`.
+- `icons/book-colours.json` lists the colours users can pick from. The first is the default.
+- `icons/render.cjs` pre-renders every colour into `public/book/<id>/` (`apple-touch-icon.png` at 180, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` with the art at 80% inside Android's safe zone, and a `manifest.webmanifest`), and the default into the root of `public/` (the same PNGs, plus `icon.svg`). `public/manifest.webmanifest` is the template for the per-colour manifests. Rerun it after changing a template or the list:
 
 ```
-pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs                  # default off-white book
-pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs --book=#f2a65a   # colour the tallest spine
+pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs
 ```
 
-The tallest spine ("the book") is the one element with a colour of its own: class `book` in both templates. Home-screen icons are copied when the app is installed, so a new colour reaches an installed app only when it's added again; the browser tab picks it up on the next load.
+In the app, Settings' App card opens a picker before installing (`src/frame/bookColour.ts`). The choice is stored on the device and applied at every boot: the tab icon is drawn from the favicon template, and the `apple-touch-icon` and manifest links point at that colour's set, which is what iOS copies at Add to Home Screen and Chromium installs from. An app already installed keeps the icon it was installed with.

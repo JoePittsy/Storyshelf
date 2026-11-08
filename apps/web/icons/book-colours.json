@@ -1,0 +1,22 @@
+[
+  { "id": "paper", "name": "Paper", "hex": "#f5f7fa" },
+  { "id": "sand", "name": "Sand", "hex": "#dcc7a1" },
+  { "id": "marigold", "name": "Marigold", "hex": "#f4c44e" },
+  { "id": "amber", "name": "Amber", "hex": "#f2a65a" },
+  { "id": "coral", "name": "Coral", "hex": "#f07a5f" },
+  { "id": "brick", "name": "Brick", "hex": "#cf5a40" },
+  { "id": "rose", "name": "Rose", "hex": "#e3607f" },
+  { "id": "blush", "name": "Blush", "hex": "#f2a3b6" },
+  { "id": "orchid", "name": "Orchid", "hex": "#d390e0" },
+  { "id": "lavender", "name": "Lavender", "hex": "#aa9bf0" },
+  { "id": "cornflower", "name": "Cornflower", "hex": "#7f9ef0" },
+  { "id": "sky", "name": "Sky", "hex": "#6cbaf0" },
+  { "id": "lagoon", "name": "Lagoon", "hex": "#4fc4c9" },
+  { "id": "mint", "name": "Mint", "hex": "#6fd7b5" },
+  { "id": "fern", "name": "Fern", "hex": "#7ccf8a" },
+  { "id": "lime", "name": "Lime", "hex": "#b8da6a" },
+  { "id": "lemon", "name": "Lemon", "hex": "#eadf6b" },
+  { "id": "sage", "name": "Sage", "hex": "#a9bfa1" },
+  { "id": "slate", "name": "Slate", "hex": "#8fa3bd" },
+  { "id": "graphite", "name": "Graphite", "hex": "#717a87" }
+]
