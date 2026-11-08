@@ -117,3 +117,11 @@ describe('navTabFor: the top-level tab a route sits under', () => {
     expect(NAV_TABS.map((t) => t.key)).toEqual(['books', 'authors', 'narrators', 'series', 'history', 'settings']);
   });
 });
+
+describe('navTabsFor', () => {
+  it('shows every tab online, and offline only the library and Settings', async () => {
+    const { navTabsFor, NAV_TABS } = await import('./people');
+    expect(navTabsFor(false)).toBe(NAV_TABS);
+    expect(navTabsFor(true).map((t) => t.key)).toEqual(['books', 'settings']);
+  });
+});

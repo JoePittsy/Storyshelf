@@ -53,6 +53,13 @@ export const NAV_TABS: readonly NavTab[] = [
   { key: 'settings', label: 'Settings', path: '/settings', icon: 'settings', separated: true },
 ];
 
+/** What can be used with no connection: the library (which offers the downloads) and Settings. */
+const OFFLINE_TAB_KEYS = new Set(['books', 'settings']);
+
+/** The tabs to show: all of them online; offline, only those that work without the server. */
+export const navTabsFor = (offline: boolean): readonly NavTab[] =>
+  offline ? NAV_TABS.filter((t) => OFFLINE_TAB_KEYS.has(t.key)) : NAV_TABS;
+
 /** The library's own sections, shown inside the Library tab rather than as tabs of their own (the phone row is full). */
 const LIBRARY_SECTION_PATHS = new Set(['/', '/collections', '/playlists']);
 
