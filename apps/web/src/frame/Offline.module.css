@@ -1,0 +1,25 @@
+/* A status is a tonal chip (DESIGN.md): Tint Chip fill, a full pill, secondary label colour. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.35em 0.8em;
+  border-radius: var(--r-pill);
+  background: rgba(var(--tint), 0.16);
+  color: var(--text-2);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.launch {
+  padding-top: calc(3em + env(safe-area-inset-top, 0px));
+}
+.announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
