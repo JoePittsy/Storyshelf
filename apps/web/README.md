@@ -30,4 +30,8 @@ The hosted site (Cloudflare Pages) is the same build with no proxy: the browser 
 
 ## Icons
 
-The icons in `public/` are placeholders.
+Book spines on a shelf, their heights a sound wave. The sources are in `icons/`: `app-icon.svg` (the full icon, full bleed; iOS and Android round the corners), `app-icon-maskable.svg` (the same at 80%, inside Android's safe zone) and `public/icon.svg` (a simpler three-spine version for browser tabs, which stays legible at 16px). After changing one, regenerate the PNGs in `public/`:
+
+```
+pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs
+```
