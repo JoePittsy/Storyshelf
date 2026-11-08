@@ -12,6 +12,8 @@ import { usePlayerJump } from '../player/useUndoableJump';
 import { useBookmarkHere } from '../player/useBookmarkHere';
 import { useToast } from '@joepittsy/ui';
 import { ShortcutsDialog } from './ShortcutsDialog';
+import { NeedsConnection, OfflineAnnouncer, OfflineBadge } from './Offline';
+import { useNeedsConnection } from './useNeedsConnection';
 import { useRouteTrail } from './routeTrail';
 import styles from './Frame.module.css';
 
@@ -55,6 +57,7 @@ export function Frame() {
   useRouteTrail();
   // History's own sections share one destination, so moving between them leaves focus on the tab.
   const announcement = useRouteAnnouncement(pathname.startsWith('/history') ? '/history' : pathname);
+  const needsConnection = useNeedsConnection();
 
   // Only worth showing when there's a choice to make.
   const picker = libs.length > 1 && current && (
@@ -87,7 +90,12 @@ export function Frame() {
           </Link>
         }
         centre={picker}
-        end={<AccountMenu onShowShortcuts={() => setHelp('menu')} />}
+        end={
+          <>
+            <OfflineBadge />
+            <AccountMenu onShowShortcuts={() => setHelp('menu')} />
+          </>
+        }
       />
       {tab && !immersive && (
         <div className={styles.tabs}>
@@ -108,7 +116,13 @@ export function Frame() {
       )}
       {/* The skip link's target. Each screen renders its own <main> inside, so the hash works without the script. */}
       <div id="main" className={`${styles.content}${!tab && !immersive ? ' ' + styles.topless : ''}`}>
-        <Outlet />
+        {/* A phone has no top bar to carry the badge: it heads the page instead. */}
+        {!needsConnection && <OfflineBadge className={styles.pageBadge} />}
+        {/* Kept mounted while hidden: its queries are what say whether the page has anything to show. */}
+        <div hidden={needsConnection}>
+          <Outlet />
+        </div>
+        {needsConnection && <NeedsConnection />}
       </div>
       {pathname === '/now-playing' ? (
         <NowPlayingTitle />
@@ -118,6 +132,7 @@ export function Frame() {
       <p className={styles.announce} role="status">
         {announcement}
       </p>
+      <OfflineAnnouncer />
       {/* Layout slot for the mini player: collapses while empty. */}
       <div id="mini-player-slot" className={styles.player} />
       {help && (

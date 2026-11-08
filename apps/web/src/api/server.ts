@@ -45,13 +45,20 @@ export function decideMode(probe: ModeProbe, remembered?: Mode | null): Mode {
 const isAbsStatus = (body: unknown): boolean =>
   typeof body === 'object' && body !== null && (body as { app?: unknown }).app === 'audiobookshelf';
 
+const GATEWAY_ERRORS = new Set([502, 503, 504]);
+
+/** The app waits on the probe to open, so on a connection that hangs it gives up after this long (as if offline). */
+const PROBE_TIMEOUT_MS = 4000;
+
 /** Probes the app's own origin and applies the result. Call once, before rendering. */
 export async function detectMode(fetchFn: typeof fetch = fetch): Promise<Mode> {
   let probe: ModeProbe;
   try {
-    const res = await fetchFn('/status');
+    const signal = typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(PROBE_TIMEOUT_MS) : undefined;
+    const res = await fetchFn('/status', { signal });
     const body: unknown = await res.json().catch(() => null);
-    probe = res.ok && isAbsStatus(body) ? 'abs' : 'other';
+    // A gateway error is nginx (or the dev proxy) with ABS down behind it: same-origin, just out of reach.
+    probe = GATEWAY_ERRORS.has(res.status) ? 'unreachable' : res.ok && isAbsStatus(body) ? 'abs' : 'other';
   } catch {
     probe = 'unreachable';
   }

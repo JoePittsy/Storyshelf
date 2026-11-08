@@ -138,3 +138,14 @@ main:focus {
 .skip:focus-visible {
   transform: none;
 }
+
+/* The Offline badge sits in the top bar; a phone has none, so there it heads the page. */
+.frame .pageBadge {
+  display: none;
+}
+@media (width < 40em) {
+  .frame .pageBadge {
+    display: inline-flex;
+    margin-bottom: 1em;
+  }
+}

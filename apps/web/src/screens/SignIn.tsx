@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
 import { PillButton, TextField } from '@joepittsy/ui';
 import { AbsError, UnsupportedServerError, assertSupported, changeServer, getStatus, login } from '../api/auth';
+import { clearUserQueries } from '../api/queryCache';
 import { ServerProbeError, getMode, getServerUrl, normalizeServerUrl, probeServer } from '../api/server';
 import styles from './SignIn.module.css';
 
@@ -117,6 +118,7 @@ export function SignIn() {
     setError(undefined);
     try {
       const user = await login(String(f.get('username')), String(f.get('password')));
+      clearUserQueries(qc); // nothing of whoever was signed in before
       qc.setQueryData(['session'], user);
       void navigate(from, { replace: true });
     } catch (err) {

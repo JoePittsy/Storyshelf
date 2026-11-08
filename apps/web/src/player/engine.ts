@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
 import { AbsError } from '../api/auth';
+import { checkConnection, isNetworkError, isOffline } from '../api/connectivity';
 import { absUrl } from '../api/server';
 import { attachAirPlay } from './airplay';
 import { diag } from './diag';
@@ -96,6 +97,8 @@ export interface PlayerState {
 const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
 const MSG_NETWORK = "Couldn't reach the server. Check your connection and try again.";
 const MSG_OTHER = "Couldn't start this book. Try again in a moment.";
+/** Offline, a book can't open: its audio streams from the server. */
+export const MSG_OFFLINE = "You're offline. Books need a connection to play until downloads arrive.";
 
 /** The settings part of the state, as stored. */
 function settingsState(): Pick<PlayerState, 'rate' | 'defaultRate' | 'skipBack' | 'skipForward' | 'rewindOnResume'> {
@@ -314,6 +317,13 @@ export function onBookEnded(cb: (itemId: string) => void): () => void {
   return () => void endedListeners.delete(cb);
 }
 
+const offlineListeners = new Set<() => void>();
+/** Calls back when Play was pressed for a book that can't open because the app is offline. Returns the unsubscribe. */
+export function onOfflinePlay(cb: () => void): () => void {
+  offlineListeners.add(cb);
+  return () => void offlineListeners.delete(cb);
+}
+
 let lastFailAt: number | null = null;
 
 function fail(e: unknown): void {
@@ -323,7 +333,14 @@ function fail(e: unknown): void {
   if (isRepeatFailure(lastFailAt, now)) return void diag.log('fail (repeat)', errInfo(e));
   lastFailAt = now;
   diag.log('fail', errInfo(e));
-  const message = e instanceof UnsupportedFormatError ? MSG_FORMAT : e instanceof TypeError ? MSG_NETWORK : MSG_OTHER;
+  const message =
+    e instanceof UnsupportedFormatError
+      ? MSG_FORMAT
+      : isNetworkError(e)
+        ? isOffline()
+          ? MSG_OFFLINE
+          : MSG_NETWORK
+        : MSG_OTHER;
   set({ status: 'error', error: message });
   updatePlaybackState('paused');
 }
@@ -696,6 +713,14 @@ export async function play(itemId: string, from?: number): Promise<void> {
   if (session?.libraryItemId === itemId && track) {
     if (from !== undefined) seekBook(from);
     if (a.paused) resume(a, 'play()');
+    return;
+  }
+  // Opening a book needs the server. Offline, say so and leave the player as it is (a restored book stays put). The
+  // server is asked again now, in case the browser had it wrong, so the next tap can work.
+  if (isOffline()) {
+    note('play while offline');
+    void checkConnection();
+    offlineListeners.forEach((cb) => cb());
     return;
   }
   // Everything up to the first await runs inside the click.
