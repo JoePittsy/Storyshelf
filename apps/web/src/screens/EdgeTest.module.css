@@ -1,0 +1,61 @@
+/* Over everything, from the very top of the screen (under the status bar), so iOS's edge effect falls on the rows. */
+.page {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+.probe {
+  position: absolute;
+  top: 0;
+  height: env(safe-area-inset-top, 0px);
+  width: 1px;
+}
+.row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  height: 10px;
+  padding-left: 0.5em;
+  font-size: var(--fs-small);
+  line-height: 1;
+}
+.line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--text);
+  opacity: 0.5;
+}
+.label {
+  min-width: 3.5em;
+  font-variant-numeric: tabular-nums;
+}
+.pill {
+  width: 2.8em;
+  height: 0.38em;
+  border-radius: var(--r-pill);
+  background: var(--track);
+}
+.foot {
+  position: absolute;
+  left: 1em;
+  right: 1em;
+  bottom: calc(1.5em + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6em;
+  font-size: var(--fs-label);
+  color: var(--text-2);
+}
+.foot p {
+  margin: 0;
+}

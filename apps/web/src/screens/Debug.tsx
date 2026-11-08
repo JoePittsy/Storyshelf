@@ -41,6 +41,9 @@ export function Debug() {
       <Link to="/debug/storage" className={styles.link}>
         Storage test
       </Link>
+      <Link to="/debug/edge" className={styles.link}>
+        Top edge blur test
+      </Link>
       <div className={styles.bar}>
         <PillButton variant="primary" onClick={() => void copy()}>
           Copy log
