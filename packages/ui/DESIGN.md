@@ -378,6 +378,7 @@ Every custom property declared in `global.css` or `depth.css` is named in this f
 - **Sizing and rhythm:** `--page-scale` is the fluid page base, `--card-size` the width of shelf cards, `--font-sans` the one font stack.
 - **Motion:** `--dur` and `--ease` for state changes, `--dur-fast` and `--ease-fast` for hover and focus feedback.
 - **Focus ring:** `--focus-width` and `--focus-color`.
+- **Browser surfaces:** `global.css` sets `color-scheme: dark` (native widgets, autofill and scrollbars draw dark), a page scrollbar in `--glass` on a clear track, and `::selection` as the tint at 0.32 with the text keeping its colour.
 - **Materials:** `--material-bg`, `--material-filter` and `--material-edge` build the frosted surface; `--float-shadow` is its shadow.
 - **Runtime:** `--wash` is not declared in the token files. It is set inline by a surface, from `useDominantColor`.
 

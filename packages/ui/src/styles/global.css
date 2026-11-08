@@ -178,6 +178,16 @@
   outline-offset: 2px;
 }
 
+/* The parts the browser draws: dark native widgets and scrollbars, and selection in the room's tint,
+   not the platform's bright blue. Selected text keeps its own colour. */
+:root {
+  color-scheme: dark;
+  scrollbar-color: var(--glass) transparent;
+}
+::selection {
+  background: rgba(var(--tint), 0.32);
+}
+
 /* Loading placeholder: add class="skeleton" and give the element its real size, so nothing shifts on
    load. Stagger with animation-delay. Static under reduced motion. */
 .skeleton {
