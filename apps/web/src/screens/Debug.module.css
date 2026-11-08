@@ -32,3 +32,23 @@
   color: var(--text-2);
   font-size: var(--fs-label);
 }
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+.heading {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
+.pre {
+  margin: 0;
+  padding: 0.8em;
+  overflow-x: auto;
+  border-radius: var(--r-xs);
+  background: var(--bg-1);
+  font-size: var(--fs-label);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
