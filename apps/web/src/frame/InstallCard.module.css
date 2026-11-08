@@ -48,10 +48,15 @@
   border: 0;
   min-width: 0;
 }
-.legend {
-  margin-bottom: 0.9em;
-  padding: 0;
-  color: var(--text-2);
+/* The group's name, for screen readers: the dialog's title says it on screen. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .grid {
   display: grid;

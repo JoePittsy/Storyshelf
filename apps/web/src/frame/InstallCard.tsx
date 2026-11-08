@@ -59,11 +59,6 @@ export function InstallCard({ className }: { className?: string }) {
       {step === 'pick' && (
         <Dialog title="Choose your icon" onClose={close} actions={next}>
           <IconPicker />
-          <p className={styles.after}>
-            {route === 'mac-safari'
-              ? 'Then choose File › Add to Dock. An app already in the Dock keeps the icon it was added with.'
-              : 'The icon is set when you install. An installed app keeps the icon it was installed with.'}
-          </p>
         </Dialog>
       )}
 
@@ -108,7 +103,7 @@ function IconPicker() {
   const chosen = useBookColour();
   return (
     <fieldset className={styles.picker}>
-      <legend className={styles.legend}>Pick a colour for the book</legend>
+      <legend className={styles.srOnly}>Book colour</legend>
       <div className={styles.grid}>
         {BOOK_COLOURS.map((c) => (
           <label key={c.id} className={styles.swatch}>
