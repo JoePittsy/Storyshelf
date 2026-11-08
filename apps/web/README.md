@@ -30,8 +30,11 @@ The hosted site (Cloudflare Pages) is the same build with no proxy: the browser 
 
 ## Icons
 
-Book spines on a shelf, their heights a sound wave. The sources are in `icons/`: `app-icon.svg` (the full icon, full bleed; iOS and Android round the corners), `app-icon-maskable.svg` (the same at 80%, inside Android's safe zone) and `public/icon.svg` (a simpler three-spine version for browser tabs, which stays legible at 16px). After changing one, regenerate the PNGs in `public/`:
+Book spines on a shelf, their heights a sound wave. The templates are in `icons/`: `app-icon.svg` (the full icon, full bleed; iOS and Android round the corners) and `favicon.svg` (a simpler three-spine version for browser tabs, which stays legible at 16px). `render.cjs` builds everything in `public/` from them: `icon.svg`, `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, and `icon-maskable-512.png` (the art at 80%, inside Android's safe zone).
 
 ```
-pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs
+pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs                  # default off-white book
+pnpm --filter @joepittsy/ui exec node ../../apps/web/icons/render.cjs --book=#f2a65a   # colour the tallest spine
 ```
+
+The tallest spine ("the book") is the one element with a colour of its own: class `book` in both templates. Home-screen icons are copied when the app is installed, so a new colour reaches an installed app only when it's added again; the browser tab picks it up on the next load.

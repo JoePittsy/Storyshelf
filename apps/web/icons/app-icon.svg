@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Storyshelf: book spines on a shelf, their heights a sound wave, the last one leaning. -->
+  <!-- Storyshelf: book spines on a shelf, their heights a sound wave, the last one leaning.
+       The tallest is "the book": render.cjs can recolour it (class book). -->
+  <style>.book { fill: #f5f7fa; }</style>
   <rect width="512" height="512" fill="#111418"/>
   <mask id="bands">
     <rect width="512" height="512" fill="#fff"/>
@@ -9,7 +11,7 @@
   <g fill="#f5f7fa" mask="url(#bands)">
     <rect x="112" y="236" width="46" height="132" rx="9" opacity=".55"/>
     <rect x="168" y="178" width="46" height="190" rx="9" opacity=".75"/>
-    <rect x="224" y="124" width="56" height="244" rx="9"/>
+    <rect class="book" x="224" y="124" width="56" height="244" rx="9"/>
     <rect x="290" y="164" width="46" height="204" rx="9" opacity=".8"/>
     <rect x="352" y="214" width="46" height="154" rx="9" opacity=".6" transform="rotate(14 398 368)"/>
   </g>
