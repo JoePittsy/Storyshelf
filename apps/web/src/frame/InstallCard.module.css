@@ -40,8 +40,8 @@
   line-height: 1.5;
 }
 
-/* The icon picker: the app icon in every book colour, as a radio group. The ring marks the choice; the name under
-   each says it in words too, so colour is never the only cue. */
+/* The icon picker: the app icon in every book colour, as a radio group with no visible names. The ring, not the
+   colour, marks the choice; each radio carries its colour's name for screen readers. */
 .picker {
   margin: 0;
   padding: 0;
@@ -53,19 +53,15 @@
   padding: 0;
   color: var(--text-2);
 }
-.legend strong {
-  color: var(--text);
-}
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(4.6em, 1fr));
-  gap: 0.9em 0.6em;
+  grid-template-columns: repeat(auto-fill, minmax(4.2em, 1fr));
+  gap: 0.8em 0.6em;
 }
 .swatch {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 0.35em;
   cursor: pointer;
 }
 .radio {
@@ -93,11 +89,4 @@
 .radio:focus-visible ~ .preview {
   outline: var(--focus-width) solid var(--focus-color);
   outline-offset: 6px;
-}
-.name {
-  color: var(--text-2);
-  font-size: var(--fs-small);
-}
-.radio:checked ~ .name {
-  color: var(--text);
 }

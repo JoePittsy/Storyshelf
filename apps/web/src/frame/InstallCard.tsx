@@ -108,15 +108,15 @@ function IconPicker() {
   const chosen = useBookColour();
   return (
     <fieldset className={styles.picker}>
-      <legend className={styles.legend}>
-        Book colour: <strong>{chosen.name}</strong>
-      </legend>
+      <legend className={styles.legend}>Pick a colour for the book</legend>
       <div className={styles.grid}>
         {BOOK_COLOURS.map((c) => (
           <label key={c.id} className={styles.swatch}>
+            {/* No visible names: the icons say it. The name stays for screen readers. */}
             <input
               type="radio"
               name="book-colour"
+              aria-label={c.name}
               className={styles.radio}
               value={c.id}
               checked={c.id === chosen.id}
@@ -124,7 +124,6 @@ function IconPicker() {
               data-autofocus={c.id === chosen.id || undefined}
             />
             <img src={iconPreview(c)} alt="" className={styles.preview} draggable={false} />
-            <span className={styles.name}>{c.name}</span>
           </label>
         ))}
       </div>

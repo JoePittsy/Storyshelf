@@ -34,13 +34,13 @@ describe('InstallCard', () => {
     render(<InstallCard />);
     await userEvent.click(screen.getByRole('button', { name: 'Install Storyshelf' }));
     expect(promptInstall).not.toHaveBeenCalled();
-    const picker = screen.getByRole('group', { name: /Book colour/ });
+    const picker = screen.getByRole('group', { name: 'Pick a colour for the book' });
     expect(within(picker).getAllByRole('radio').length).toBeGreaterThanOrEqual(16);
     expect(within(picker).getByRole('radio', { name: 'Paper' })).toBeChecked();
 
     await userEvent.click(within(picker).getByRole('radio', { name: 'Amber' }));
     expect(within(picker).getByRole('radio', { name: 'Amber' })).toBeChecked();
-    expect(screen.getByRole('group', { name: 'Book colour: Amber' })).toBeInTheDocument();
+    expect(screen.queryByText('Amber')).not.toBeInTheDocument(); // named for screen readers only
     expect(localStorage.getItem('storyshelf.bookColour')).toBe('amber');
 
     await userEvent.click(screen.getByRole('button', { name: 'Install' }));
@@ -66,7 +66,7 @@ describe('InstallCard', () => {
     render(<InstallCard />);
     expect(screen.getByText('File › Add to Dock')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Choose the icon' }));
-    expect(screen.getByRole('group', { name: /Book colour/ })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Pick a colour for the book' })).toBeInTheDocument();
   });
 
   it('is not there when installed, or when the browser cannot install', () => {
