@@ -141,6 +141,65 @@ async function pauseFor(a: FakeAudio, ms: number) {
   now += ms;
 }
 
+describe('resuming after a long pause (iOS may have dropped the stream)', () => {
+  it('a pause of 30 s or more loads the file afresh at the place, inside the tap, and plays it', async () => {
+    const a = await playing();
+    await pauseFor(a, 2 * 60_000);
+    a.src = ''; // to see whether it is pointed at the file again
+    engine.toggle();
+    expect(a.src).toBe('/t/2');
+    expect(a.paused).toBe(false);
+    expect(snapshot().position).toBe(445); // the rewind still applies
+  });
+
+  it('a short pause just plays on: no reload', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    a.src = '';
+    engine.toggle();
+    expect(a.src).toBe('');
+    expect(a.paused).toBe(false);
+  });
+
+  it('play() on the paused book (the hero Resume) reloads after a long pause too', async () => {
+    const a = await playing();
+    await pauseFor(a, 2 * 60_000);
+    a.src = '';
+    void engine.play('li_1');
+    expect(a.src).toBe('/t/2');
+  });
+
+  it('when the fresh file fails too, the session is re-opened and playback carries on, not left paused', async () => {
+    vi.stubGlobal('MediaError', { MEDIA_ERR_SRC_NOT_SUPPORTED: 4 });
+    const a = await playing();
+    await pauseFor(a, 2 * 60_000);
+    engine.toggle();
+    a.fire('error'); // the reload's file fails: one retry
+    a.fire('error'); // and again: re-open the session, then play
+    a.paused = true;
+    a.src = '';
+    await vi.waitFor(() => expect(a.src).toBe('/t/2'));
+    expect(a.paused).toBe(false);
+  });
+
+  it('sets the lock-screen handlers again each time playback starts', async () => {
+    const setActionHandler = vi.fn();
+    vi.stubGlobal('navigator', { ...navigator, mediaSession: { setActionHandler, setPositionState() {} } });
+    vi.stubGlobal(
+      'MediaMetadata',
+      class {
+        constructor(public init: unknown) {}
+      }
+    );
+    const a = await playing();
+    setActionHandler.mockClear();
+    a.pause();
+    a.paused = false;
+    a.fire('playing');
+    expect(setActionHandler).toHaveBeenCalledWith('play', expect.any(Function));
+  });
+});
+
 describe('each book keeps its speed', () => {
   it('a speed set while a book is loaded stays with that book; other books play at the default', async () => {
     const a = await playing('li_1');

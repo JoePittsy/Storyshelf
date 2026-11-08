@@ -14,7 +14,7 @@ import { supportedMimeTypes } from './mime';
 import { isRepeatFailure, srcNotSupportedError } from './failure';
 import type { Progress as LibraryProgress } from '../api/libraries';
 import { chooseStart, refreshedPosition, restoredPatch, restoredSeek, type Restorable } from './restore';
-import { createRetryOnce, decide, stalledFor, STALL_MS, type Intent } from './resume';
+import { createRetryOnce, decide, freshAfterPause, stalledFor, STALL_MS, type Intent } from './resume';
 import {
   UnsupportedFormatError,
   closeSession,
@@ -349,15 +349,20 @@ function startPlay(a: HTMLAudioElement, why = 'play'): void {
   );
 }
 
-/** Reload the current track at the current position and play, once per resume. False when it can't or already did. */
-function reloadAndPlay(why: string): boolean {
+/** Reload the current track at the current position and play. False when nothing is loaded. */
+function reload(why: string): boolean {
   if (!session || !track || !audio) return false;
-  if (!retry.attempt()) return false;
   const here = audio.currentTime > 0 ? toBookTime(track, audio.currentTime) : state.position;
   const { track: tr, offset } = locate(session.audioTracks, here);
-  note(`reload and retry (${why})`, { to: Math.round(here) });
+  note(`reload (${why})`, { to: Math.round(here) });
   load(tr, offset, true);
   return true;
+}
+
+/** `reload`, once per resume. False when it can't or already did. */
+function reloadAndPlay(why: string): boolean {
+  if (!session || !track || !audio) return false;
+  return retry.attempt() && reload(`retry: ${why}`);
 }
 
 /** Called from events and wake-ups: if play() was asked for 3 s ago and nothing has played, reload. */
@@ -376,13 +381,22 @@ function act(intent: Intent, why: string): void {
   const todo = decide(intent, a.paused);
   if (todo === 'pause') return a.pause();
   if (todo !== 'play') return;
-  if (session && track) {
-    takeNewerOnPlay();
-    // iOS may have dropped the stream while paused and locked: start over now, inside this handler.
-    if (rewindOnResume()) return;
-    if ((a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) && reloadAndPlay('no source')) return;
-    startPlay(a, why);
-  } else if (lastRequest) void play(lastRequest.itemId, lastRequest.from);
+  if (session && track) resume(a, why);
+  else if (lastRequest) void play(lastRequest.itemId, lastRequest.from);
+}
+
+/**
+ * Plays the loaded book after a pause. Runs synchronously inside the tap or the lock-screen action: iOS only lets
+ * playback start there. After a long pause, or with the element broken, the file is loaded afresh rather than resumed,
+ * since iOS may have dropped the stream (and, in a home-screen app, the page's hold on the audio) while it sat paused.
+ */
+function resume(a: HTMLAudioElement, why: string): void {
+  const since = pausedAt; // read before anything below clears it
+  takeNewerOnPlay();
+  if (rewindOnResume()) return; // crossed into another file: already loading it afresh
+  const broken = !!a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE;
+  if ((broken || freshAfterPause(since, Date.now())) && reload(broken ? 'no source' : 'long pause')) return;
+  startPlay(a, why);
 }
 
 /** Point the element at a track. Called synchronously from a gesture or the `ended` handler when autoplay is true. */
@@ -550,6 +564,8 @@ function getAudio(): HTMLAudioElement {
     retry.reset();
     lastMs = performance.now();
     set({ status: 'playing', ended: false });
+    // iOS can ignore lock-screen handlers set before the element became the "now playing" one: set them all again now.
+    setMetadata(state.item, state.chapters[state.chapterIndex]?.title ?? '');
     updatePlaybackState('playing');
     mediaPosition();
   });
@@ -609,7 +625,8 @@ function getAudio(): HTMLAudioElement {
     if (awaitingPlaying !== null && reloadAndPlay('error')) return;
     // Often the server lost the session (restart). Syncing re-opens it, then carry on from where we were.
     recovering = true;
-    const wasPlaying = state.status === 'playing';
+    // Playing, or Play pressed and not yet playing (a resume whose reload failed): either way, carry on playing.
+    const wasPlaying = state.status === 'playing' || awaitingPlaying !== null;
     const t = position();
     void doSync().then(() => {
       if (!session) return;
@@ -678,10 +695,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
   lastRequest = { itemId, from };
   if (session?.libraryItemId === itemId && track) {
     if (from !== undefined) seekBook(from);
-    if (a.paused) {
-      takeNewerOnPlay();
-      if (!rewindOnResume()) startPlay(a, 'play()');
-    }
+    if (a.paused) resume(a, 'play()');
     return;
   }
   // Everything up to the first await runs inside the click.

@@ -233,6 +233,7 @@ describe('found while paused: offered, not jumped to', () => {
     await engine.checkHandoff('wake');
     engine.toggle();
     expect(snapshot().position).toBe(900);
+    a.fire('loadedmetadata'); // paused an hour: the file is loaded afresh, and seeks once it is in
     expect(a.currentTime).toBe(500); // file 2 at 500: no rewind on top of the other device's place
     expect(snapshot().handoff).toBeNull();
     expect(notices).toEqual([expect.objectContaining({ kind: 'adopted', itemId: 'li_1', from: 450, to: 900 })]);
