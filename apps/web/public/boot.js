@@ -10,7 +10,7 @@
     try {
       var list = JSON.parse(localStorage.getItem(KEY) || '[]');
       list.push({ t: new Date().toISOString(), ev: ev, detail: detail });
-      localStorage.setItem(KEY, JSON.stringify(list.slice(-40)));
+      localStorage.setItem(KEY, JSON.stringify(list.slice(-60)));
     } catch (e) {
       // Storage blocked: the screen still says it.
     }
@@ -36,6 +36,8 @@
     'error',
     function (e) {
       var t = e.target;
+      // A cover that didn't load (offline) is the app's business, not a start-up failure.
+      if (t && t.tagName === 'IMG') return;
       var what = e.message || (t && (t.src || t.href) ? 'could not load ' + (t.src || t.href) : 'error');
       record(what + (e.filename ? ' (' + e.filename + ':' + e.lineno + ')' : ''));
     },
