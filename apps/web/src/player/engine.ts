@@ -3,10 +3,21 @@
 import { useSyncExternalStore } from 'react';
 import { chapterIndexAt, nextChapterTarget, previousChapterTarget, type Chapter } from './chapters';
 import { AbsError } from '../api/auth';
-import { checkConnection, isNetworkError, isOffline } from '../api/connectivity';
+import { checkConnection, isNetworkError, isOffline, subscribeConnectivity } from '../api/connectivity';
 import { absUrl } from '../api/server';
 import { attachAirPlay } from './airplay';
 import { diag } from './diag';
+import { localBook, onDevice, onDownloadsChanged, type LocalBook } from './localAudio';
+import {
+  endListening,
+  flushListening,
+  hasUnsent,
+  onListeningSynced,
+  recordListening,
+  setBeforeSend,
+  type SyncResult,
+} from './localSessions';
+import { localStart, placeOf, savePlace, type KnownPlace } from './places';
 import { newerElsewhere, SAME_PLACE_S, whoWrote, type ServerPlace, type Writer } from './handoff';
 import { recentSessions, serverPlace } from './handoffServer';
 import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
@@ -97,8 +108,8 @@ export interface PlayerState {
 const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
 const MSG_NETWORK = "Couldn't reach the server. Check your connection and try again.";
 const MSG_OTHER = "Couldn't start this book. Try again in a moment.";
-/** Offline, a book can't open: its audio streams from the server. */
-export const MSG_OFFLINE = "You're offline. Books need a connection to play until downloads arrive.";
+/** Offline, a book that isn't downloaded can't open: its audio streams from the server. */
+export const MSG_OFFLINE = "You're offline. Download a book to listen with no connection.";
 
 /** The settings part of the state, as stored. */
 function settingsState(): Pick<PlayerState, 'rate' | 'defaultRate' | 'skipBack' | 'skipForward' | 'rewindOnResume'> {
@@ -158,6 +169,16 @@ let fadeFrom: number | null = null;
 // Book seconds a file just pointed at will seek to once its metadata is in. Until then the element's clock reads 0 (a
 // new src resets it), so `position()` gives this instead: a sync or a close in that moment sends the real place.
 let pendingAt: number | null = null;
+// A downloaded book plays from the device: its files' object URLs by track index, kept here so the `ended` handler and
+// a reload can point the element at a file synchronously. Null when the book streams from the server.
+let localSrc: Map<number, string> | null = null;
+// The book is playing from the device with no server session behind `session` (offline): its listening is kept on the
+// device and sent later (see localSessions.ts). No syncs, hand-off checks or close go to the server meanwhile.
+let localSession = false;
+// Book seconds where a local session's listening began.
+let localFrom = 0;
+// The server's last known place for a book, from the cached progress (see `setProgressLookup`).
+let progressLookup: (itemId: string) => KnownPlace | undefined = () => undefined;
 
 // Device hand-off (see handoff.ts). What the server last took from this player, and when it was sent, so a check can
 // tell another device's write from this player's own.
@@ -252,6 +273,7 @@ function mediaPosition(): void {
  */
 function doSync(): Promise<void> {
   if (!session || !audio) return Promise.resolve();
+  keepPlace();
   if (verified) return send();
   // One sync waits for the answer; any that come due meanwhile are that one (it sends the place as it is then).
   held ??= verify()
@@ -269,6 +291,10 @@ function send(): Promise<void> {
   if (!cur || !audio) return Promise.resolve();
   const p: Progress = payload(clock, position(), cur.duration);
   clock = markSynced(p.currentTime);
+  if (localSession) {
+    keepListening(cur, p);
+    return Promise.resolve();
+  }
   syncChain = syncChain.then(async () => {
     if (!session || session.libraryItemId !== cur.libraryItemId) return;
     try {
@@ -294,6 +320,41 @@ function send(): Promise<void> {
 
 function syncIfDue(): Promise<void> {
   return session && dueOnStop(clock, position()) ? doSync() : Promise.resolve();
+}
+
+/** Keeps the loaded book's place on the device (see places.ts). */
+function keepPlace(): void {
+  if (session && track) savePlace(session.libraryItemId, position());
+}
+
+/** A local session's sync: the listening goes in the device's queue, and on to the server when it can be reached. */
+function keepListening(s: PlaybackSession, p: Progress): void {
+  recordListening({
+    itemId: s.libraryItemId,
+    title: s.displayTitle,
+    author: s.displayAuthor,
+    duration: s.duration,
+    startTime: localFrom,
+    currentTime: p.currentTime,
+    timeListened: p.timeListened,
+  });
+  if (!isOffline()) void flushListening();
+}
+
+/** Closes what `detach` let go of: the server session, or a local session's last listening. */
+async function closeDetached(old: Detached): Promise<void> {
+  if (!old.local) return closeSession(old.s, old.p);
+  if (old.p) keepListening(old.s, old.p);
+  endListening(old.s.libraryItemId);
+  if (!isOffline()) await flushListening();
+}
+
+/**
+ * Before a book opens a server session, the listening this device did offline goes first, so the place the server
+ * opens at is current. Best effort, and never long: the book opens anyway.
+ */
+async function sendListeningFirst(): Promise<void> {
+  await within(flushListening(), CHECK_TIMEOUT_MS).catch((e: unknown) => diag.log('local sessions late', errInfo(e)));
 }
 
 const savedListeners = new Set<() => void>();
@@ -322,6 +383,13 @@ const offlineListeners = new Set<() => void>();
 export function onOfflinePlay(cb: () => void): () => void {
   offlineListeners.add(cb);
   return () => void offlineListeners.delete(cb);
+}
+
+/** Play was pressed for a book that needs the server, offline: say so. The server is asked again now, in case the browser had it wrong, so the next tap can work. */
+function offlinePlay(): void {
+  note('play while offline');
+  void checkConnection();
+  offlineListeners.forEach((cb) => cb());
 }
 
 let lastFailAt: number | null = null;
@@ -398,6 +466,8 @@ function act(intent: Intent, why: string): void {
   const todo = decide(intent, a.paused);
   if (todo === 'pause') return a.pause();
   if (todo !== 'play') return;
+  // Offline, a book that streams can't carry on: say why rather than fail (a downloaded one plays from the device).
+  if (session && track && !localSrc && isOffline()) return offlinePlay();
   if (session && track) resume(a, why);
   else if (lastRequest) void play(lastRequest.itemId, lastRequest.from);
 }
@@ -424,7 +494,7 @@ function load(tr: AudioTrack, offset: number, autoplay: boolean): void {
   ownChange = true;
   pendingOffset = offset;
   pendingAt = tr.startOffset + offset;
-  a.src = trackUrl(session, tr.index);
+  a.src = localSrc?.get(tr.index) ?? trackUrl(session, tr.index);
   a.defaultPlaybackRate = a.playbackRate = state.rate; // loading a new src resets the rate to the default
   if (autoplay) startPlay(a, 'load');
 }
@@ -442,6 +512,7 @@ function seekBook(t: number): void {
     const r = restoredSeek(t, state.duration, state.chapters);
     movedHere = r.position;
     set(r);
+    if (state.item) savePlace(state.item.id, r.position);
     // Nothing is syncing this book, so tell the server now: another device then sees the move, and it isn't a place only this tab knows.
     clearTimeout(moveTimer);
     moveTimer = setTimeout(flushMoved, MOVE_SAVE_MS);
@@ -631,6 +702,13 @@ function getAudio(): HTMLAudioElement {
   a.addEventListener('error', () => {
     note('audio error', { code: a.error?.code ?? null, message: a.error?.message ?? null });
     if (!session || !track) return;
+    // A file on the device that won't play, with a server session open: stream the book instead.
+    if (localSrc && !localSession) return streamInstead('local file failed');
+    // Playing from the device with no server: nothing to re-open. One reload on a resume, then say it failed.
+    if (localSession) {
+      if (awaitingPlaying !== null && reloadAndPlay('error')) return;
+      return fail(new Error(`local file failed (${a.error?.code ?? 'unknown'})`));
+    }
     if (recovering || a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
       return fail(
         a.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
@@ -665,6 +743,7 @@ if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       note('visibilitychange hidden');
+      keepPlace();
       void syncIfDue();
       flushMoved();
       diag.flush();
@@ -672,6 +751,7 @@ if (typeof document !== 'undefined') {
   });
   addEventListener('pagehide', () => {
     note('pagehide');
+    keepPlace();
     void syncIfDue();
     flushMoved();
     diag.flush();
@@ -685,21 +765,136 @@ if (typeof document !== 'undefined') {
   diag.log('boot');
 }
 
+/** What `detach` let go of, for `closeDetached`. `local`: there was no server session behind it. */
+interface Detached {
+  s: PlaybackSession;
+  p: Progress | undefined;
+  local: boolean;
+}
+
 /** Stop using the current session: remember where it was, then silence the element. */
-function detach(): { s: PlaybackSession; p: Progress | undefined } | null {
+function detach(): Detached | null {
   const s = session;
   if (!s) return null;
+  keepPlace();
   // Paused, and the place unchecked since: the close leaves the server's place alone (the pause sync already sent this
   // one), in case another device has moved on.
   const p = verified ? payload(clock, position(), s.duration) : undefined;
+  const local = localSession;
   session = null;
   track = null;
   pendingAt = null;
   lastMs = null;
   pausedAt = null;
+  localSrc = null;
+  localSession = false;
   getAudio().pause();
   restoreVolume();
-  return { s, p };
+  return { s, p, local };
+}
+
+/** The book's files on the device fit the server session's tracks: the same files, so the same book times. */
+function fits(tracks: AudioTrack[], b: LocalBook): boolean {
+  return (
+    tracks.length === b.item.tracks.length &&
+    tracks.every((t) => {
+      const saved = b.item.tracks.find((x) => x.index === t.index);
+      return !!saved && b.urls.has(t.index) && Math.abs(saved.duration - t.duration) < 1;
+    })
+  );
+}
+
+/** The engine's session for a book played from the device with no server: its saved tracks, chapters and details. */
+function sessionOnDevice(b: LocalBook): PlaybackSession {
+  const audioTracks: AudioTrack[] = b.item.tracks.map((t) => ({
+    index: t.index,
+    startOffset: t.startOffset,
+    duration: t.duration,
+    contentUrl: '',
+    mimeType: t.mimeType,
+  }));
+  return {
+    id: 'local',
+    libraryItemId: b.item.itemId,
+    currentTime: 0,
+    duration: b.item.duration || totalDuration(audioTracks),
+    playMethod: 3,
+    audioTracks,
+    chapters: b.item.chapters,
+    displayTitle: b.item.title,
+    displayAuthor: b.item.author,
+  };
+}
+
+/** A file on the device can't be used, and a server session is open: stream the book from where it is. */
+function streamInstead(why: string): void {
+  if (!session || !track || !audio || localSession || !localSrc) return;
+  note(`streaming instead (${why})`);
+  const wasPlaying = state.status === 'playing' || !audio.paused || awaitingPlaying !== null;
+  const here = position();
+  localSrc = null;
+  const { track: tr, offset } = locate(session.audioTracks, here);
+  load(tr, offset, wasPlaying);
+}
+
+/**
+ * The loaded book's download was removed. With a server session it streams on from the same place. With none
+ * (offline) it can't play on: it comes out of the player and goes back in paused where it was, as on a launch, so the
+ * place is kept and Play says why it can't play until the connection is back.
+ */
+async function downloadRemoved(itemId: string): Promise<void> {
+  note('download removed while loaded');
+  if (!localSession) return streamInstead('download removed');
+  const r = await release(itemId);
+  if (r) restore(r.restorable, r.chapters);
+}
+
+/**
+ * Whether the loaded local session has been checked against the server since the app came back online. Until then
+ * its place isn't sent, so a newer place written elsewhere while this device was offline is offered, not overwritten.
+ */
+let reconciled = false;
+
+if (typeof document !== 'undefined') {
+  onDownloadsChanged(() => {
+    const id = session?.libraryItemId;
+    if (localSrc && id && !onDevice(id)) void downloadRemoved(id);
+  });
+  // Back online after listening offline: before that listening goes to the server, ask it whether another device has
+  // moved the book on meanwhile (see `reconcile`). Going offline again means asking again when it is back.
+  subscribeConnectivity(() => {
+    if (isOffline()) reconciled = false;
+  });
+  setBeforeSend(reconcile);
+  onListeningSynced(listeningSynced);
+}
+
+async function reconcile(): Promise<void> {
+  if (!localSession || !session || reconciled || isOffline()) return;
+  reconciled = true;
+  note('handoff check (back online)');
+  await verify();
+}
+
+/** What the server said to the listening this device sent (see localSessions.ts). */
+function listeningSynced(results: SyncResult[]): void {
+  const id = session?.libraryItemId;
+  const ours = localSession && id ? results.filter((r) => r.libraryItemId === id && r.success) : [];
+  // Lists and stats refresh, but not every ten seconds while a book plays on.
+  if (results.some((r) => r.success && (r.libraryItemId !== id || state.status !== 'playing'))) emitSaved();
+  const last = ours[ours.length - 1];
+  if (!last) return;
+  if (last.progressSynced) {
+    lastSent = last.currentTime;
+    lastWriteAt = Date.now();
+  }
+  // The server kept a newer place than this device's: offer it, or say another device was playing too.
+  else void verify();
+}
+
+/** The server's last known place for a book: the cached progress (main.tsx wires it). Used when a book opens offline. */
+export function setProgressLookup(fn: (itemId: string) => KnownPlace | undefined): void {
+  progressLookup = fn;
 }
 
 /** Makes the player's <audio> element now rather than at the first Play, so AirPlay can offer its targets before then. */
@@ -715,14 +910,9 @@ export async function play(itemId: string, from?: number): Promise<void> {
     if (a.paused) resume(a, 'play()');
     return;
   }
-  // Opening a book needs the server. Offline, say so and leave the player as it is (a restored book stays put). The
-  // server is asked again now, in case the browser had it wrong, so the next tap can work.
-  if (isOffline()) {
-    note('play while offline');
-    void checkConnection();
-    offlineListeners.forEach((cb) => cb());
-    return;
-  }
+  // Offline, only a downloaded book can open. Any other: say so and leave the player as it is (a restored book stays put).
+  const offline = isOffline();
+  if (offline && !onDevice(itemId)) return offlinePlay();
   // Everything up to the first await runs inside the click.
   // A restored book starts from the server's place unless the listener moved it here since (see `chooseStart`).
   const local = state.restored && state.item?.id === itemId ? movedHere : null;
@@ -740,30 +930,71 @@ export async function play(itemId: string, from?: number): Promise<void> {
   const mine = ++token;
   set({ status: 'loading', error: null, restored: false, ended: false, handoff: null });
   if (old) {
-    await closeSession(old.s, old.p);
+    await closeDetached(old);
     emitSaved();
   }
-  let s: PlaybackSession;
-  try {
-    s = await openSession(itemId, getMimes(a));
-  } catch (e) {
-    if (mine === token) fail(e);
-    return;
+  // A downloaded book plays from the device: with a server session when the server can be reached (progress, stats and
+  // hand-off work as for any book; only the audio comes from the device), else with none (see localSessions.ts).
+  const onDisk = onDevice(itemId)
+    ? localBook(itemId).catch((e: unknown) => {
+        diag.log('download not readable', errInfo(e));
+        return null;
+      })
+    : Promise.resolve(null);
+  let opened: PlaybackSession | null = null;
+  if (!offline) {
+    if (hasUnsent(itemId)) {
+      await sendListeningFirst();
+      if (mine !== token) return;
+    }
+    try {
+      opened = await openSession(itemId, getMimes(a));
+    } catch (e) {
+      if (mine !== token) return;
+      if (!isNetworkError(e) || !onDevice(itemId)) return fail(e);
+      note('session not opened: playing from the device', errInfo(e));
+    }
+    if (mine !== token) return void (opened && closeSession(opened));
   }
-  if (mine !== token) return void closeSession(s);
+  const book = await onDisk;
+  if (mine !== token) return void (opened && closeSession(opened));
+  if (!opened && !book) return fail(new Error('download not readable'));
+  const s: PlaybackSession = opened ?? sessionOnDevice(book as LocalBook);
+  const onServer = !!opened;
+  if (book && onServer && !fits(s.audioTracks, book)) note('download differs from the server: streaming');
   session = s;
-  // The server holds the session's place, and whatever this starts from is chosen: nothing to check yet.
-  lastSent = s.currentTime;
-  lastWriteAt = Date.now();
+  localSession = !onServer;
+  localSrc = book && (!onServer || fits(s.audioTracks, book)) ? book.urls : null;
   verified = true;
   placeEpoch++;
   conflictAt = -Infinity;
-  let startAt = chooseStart(from, local, s.currentTime);
-  if (pausedSince && state.rewindOnResume && Math.abs(s.currentTime - pausedSince.position) < 1)
-    startAt = rewindTarget(startAt, rewindSeconds(Date.now() - pausedSince.at), s.chapters);
+  let startAt: number;
+  if (onServer) {
+    // The server holds the session's place, and whatever this starts from is chosen: nothing to check yet.
+    lastSent = s.currentTime;
+    lastWriteAt = Date.now();
+    startAt = chooseStart(from, local, s.currentTime);
+    if (pausedSince && state.rewindOnResume && Math.abs(s.currentTime - pausedSince.position) < 1)
+      startAt = rewindTarget(startAt, rewindSeconds(Date.now() - pausedSince.at), s.chapters);
+  } else {
+    // No server: the newest place known here, this device's own or the server's last known (see `localStart`).
+    const saved = placeOf(itemId);
+    const known = progressLookup(itemId);
+    const st = localStart(from, local, saved, known);
+    startAt = st.position;
+    if (pausedSince && state.rewindOnResume && st.at && Math.abs(st.position - pausedSince.position) < 1)
+      startAt = rewindTarget(startAt, rewindSeconds(Date.now() - st.at), s.chapters);
+    // For the hand-off check once the server is back: the latest of the server's places this device knew of.
+    lastSent = startAt;
+    lastWriteAt = Math.max(saved?.updatedAt ?? 0, known?.lastUpdate ?? 0);
+    reconciled = false;
+    note('playing from the device, offline', { at: Math.round(startAt) });
+  }
   clock = startClock(startAt);
-  const item: PlayerItem = { id: itemId, title: s.displayTitle, author: s.displayAuthor, coverUrl: coverFor(itemId) };
+  const cover = !onServer && book?.cover ? book.cover : coverFor(itemId);
+  const item: PlayerItem = { id: itemId, title: s.displayTitle, author: s.displayAuthor, coverUrl: cover };
   const start = clampSeek(startAt, totalDuration(s.audioTracks));
+  localFrom = start;
   const { track: tr, offset } = locate(s.audioTracks, start);
   set({
     item,
@@ -782,8 +1013,12 @@ export async function play(itemId: string, from?: number): Promise<void> {
  * Puts a book into the player paused where the listener left it, so the mini player is there on load. It opens no
  * session and loads no audio: the first Play does, through `play()`. Does nothing once anything is in the player.
  */
-export function restore(r: Restorable, chapters: Chapter[]): void {
+export function restore(given: Restorable, chapters: Chapter[]): void {
   if (state.status !== 'idle' || state.item) return;
+  // A place left here since the server last heard (listening offline not yet sent) is the later one.
+  const mine = placeOf(given.id);
+  const r =
+    mine && mine.updatedAt > given.updatedAt ? { ...given, position: mine.position, updatedAt: mine.updatedAt } : given;
   const patch = restoredPatch(r, coverFor(r.id), chapters);
   lastRequest = { itemId: r.id }; // no `from`: Play starts from the server's place, or from a move made here
   movedHere = null;
@@ -913,7 +1148,7 @@ export async function stop(): Promise<void> {
   if (old) {
     // A sync already on its way finishes first, so the close (with the final place) is the last word the server hears.
     await syncChain;
-    await closeSession(old.s, old.p);
+    await closeDetached(old);
     emitSaved();
   }
 }
@@ -973,6 +1208,11 @@ async function writerOf(itemId: string, place: ServerPlace): Promise<Writer> {
 async function check(): Promise<CheckResult> {
   const item = state.item;
   if (!session || !item || session.libraryItemId !== item.id) return 'stale';
+  // Playing from the device offline: there is no server to ask. This place is the listener's until it is back.
+  if (localSession && isOffline()) {
+    if (playingHere()) verified = true;
+    return 'clear';
+  }
   const epoch = placeEpoch;
   const still = () => placeEpoch === epoch && session?.libraryItemId === item.id;
   let server: ServerPlace | null;
