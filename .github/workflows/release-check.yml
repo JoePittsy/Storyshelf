@@ -1,0 +1,36 @@
+name: Release check
+
+# apps/web/package.json's version decides whether merging a PR into main releases:
+#   unchanged                                  no release
+#   bumped one step (major, minor or patch)    release that version; the PR needs a "## Release notes" section
+# The rules are in .github/scripts/release.mjs. Merging a release PR tags and releases it (tag-release.yml).
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Release version and notes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check
+        shell: bash
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          base=$(git show "$BASE_SHA:apps/web/package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")
+          head=$(node -p "require('./apps/web/package.json').version")
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
+          node .github/scripts/release.mjs check "$base" "$head" "$RUNNER_TEMP/body.md" | tee -a "$GITHUB_STEP_SUMMARY"

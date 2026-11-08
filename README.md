@@ -91,7 +91,12 @@ The repository is a pnpm workspace:
 | [`packages/ui`](packages/ui/README.md) | `@joepittsy/ui`, the design system: tokens, components and Storybook |
 | [`e2e`](e2e/README.md) | A local ABS server for end-to-end testing |
 
-Releases are cut by pushing a `vX.Y.Z` tag on `main`: the release workflow runs the checks, publishes the Docker image, creates the GitHub Release and updates the hosted site.
+Changes reach `main` through pull requests, and the version in `apps/web/package.json` decides whether merging one releases:
+
+- **Leave it alone** and merging releases nothing.
+- **Bump it one step** (`pnpm --filter @storyshelf/web version patch|minor|major --no-git-tag-version`) and fill in the description's **Release notes**, and merging tags `vX.Y.Z` and releases it.
+
+The **Release check** on each PR enforces a single-step bump and the notes (the rules are in `.github/scripts/release.mjs`). A release runs the checks, publishes the Docker image, creates the GitHub Release with those notes and updates the hosted site. Pushing a `vX.Y.Z` tag on `main` by hand still releases too.
 
 ## Licence
 
