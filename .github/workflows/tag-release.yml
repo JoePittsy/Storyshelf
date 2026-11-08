@@ -1,0 +1,68 @@
+name: Tag release
+
+# A merge into main that changes apps/web/package.json's version tags it (vX.Y.Z) and runs the release, with the
+# merged PR's "## Release notes" section as the GitHub Release text. release-check.yml makes sure the version and
+# notes are right before the merge. A tag made with the workflow token starts no workflows of its own, so this calls
+# release.yml directly; pushing a tag by hand still works as before.
+on:
+  push:
+    branches: [main]
+    paths: [apps/web/package.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Tag the new version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      notes: ${{ steps.tag.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p "require('./apps/web/package.json').version")"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists; nothing to release." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          notes=""
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].number // empty')
+          if [[ -n $pr ]]; then
+            gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.body // ""' > "$RUNNER_TEMP/body.md"
+            notes=$(node .github/scripts/release.mjs notes "$RUNNER_TEMP/body.md")
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "$tag"
+          git push origin "refs/tags/$tag"
+          echo "Tagged $tag${pr:+ from #$pr}." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          delim="NOTES_$(openssl rand -hex 8)"
+          { echo "notes<<$delim"; echo "$notes"; echo "$delim"; } >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Release
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+      notes: ${{ needs.tag.outputs.notes }}
