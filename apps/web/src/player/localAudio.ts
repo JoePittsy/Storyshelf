@@ -24,5 +24,8 @@ export async function localBook(itemId: string): Promise<LocalBook | null> {
   };
 }
 
+/** An object URL of the cover saved with the book, or null. */
+export const coverOnDevice = (itemId: string): string | null => downloadOf(itemId)?.coverUrl ?? null;
+
 /** Calls back when the downloads change. Returns the unsubscribe. */
 export const onDownloadsChanged = (cb: () => void): (() => void) => onDownloadsChange(cb);

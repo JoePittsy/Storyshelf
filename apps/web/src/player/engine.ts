@@ -7,7 +7,7 @@ import { checkConnection, isNetworkError, isOffline, subscribeConnectivity } fro
 import { absUrl } from '../api/server';
 import { attachAirPlay } from './airplay';
 import { diag } from './diag';
-import { localBook, onDevice, onDownloadsChanged, type LocalBook } from './localAudio';
+import { coverOnDevice, localBook, onDevice, onDownloadsChanged, type LocalBook } from './localAudio';
 import {
   endListening,
   flushListening,
@@ -1019,7 +1019,9 @@ export function restore(given: Restorable, chapters: Chapter[]): void {
   const mine = placeOf(given.id);
   const r =
     mine && mine.updatedAt > given.updatedAt ? { ...given, position: mine.position, updatedAt: mine.updatedAt } : given;
-  const patch = restoredPatch(r, coverFor(r.id), chapters);
+  // Offline the server's cover can't load: a downloaded book has its own.
+  const cover = (isOffline() && coverOnDevice(r.id)) || coverFor(r.id);
+  const patch = restoredPatch(r, cover, chapters);
   lastRequest = { itemId: r.id }; // no `from`: Play starts from the server's place, or from a move made here
   movedHere = null;
   restoredAt = r.updatedAt;

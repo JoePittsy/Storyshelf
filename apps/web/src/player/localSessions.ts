@@ -110,14 +110,20 @@ export function recordListening(l: Listened, now = Date.now()): void {
   const owner = ownerKey();
   const list = read();
   let e = list.find((x) => x.open && x.owner === owner && x.session.libraryItemId === l.itemId);
-  if (e && dayOf(e.session.startedAt) !== dayOf(now)) {
-    // Past midnight: that day's session is done, and this listening opens the next day's.
+  if (e && dayOf(e.session.updatedAt) !== dayOf(now)) {
+    // Past midnight: that day's session is done (ABS files it under its `updatedAt`, so moving that on would move the
+    // whole session to today), and this listening opens the next day's.
     e.open = false;
     const startTime = e.session.currentTime;
     e = undefined;
     l = { ...l, startTime };
   }
   if (!e) {
+    // It began when this listening did, as far as today goes.
+    const startedAt = Math.max(
+      new Date(now).setHours(0, 0, 0, 0),
+      now - Math.round(Math.max(0, l.timeListened) * 1000)
+    );
     e = {
       session: {
         id: crypto.randomUUID(),
@@ -131,7 +137,7 @@ export function recordListening(l: Listened, now = Date.now()): void {
         startTime: l.startTime,
         currentTime: l.currentTime,
         timeListening: 0,
-        startedAt: now,
+        startedAt,
         updatedAt: now,
       },
       open: true,

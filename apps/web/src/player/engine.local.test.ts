@@ -72,6 +72,7 @@ let downloadsChanged: () => void = () => undefined;
 vi.mock('./localAudio', () => ({
   onDevice: vi.fn(() => true),
   localBook: vi.fn(),
+  coverOnDevice: () => 'blob:cover',
   onDownloadsChanged: (cb: () => void) => {
     downloadsChanged = cb;
     return () => undefined;
@@ -388,6 +389,11 @@ describe('offline, a downloaded book', () => {
       expect(snapshot().position).toBeLessThan(700);
       expect(snapshot().position).toBeGreaterThanOrEqual(670);
     });
+  });
+
+  it('a book restored on a launch offline shows the cover saved with it', () => {
+    engine.restore({ id: 'li_1', title: 'T', author: 'A', duration: 1000, position: 650, updatedAt: 1 }, chapters);
+    expect(snapshot().item?.coverUrl).toBe('blob:cover');
   });
 
   it('after a long pause, reloads the file from the device', async () => {

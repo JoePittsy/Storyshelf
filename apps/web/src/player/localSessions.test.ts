@@ -71,7 +71,7 @@ describe('recording listening', () => {
       startTime: 400,
       currentTime: 420,
       timeListening: 20,
-      startedAt: at(9),
+      startedAt: at(9) - 10_000, // when the first listening began
       updatedAt: at(9, 1),
       duration: 1000,
     });
@@ -82,6 +82,7 @@ describe('recording listening', () => {
     q.recordListening(listened(430, 20), at(24));
     const [a, b] = q.queuedSessions();
     expect(a).toMatchObject({ startTime: 400, currentTime: 410, timeListening: 10, updatedAt: at(23, 59) });
+    // It began at midnight at the earliest: its 20 s that crossed midnight count for the new day.
     expect(b).toMatchObject({ startTime: 410, currentTime: 430, timeListening: 20, startedAt: at(24) });
     expect(b.id).not.toBe(a.id);
   });
