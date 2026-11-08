@@ -16,7 +16,11 @@ function fakeContainer(opts: { waiting?: boolean; controller?: boolean; takesOve
         queueMicrotask(() => listeners.get('controllerchange')?.());
     }),
   };
-  const reg = { waiting: opts.waiting ? waiting : null, update: vi.fn(() => Promise.resolve()) };
+  const reg = {
+    waiting: opts.waiting ? waiting : null,
+    update: vi.fn(() => Promise.resolve()),
+    addEventListener: vi.fn(),
+  };
   const leftover = { unregister: vi.fn(() => Promise.resolve(true)) };
   const container = {
     controller: opts.controller ? {} : null,

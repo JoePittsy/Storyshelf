@@ -8,6 +8,7 @@ import { OfflineLaunch } from './frame/Offline';
 import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
 import { Debug } from './screens/Debug';
+import { EdgeTest } from './screens/EdgeTest';
 import { diag } from './player/diag';
 import { StorageTest } from './screens/StorageTest';
 import { Book } from './screens/Book';
@@ -17,6 +18,7 @@ import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { HandoffWatch } from './player/HandoffWatch';
 import { PlayerToasts } from './player/PlayerToasts';
+import { UpdatePrompt } from './frame/UpdatePrompt';
 import { AuthorList } from './screens/AuthorList';
 import { Collection, Playlist } from './screens/BookListDetail';
 import { CollectionList, PlaylistList } from './screens/BookListIndex';
@@ -77,6 +79,7 @@ export function App() {
   return (
     <>
       <PlayerToasts />
+      <UpdatePrompt />
       <HandoffWatch />
       <AppRoutes />
       <MiniPlayerPortal />
@@ -131,6 +134,7 @@ function AppRoutes() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/debug/storage" element={<StorageTest />} />
+          <Route path="/debug/edge" element={<EdgeTest />} />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<PlayableSeries />} />
           <Route path="/history" element={<History />}>

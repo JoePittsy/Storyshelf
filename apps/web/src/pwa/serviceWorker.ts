@@ -2,15 +2,18 @@
  * The service worker keeps the app itself on the device (the page, its scripts, styles, fonts and icons), so the
  * installed app opens with no network. It never answers ABS's own paths and keeps nothing ABS sends: see vite.config.ts.
  *
- * Updates take over at the next launch, never while the app is open. A worker that takes over an open page has to
- * reload it to be of use, and a reload stops the book playing, so the worker never skips waiting on its own
- * (vite-plugin-pwa's 'prompt' mode, with no prompt). A new release installs in the background and waits. At launch,
+ * Updates take over at the next launch, or when the listener chooses Update in the app (updates.ts); never by themselves
+ * while it is open. A worker that takes over an open page has to reload it to be of use, and a reload stops the book
+ * playing, so the worker never skips waiting on its own (vite-plugin-pwa's 'prompt' mode). A new release installs in the
+ * background and waits, and the app offers it. At launch,
  * before anything has rendered or started playing, a waiting worker is told to take over and the page reloads onto it,
  * once. The browser would also activate it once every window of the old one had closed, but an iOS home-screen app is
  * mostly suspended rather than closed, and one the system kills doesn't reliably get that chance, so launch is where it
  * happens. On a computer, a second window opening does the same; a window already open carries on undisturbed, since
  * the whole app is one script it has already loaded.
  */
+
+import { watchForUpdates } from './updates';
 
 /** Where the build writes the worker (vite-plugin-pwa's default). */
 export const SW_URL = '/sw.js';
@@ -43,8 +46,9 @@ export async function startServiceWorker(
     void container
       .register(SW_URL, { scope: '/' })
       .then((reg) => {
+        // A release that installs is offered in the app (updates.ts); otherwise it takes over at the next launch.
+        watchForUpdates(reg, container);
         // A home-screen app can stay open (suspended) for days: look for a release when it comes back to the screen.
-        // One found installs and waits for the next launch.
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') reg.update().catch(() => undefined);
         });
