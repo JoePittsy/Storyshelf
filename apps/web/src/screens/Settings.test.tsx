@@ -77,6 +77,8 @@ describe('Settings', () => {
       'href',
       'https://github.com/JoePittsy/Storyshelf'
     );
+    expect(within(about).getByRole('link', { name: 'Player log' })).toHaveAttribute('href', '/debug');
+    expect(within(about).getByRole('link', { name: 'Storage test' })).toHaveAttribute('href', '/debug/storage');
   });
 
   it('names who is signed in and signs out through the same confirmation as the account menu', async () => {
