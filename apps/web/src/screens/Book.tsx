@@ -38,6 +38,7 @@ import { BookBookmarks } from '../components/BookBookmarks';
 import { BookNextInSeries } from '../components/UpNext';
 import { BookMoreBy } from '../components/BookMoreBy';
 import { BookProgressMenu } from '../components/BookProgressMenu';
+import { BookDownload } from '../components/BookDownload';
 import styles from './Book.module.css';
 
 interface Props {
@@ -228,6 +229,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
             canHide={started && !p?.hideFromContinueListening}
           />
         </div>
+        <BookDownload itemId={item.id} title={m.title} />
       </HeroBand>
 
       <div className={styles.body}>

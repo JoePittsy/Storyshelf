@@ -1,0 +1,47 @@
+/* Under the hero's actions: a quiet line of state, its bar, and small ghost pills. */
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5em;
+  max-width: 24em;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em 0.8em;
+}
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.sizes {
+  color: var(--text-2);
+}
+.done {
+  flex: none;
+  color: var(--text-2);
+}
+.bar {
+  align-self: stretch;
+}
+.note {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--fs-prose);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.dialogText {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--fs-prose);
+  line-height: 1.55;
+  color: var(--text-2);
+}

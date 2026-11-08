@@ -17,6 +17,7 @@ import {
   persistOptions,
 } from './api/queryCache';
 import { detectMode } from './api/server';
+import { startDownloads } from './downloads';
 import { applyStoredBookColour } from './frame/bookColour';
 import { listenForInstall } from './frame/install';
 import { startServiceWorker } from './pwa/serviceWorker';
@@ -52,6 +53,8 @@ function render() {
   const persister = createCachePersister(idbStore);
   followConnectivity();
   startConnectivity(renewSession);
+  // The books kept on the device, for the screens; one left halfway when the app closed carries on.
+  void startDownloads();
   // Back online, or a 401 renewed: the session query holds the fresh user.
   onSessionRenewed((user) => queryClient.setQueryData(['session'], user));
   // Signed out, or the server no longer knows the session: the device keeps nothing of the user's.
