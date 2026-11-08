@@ -235,6 +235,9 @@ export async function absFetch<T>(path: string, init: RequestInit = {}): Promise
   }
 }
 
+/** A token is held: requests go out signed in (not before launch has renewed the session, nor while signed out). */
+export const hasAccessToken = (): boolean => !!accessToken;
+
 export function onSignedOut(cb: () => void): () => void {
   listeners.add(cb);
   return () => void listeners.delete(cb);

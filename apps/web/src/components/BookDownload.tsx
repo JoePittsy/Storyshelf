@@ -154,10 +154,10 @@ export function BookDownload({ itemId, title }: Props) {
         {/* Offline it carries on by itself, or can be resumed once there's a connection. */}
         {!offline && (
           <PillButton
-            aria-label={`${failed ? 'Try again' : 'Resume'}: download ${title}`}
+            aria-label={failed ? `Try again: download ${title}` : `Resume download: ${title}`}
             onClick={() => void resumeDownload(itemId)}
           >
-            {failed ? 'Try again' : 'Resume'}
+            {failed ? 'Try again' : 'Resume download'}
           </PillButton>
         )}
         {cancel}

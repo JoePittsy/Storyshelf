@@ -1,5 +1,5 @@
 // The real network and browser for the download manager.
-import { absFetch, absResponse } from '../api/auth';
+import { absFetch, absResponse, hasAccessToken, onSessionRenewed } from '../api/auth';
 import { isOffline, subscribeConnectivity } from '../api/connectivity';
 import { rememberedUser, serverKey } from '../api/lastUser';
 import { screenWakeLock, browserEnv as wakeLockEnv } from '../player/wakeLock';
@@ -27,14 +27,20 @@ export const absNet: Net = {
 export function browserEnv(): Env {
   const lock = screenWakeLock(wakeLockEnv());
   return {
-    online: () => !isOffline(),
+    // Online and signed in: at launch, a book left halfway waits for the session rather than meeting a 401.
+    online: () => !isOffline() && hasAccessToken(),
     onOnline: (cb) => {
       let was = !isOffline();
-      return subscribeConnectivity(() => {
+      const offConnectivity = subscribeConnectivity(() => {
         const now = !isOffline();
         if (now && !was) cb();
         was = now;
       });
+      const offRenewed = onSessionRenewed(() => cb());
+      return () => {
+        offConnectivity();
+        offRenewed();
+      };
     },
     visible: () => document.visibilityState === 'visible',
     onVisible: (cb) => {

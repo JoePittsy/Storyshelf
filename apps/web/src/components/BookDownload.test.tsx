@@ -117,7 +117,7 @@ describe('BookDownload', () => {
     renderControl();
     expect(screen.getByText('Paused at 42%')).toBeInTheDocument();
     expect(screen.getByText('Waiting for a connection.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Resume: download The Hobbit' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Resume download: The Hobbit' }));
     expect(downloads.resumeDownload).toHaveBeenCalledWith('li_1');
     act(() => markUnreachable());
     expect(screen.queryByRole('button', { name: /Resume/ })).toBeNull();
