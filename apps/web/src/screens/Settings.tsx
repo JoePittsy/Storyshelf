@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { DetailList, PillButton, SectionCard, Select, UserAvatar, useMediaQuery, useToast } from '@joepittsy/ui';
 import { getStatus, restoreSession } from '../api/auth';
 import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
@@ -164,6 +164,20 @@ export function Settings() {
                   >
                     GitHub
                   </a>
+                ),
+              },
+              {
+                // On the phone, where the installed app has no address bar to type /debug into.
+                label: 'Diagnostics',
+                value: (
+                  <span className={styles.links}>
+                    <Link className={styles.link} to="/debug">
+                      Player log
+                    </Link>
+                    <Link className={styles.link} to="/debug/storage">
+                      Storage test
+                    </Link>
+                  </span>
                 ),
               },
             ]}

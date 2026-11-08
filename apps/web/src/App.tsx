@@ -2,10 +2,13 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
 import { onSignedOut, restoreSession } from './api/auth';
+import { isNetworkError } from './api/connectivity';
 import { Frame } from './frame/Frame';
+import { OfflineLaunch } from './frame/Offline';
 import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
 import { Debug } from './screens/Debug';
+import { StorageTest } from './screens/StorageTest';
 import { Book } from './screens/Book';
 import { CarMode } from './screens/CarMode';
 import { play } from './player/engine';
@@ -28,12 +31,16 @@ import { SignIn } from './screens/SignIn';
 
 const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
 
-/** Holds the session; sends signed-out visitors to /sign-in, remembering where they were going. */
-function RequireSession() {
+/**
+ * Holds the session; sends signed-out visitors to /sign-in, remembering where they were going. Offline is not signed
+ * out: the session is then the user last signed in here (see restoreSession), or, with none kept, a note that the app
+ * needs a connection.
+ */
+export function RequireSession() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: user, isPending } = useSession();
+  const { data: user, isPending, error } = useSession();
   useEffect(
     () =>
       onSignedOut(() => {
@@ -43,6 +50,7 @@ function RequireSession() {
     [qc, navigate]
   );
   if (isPending) return <div className="skeleton appLoading" role="status" aria-label="Loading" />;
+  if (!user && isNetworkError(error)) return <OfflineLaunch />;
   if (!user) return <Navigate to="/sign-in" replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
@@ -105,6 +113,7 @@ function AppRoutes() {
           <Route path="/now-playing" element={<NowPlaying />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/debug" element={<Debug />} />
+          <Route path="/debug/storage" element={<StorageTest />} />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<PlayableSeries />} />
           <Route path="/history" element={<History />}>

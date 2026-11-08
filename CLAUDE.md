@@ -7,7 +7,8 @@ A listening-first PWA for Audiobookshelf (ABS). pnpm workspace: `apps/web` (the 
 - Never push to `main` and never push tags. Work on a branch, push it, and open a PR into `main`. The owner merges.
 - `apps/web/package.json`'s version decides whether merging releases:
   - Leave it alone: no release.
-  - Bump it one step when asked to release (`pnpm --filter @storyshelf/web version patch|minor|major --no-git-tag-version`) and fill in the PR's `## Release notes`. Merging then tags `vX.Y.Z` and releases it: Docker image, GitHub Release with those notes, and the hosted site via the `release` branch.
+  - Bump it one step when asked to release (`cd apps/web && npm version patch|minor|major --no-git-tag-version`; `pnpm version` doesn't work here) and fill in the PR's `## Release notes`. Merging then tags `vX.Y.Z` and releases it: Docker image, GitHub Release with those notes, and the hosted site via the `release` branch.
+  - A pre-release (`npm version 0.3.0-alpha --no-git-tag-version`; then `-alpha.1`, `-beta`, …, then `0.3.0`) releases as a GitHub pre-release and a Docker tag only: not `latest`, and not the hosted site.
   - The Release check enforces a single-step bump and the notes. The rules are in `.github/scripts/release.mjs`.
 - Release notes are for users: short and plain, in sentence case, with no marketing tone. Follow the PR template (`.github/pull_request_template.md`).
 

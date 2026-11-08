@@ -87,3 +87,8 @@
   color: inherit;
   text-underline-offset: 0.2em;
 }
+.links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1em;
+}

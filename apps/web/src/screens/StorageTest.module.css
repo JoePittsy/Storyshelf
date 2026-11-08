@@ -1,0 +1,101 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  padding-bottom: 3em;
+  min-width: 0;
+}
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6em;
+}
+.title {
+  margin: 0;
+  font-size: var(--fs-title-feature);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.link {
+  color: var(--text-2);
+  font-size: var(--fs-label);
+}
+.note {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-label);
+  overflow-wrap: anywhere;
+}
+.details {
+  overflow-wrap: anywhere;
+}
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+  margin-top: 0.8em;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+.mono {
+  margin: 0.4em 0 0;
+  color: var(--text-2);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: var(--fs-small);
+  overflow-wrap: anywhere;
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  padding: 0.8em;
+  border-radius: var(--r-row);
+  background: var(--surface);
+}
+.rowTitle {
+  margin: 0;
+  font-weight: 600;
+}
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  margin-top: 1.2em;
+}
+.audio {
+  width: 100%;
+}
+.check {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+  color: var(--text-2);
+  font-size: var(--fs-label);
+}
+.log {
+  max-height: 60vh;
+  margin: 0;
+  overflow: auto;
+  color: var(--text-2);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: var(--fs-small);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.offscreen {
+  position: fixed;
+  top: 0;
+  left: -100vw;
+  opacity: 0;
+}
