@@ -157,6 +157,31 @@ function refreshOnce(): Promise<AbsUser> {
  */
 export const renewSession = (): Promise<AbsUser> => refreshOnce();
 
+/**
+ * An ABS request with the app's auth, for a caller that reads the body itself (a file download). A 401 renews the
+ * session and tries once more. Resolves with the response whatever its status; a network failure rejects.
+ */
+export async function absResponse(path: string, init: RequestInit = {}): Promise<Response> {
+  const send = () => {
+    const headers = new Headers(init.headers);
+    if (accessToken) headers.set('authorization', `Bearer ${accessToken}`);
+    return fetch(absUrl(path), { ...init, headers });
+  };
+  try {
+    let res = await send();
+    if (res.status === 401) {
+      await res.body?.cancel().catch(() => undefined);
+      await refreshOnce();
+      res = await send();
+    }
+    markReachable();
+    return res;
+  } catch (e) {
+    if (isNetworkError(e)) markUnreachable();
+    throw e;
+  }
+}
+
 export async function absFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const send = () => {
     const headers = new Headers(init.headers);

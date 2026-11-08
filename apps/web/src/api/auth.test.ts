@@ -24,6 +24,7 @@ import {
   AbsError,
   UnsupportedServerError,
   absFetch,
+  absResponse,
   assertSupported,
   getStatus,
   login,
@@ -502,6 +503,19 @@ describe('REQ-5: absFetch (authenticated requests with silent renewal)', () => {
       'include'
     );
     expect(data, 'Expected the caller to receive the retried response, none the wiser').toEqual({ path: '/api/me' });
+  });
+
+  it('absResponse: sends the token and other headers, renews on 401 and hands back the raw response', async () => {
+    const server = absServer();
+    await login('joe', 'correct');
+    server.expireAccessToken();
+    const res = await absResponse('/api/me', { headers: { range: 'bytes=10-' } });
+
+    const sequence = server.calls.slice(1).map((c) => `${c.method} ${c.url} ${c.auth ?? '-'}`);
+    expect(sequence).toEqual(['GET /api/me Bearer access-1', 'POST /auth/refresh -', 'GET /api/me Bearer access-2']);
+    expect(new Headers(callsTo(server.calls, '/api/me')[1]?.init.headers).get('range')).toBe('bytes=10-');
+    expect(res.ok).toBe(true);
+    expect(await res.json()).toEqual({ path: '/api/me' });
   });
 
   it('REQ-5: after a renewal later requests use the new token without refreshing again', async () => {

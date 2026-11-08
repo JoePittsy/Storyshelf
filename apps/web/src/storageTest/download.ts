@@ -1,5 +1,5 @@
 // The storage test's download: one ABS audio file, streamed chunk by chunk into the chosen backend, never held whole.
-import { absFetch } from '../api/auth';
+import { absResponse } from '../api/auth';
 import { absUrl } from '../api/server';
 import type { Backend } from './env';
 import { formatBytes, formatRate } from './log';
@@ -20,31 +20,6 @@ import {
 import { startWorker, type WorkerClient, type WorkerReply } from './workerProtocol';
 
 type Log = (msg: string, detail?: unknown) => void;
-
-/**
- * The Authorization header the app sends right now. The access token lives inside api/auth.ts, so this watches one
- * ordinary absFetch go out (which also refreshes the token first if it has expired) and copies its header.
- */
-export async function currentAuthHeader(): Promise<string | null> {
-  const original = globalThis.fetch;
-  let header: string | null = null;
-  const watching: typeof fetch = (input, init) => {
-    try {
-      const h = new Headers(init?.headers).get('authorization');
-      if (h) header = h;
-    } catch {
-      // Not ours to judge: pass it on untouched.
-    }
-    return original(input, init);
-  };
-  globalThis.fetch = watching;
-  try {
-    await absFetch('/api/libraries');
-  } finally {
-    if (globalThis.fetch === watching) globalThis.fetch = original;
-  }
-  return header;
-}
 
 export interface Progress {
   /** Bytes in storage now, counting what was there before a resume. */
@@ -149,23 +124,11 @@ async function workerSink(
   };
 }
 
-/** fetch with the app's auth; a 401 (token expired) gets a fresh header and one retry. */
-async function authedFetch(url: string, range: string | null, signal: AbortSignal, log: Log): Promise<Response> {
-  const send = async () => {
-    const headers = new Headers();
-    const auth = await currentAuthHeader();
-    if (auth) headers.set('authorization', auth);
-    else log('No access token found: sending without one');
-    if (range) headers.set('range', range);
-    return fetch(absUrl(url), { headers, signal, cache: 'no-store' });
-  };
-  let res = await send();
-  if (res.status === 401) {
-    log('HTTP 401: getting a fresh token and trying again');
-    await res.body?.cancel().catch(() => undefined);
-    res = await send();
-  }
-  return res;
+/** fetch with the app's auth (absResponse renews an expired token and retries once). */
+function authedFetch(url: string, range: string | null, signal: AbortSignal): Promise<Response> {
+  const headers = new Headers();
+  if (range) headers.set('range', range);
+  return absResponse(url, { headers, signal, cache: 'no-store' });
 }
 
 /** Runs one download. Resolves when it finished, stopped or failed; every outcome is logged, never thrown. */
@@ -231,7 +194,7 @@ export async function download(o: DownloadOptions, existingWorker?: () => Worker
     writeRunning({ key, bytes: existing, at: Date.now() });
 
     // 2. Ask.
-    const res = await authedFetch(url, plan.range, o.signal, log);
+    const res = await authedFetch(url, plan.range, o.signal);
     const h = (n: string) => res.headers.get(n);
     log(
       `HTTP ${res.status} after ${Math.round(performance.now() - t0)} ms; content-length ${h('content-length') ?? 'unreadable'}, ` +
