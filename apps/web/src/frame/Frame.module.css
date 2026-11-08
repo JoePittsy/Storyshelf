@@ -32,13 +32,24 @@
   .frame .topless {
     padding-top: calc(1.4em + var(--safe-top, env(safe-area-inset-top, 0px)));
   }
+  /* Above everything that scrolls under it. Its own stacking context, so the frosted layer below sits behind the tabs. */
   .frame .tabs {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 20;
+    isolation: isolate;
     padding: calc(0.4em + var(--safe-top, env(safe-area-inset-top, 0px)))
       max(calc(var(--gutter) - 0.45em), env(safe-area-inset-right)) 0
       max(calc(var(--gutter) - 0.45em), env(safe-area-inset-left));
+  }
+  /* The frost is a layer behind the tabs, not the tabs' own box: iOS Safari can rasterise text inside a backdrop-filter
+     at low resolution, which leaves the labels blurry. */
+  .frame .tabs::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background: var(--material-bg);
     -webkit-backdrop-filter: var(--material-filter);
     backdrop-filter: var(--material-filter);
