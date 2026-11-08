@@ -4,6 +4,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { DetailList, PillButton, SectionCard, Select, UserAvatar, useMediaQuery, useToast } from '@joepittsy/ui';
 import { getStatus, restoreSession } from '../api/auth';
 import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/libraries';
+import { DownloadsCard } from '../components/DownloadsCard';
+import { downloadsSupported } from '../downloads';
 import { InstallCard } from '../frame/InstallCard';
 import { offersInstall, useInstall } from '../frame/install';
 import { ShortcutList } from '../frame/ShortcutList';
@@ -29,7 +31,7 @@ const rewindOptions = [
 // keyboard to press shortcuts on there (an iPad with a keyboard but no trackpad can't be told apart, so it loses them).
 const TOUCH_ONLY = '(any-hover: none) and (any-pointer: coarse)';
 
-/** Settings: the account, how playback skips, installing the app, the keyboard shortcuts, and which versions are running. A route in the frame, so it has its own tab. */
+/** Settings: the account, how playback skips, the downloads, installing the app, the keyboard shortcuts, and which versions are running. A route in the frame, so it has its own tab. */
 export function Settings() {
   const { data: user } = useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
   const { data: server } = useQuery({ queryKey: ['status'], queryFn: getStatus, staleTime: Infinity });
@@ -63,7 +65,8 @@ export function Settings() {
   const installs = offersInstall(useInstall().route);
   // Wide, Playback takes the left column and the other cards stack on the right. Playback spans their rows, and the
   // last of those rows soaks up any height Playback has over them, so the right column never opens gaps between cards.
-  const sideCards = 2 + (choosesLibrary ? 1 : 0) + (touchOnly ? 0 : 1) + (installs ? 1 : 0);
+  const sideCards =
+    2 + (downloadsSupported() ? 1 : 0) + (choosesLibrary ? 1 : 0) + (touchOnly ? 0 : 1) + (installs ? 1 : 0);
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Settings</h1>
@@ -138,6 +141,8 @@ export function Settings() {
             </p>
           </div>
         </SectionCard>
+
+        <DownloadsCard className={styles.side} />
 
         <InstallCard className={styles.side} />
 

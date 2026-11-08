@@ -1,0 +1,84 @@
+/* A row per download in the bookmark rows' manner (ActionRow): cover, title over its state, and a remove button that
+   is always there, so a phone can reach it. */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.3em 0.2em 0.3em 0.6em;
+  border-radius: var(--r-row);
+  transition: background var(--dur-fast) var(--ease-fast);
+}
+.row:hover,
+.row:focus-within {
+  background: var(--row-hover);
+}
+.open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0.3em 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--title-rest);
+  text-align: left;
+  cursor: pointer;
+}
+.row:hover .open {
+  color: var(--on-art);
+}
+.title {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.detail {
+  font-size: var(--fs-label);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.remove {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--r-round);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-fast),
+    color var(--dur-fast) var(--ease-fast);
+}
+.remove:hover {
+  background: rgba(var(--danger), 0.16);
+  color: rgb(var(--danger));
+}
+.empty,
+.dialogText {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--fs-prose);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .remove {
+    transition: none;
+  }
+}
