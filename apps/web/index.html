@@ -12,6 +12,100 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Storyshelf" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!--
+      Inline, so it arrives with the page itself: records whether any script runs on an offline launch, and what the
+      page gets when it asks for its own script files (public/boot.js reads the same log). Its hash is added to the
+      Content-Security-Policy in dist/_headers by the build (vite.config.ts), so edit it freely.
+    -->
+    <script>
+      (function () {
+        var KEY = 'storyshelf.bootlog';
+        function keep(ev, detail) {
+          try {
+            var list = JSON.parse(localStorage.getItem(KEY) || '[]');
+            list.push({ t: new Date().toISOString(), ev: ev, detail: detail });
+            localStorage.setItem(KEY, JSON.stringify(list.slice(-60)));
+          } catch (e) {}
+        }
+        var sw = navigator.serviceWorker;
+        keep('inline script ran', { online: navigator.onLine, sw: !!(sw && sw.controller) });
+        function timing(e) {
+          return e
+            ? { worker: Math.round(e.workerStart), took: Math.round(e.responseEnd - e.startTime), size: e.transferSize }
+            : 'no entry';
+        }
+        function probe(url) {
+          var start = Date.now();
+          var settled = false;
+          setTimeout(function () {
+            if (!settled) keep('fetch ' + url, 'no answer after 5 s');
+          }, 5000);
+          fetch(url, { cache: 'no-store' }).then(
+            function (r) {
+              settled = true;
+              keep('fetch ' + url, r.status + ' in ' + (Date.now() - start) + ' ms');
+            },
+            function (e) {
+              settled = true;
+              keep('fetch ' + url, (e && e.name) + ': ' + (e && e.message) + ' in ' + (Date.now() - start) + ' ms');
+            }
+          );
+        }
+        addEventListener('DOMContentLoaded', function () {
+          var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+          keep('page timing', timing(nav));
+          var scripts = document.querySelectorAll('script[src]');
+          for (var i = 0; i < scripts.length; i++) probe(scripts[i].getAttribute('src'));
+        });
+        setTimeout(function () {
+          var files = {};
+          var all = (performance.getEntriesByType && performance.getEntriesByType('resource')) || [];
+          for (var i = 0; i < all.length; i++)
+            if (all[i].name.indexOf(location.origin) === 0)
+              files[all[i].name.replace(location.origin, '')] = timing(all[i]);
+          keep('file timing at 6 s', files);
+          var boot = document.getElementById('boot');
+          if (!boot) return; // the app rendered
+          var el = document.getElementById('boot-detail');
+          if (el && !el.textContent) el.textContent = 'No app script has run yet.';
+          // Still stuck: offer the log here, as the app's own log page can't be reached.
+          function logText() {
+            var list = [];
+            try {
+              list = JSON.parse(localStorage.getItem(KEY) || '[]');
+            } catch (e) {}
+            return list
+              .map(function (x) {
+                return x.t + ' ' + x.ev + (x.detail === undefined ? '' : ' ' + JSON.stringify(x.detail));
+              })
+              .reverse()
+              .join('\n');
+          }
+          var pre = document.createElement('pre');
+          pre.className = 'bootLog';
+          pre.textContent = logText();
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'bootCopy';
+          button.textContent = 'Copy start-up log';
+          button.onclick = function () {
+            var text = logText();
+            pre.textContent = text; // on screen too, to select by hand if copying fails
+            if (!navigator.clipboard) return void (button.textContent = 'Press and hold the text below to copy it');
+            navigator.clipboard.writeText(text).then(
+              function () {
+                button.textContent = 'Copied';
+              },
+              function () {
+                button.textContent = 'Couldn’t copy. Press and hold the text below';
+              }
+            );
+          };
+          boot.appendChild(button);
+          boot.appendChild(pre);
+        }, 6000);
+      })();
+    </script>
   </head>
   <body>
     <!-- Until the app renders over it: says the page is here, and (public/boot.js) why it might be stuck. -->
