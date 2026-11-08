@@ -73,6 +73,11 @@ export const pauseDownload = (itemId: string): Promise<void> => run(undefined, (
 export const resumeDownload = (itemId: string): Promise<void> => run(undefined, (m) => m.resume(itemId));
 /** Cancels a download in progress, or removes a finished one: its files, details and object URLs. */
 export const removeDownload = (itemId: string): Promise<void> => run(undefined, (m) => m.remove(itemId));
+/** Removes every download on the device: on signing out, so the device keeps nothing of the listener's. */
+export const removeAllDownloads = (): Promise<void> =>
+  run(undefined, async (m) => {
+    for (const b of [...books]) await m.remove(b.itemId);
+  });
 
 /**
  * For playing offline (the next phase): object URLs of the book's files in play order, each typed to play (m4b as

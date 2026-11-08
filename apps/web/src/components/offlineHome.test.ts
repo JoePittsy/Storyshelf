@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DownloadedBook } from '../downloads';
-import { downloadLine, fmtSize, jumpBackIn } from './offlineHome';
+import { downloadLine, jumpBackIn } from './offlineHome';
 
 const dl = (itemId: string, over: Partial<DownloadedBook> = {}): DownloadedBook => ({
   itemId,
@@ -55,14 +55,5 @@ describe('downloadLine', () => {
     expect(downloadLine(dl('a', { status: 'failed', error: 'not enough space' }))).toBe(
       "Didn't download: not enough space"
     );
-  });
-});
-
-describe('fmtSize', () => {
-  it('reads in MB, then GB', () => {
-    expect(fmtSize(0)).toBe('0 MB');
-    expect(fmtSize(400_000)).toBe('1 MB');
-    expect(fmtSize(525.6e6)).toBe('526 MB');
-    expect(fmtSize(1.44e9)).toBe('1.4 GB');
   });
 });

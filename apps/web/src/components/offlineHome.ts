@@ -1,5 +1,5 @@
 // The decisions behind the offline home: which download to offer to carry on with, and how each one reads.
-import type { DownloadedBook } from '../downloads';
+import { fmtBytes, type DownloadedBook } from '../downloads';
 
 interface Place {
   currentTime?: number;
@@ -23,20 +23,12 @@ export function jumpBackIn(
   return [...ready].sort((a, b) => heard(b) - heard(a) || b.addedAt - a.addedAt)[0];
 }
 
-/** Bytes as the listener reads them: "312 MB", "1.4 GB". */
-export function fmtSize(bytes: number): string {
-  if (!(bytes > 0)) return '0 MB';
-  const gb = bytes / 1e9;
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  return `${Math.max(1, Math.round(bytes / 1e6))} MB`;
-}
-
 /** A download's state in a few words: "Downloaded · 312 MB", "Downloading 42%", "Paused: you left the app". */
 export function downloadLine(d: DownloadedBook): string {
   const pct = d.totalBytes > 0 ? Math.floor((d.bytes / d.totalBytes) * 100) : 0;
   switch (d.status) {
     case 'complete':
-      return `Downloaded · ${fmtSize(d.totalBytes)}`;
+      return `Downloaded · ${fmtBytes(d.totalBytes)}`;
     case 'downloading':
       return `Downloading ${pct}%`;
     case 'queued':

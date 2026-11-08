@@ -11,14 +11,20 @@ vi.mock('../api/auth', async (orig) => ({
   logout: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('../player/engine', () => ({ stop: vi.fn(() => Promise.resolve()) }));
+vi.mock('../downloads', async (orig) => ({
+  ...(await orig<typeof import('../downloads')>()),
+  removeAllDownloads: vi.fn(() => Promise.resolve()),
+}));
 
 import * as auth from '../api/auth';
 import { stop } from '../player/engine';
+import { removeAllDownloads, setDownloadsForTests } from '../downloads';
 import { AccountMenu } from './AccountMenu';
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  setDownloadsForTests([]);
 });
 
 function renderMenu(onShowShortcuts?: () => void) {
@@ -53,6 +59,32 @@ describe('account menu', () => {
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign out' }));
     expect(stop).toHaveBeenCalledOnce();
     expect(auth.logout).toHaveBeenCalledOnce();
+  });
+
+  it('says downloads go too, and removes them on signing out', async () => {
+    const book = {
+      libraryId: 'L1',
+      author: 'A',
+      coverUrl: null,
+      duration: 60,
+      status: 'complete' as const,
+      addedAt: 1,
+    };
+    setDownloadsForTests([
+      { ...book, itemId: 'a', title: 'A', bytes: 300e6, totalBytes: 300e6 },
+      { ...book, itemId: 'b', title: 'B', bytes: 200e6, totalBytes: 200e6 },
+    ]);
+    renderMenu();
+    await userEvent.click(await screen.findByRole('button', { name: 'Account: joe' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(screen.getByText(/the 2 books downloaded to this device \(500 MB\) will be removed/)).toBeInTheDocument();
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign out' }));
+    await vi.waitFor(() => expect(auth.logout).toHaveBeenCalledOnce());
+    expect(removeAllDownloads).toHaveBeenCalledOnce();
+    // Gone before the session is: the device keeps nothing of the listener's.
+    expect(vi.mocked(removeAllDownloads).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(auth.logout).mock.invocationCallOrder[0] ?? 0
+    );
   });
 
   it('closes on Escape and returns focus to the button', async () => {
