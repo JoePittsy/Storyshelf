@@ -84,7 +84,7 @@ describe('detectMode', () => {
   it('picks same-origin for ABS JSON', async () => {
     const f = vi.fn(() => Promise.resolve(json(ABS)));
     await expect(detectMode(f as never)).resolves.toBe('same-origin');
-    expect(f).toHaveBeenCalledWith('/status');
+    expect(f).toHaveBeenCalledWith('/status', expect.anything());
     expect(getMode()).toBe('same-origin');
   });
   it('picks hosted for an index.html fallback', async () => {
@@ -99,6 +99,15 @@ describe('detectMode', () => {
   it('picks hosted for JSON that is not ABS', async () => {
     const f = () => Promise.resolve(json({ status: 'ok' }));
     await expect(detectMode(f as never)).resolves.toBe('hosted');
+  });
+  it('a gateway error (ABS down behind nginx) is out of reach, not a static host', async () => {
+    await detectMode((() => Promise.resolve(json(ABS))) as never);
+    resetServerForTests();
+    for (const status of [502, 503, 504]) {
+      const f = () => Promise.resolve(new Response('Bad Gateway', { status }));
+      await expect(detectMode(f as never)).resolves.toBe('same-origin');
+    }
+    expect(localStorage.getItem('storyshelf.mode')).toBe('same-origin');
   });
   it('reuses the remembered mode when offline', async () => {
     await detectMode((() => Promise.resolve(new Response('x'))) as never);

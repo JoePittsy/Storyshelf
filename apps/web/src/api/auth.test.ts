@@ -365,12 +365,17 @@ describe('REQ-4: login (sign in with username and password)', () => {
     server.expireAccessToken();
     await absFetch('/api/me'); // forces a refresh and a new token
     await logout();
+    // The only thing written is the small copy of the user that offline needs (lastUser.ts), and it holds no token.
     for (const [name, store] of [
       ['localStorage', local],
       ['sessionStorage', session],
     ] as const) {
-      expect(store.setItem, `Expected no writes to ${name}: tokens must stay in memory`).not.toHaveBeenCalled();
+      for (const [key, value] of store.setItem.mock.calls as unknown as [string, string][]) {
+        expect(key, `Expected only the remembered user in ${name}`).toBe('storyshelf.lastUser');
+        expect(value, `Expected no token in ${name}: tokens must stay in memory`).not.toMatch(/access-|LEGACY-TOKEN/);
+      }
     }
+    expect(session.setItem).not.toHaveBeenCalled();
   });
 });
 
