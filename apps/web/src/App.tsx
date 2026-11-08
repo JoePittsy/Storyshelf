@@ -6,6 +6,7 @@ import { Frame } from './frame/Frame';
 import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
 import { Debug } from './screens/Debug';
+import { StorageTest } from './screens/StorageTest';
 import { Book } from './screens/Book';
 import { CarMode } from './screens/CarMode';
 import { play } from './player/engine';
@@ -105,6 +106,7 @@ function AppRoutes() {
           <Route path="/now-playing" element={<NowPlaying />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/debug" element={<Debug />} />
+          <Route path="/debug/storage" element={<StorageTest />} />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<PlayableSeries />} />
           <Route path="/history" element={<History />}>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { EmptyState, ListRow, PillButton } from '@joepittsy/ui';
 import { diag, formatDiag, useDiag } from '../player/diag';
 import styles from './Debug.module.css';
@@ -21,6 +22,9 @@ export function Debug() {
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>Player log</h1>
+      <Link to="/debug/storage" className={styles.link}>
+        Storage test
+      </Link>
       <div className={styles.bar}>
         <PillButton variant="primary" onClick={() => void copy()}>
           Copy log
