@@ -41,6 +41,8 @@ export function useHasBookDownload(itemId: string): boolean {
 interface Props {
   itemId: string;
   title: string;
+  /** No fill until hovered, as the player's own round buttons (car mode, AirPlay). Default: the tonal circle. */
+  quiet?: boolean;
 }
 
 /**
@@ -49,7 +51,7 @@ interface Props {
  * stopped; tap to carry on, hold for Cancel. Downloaded: the download icon with a tick; tap for Remove, which asks first.
  * Hold is a shortcut, never the only way: the options also open from the keyboard's context-menu key or Shift+F10.
  */
-export function BookDownload({ itemId, title }: Props) {
+export function BookDownload({ itemId, title, quiet = false }: Props) {
   const book = useDownloads().find((b) => b.itemId === itemId);
   const offline = useOffline();
   const allowed = useCanDownload();
@@ -109,7 +111,7 @@ export function BookDownload({ itemId, title }: Props) {
       <button
         ref={button}
         type="button"
-        className={styles.button}
+        className={`${styles.button}${quiet ? ' ' + styles.quiet : ''}`}
         aria-label={view.label}
         aria-describedby={book ? hintId : undefined}
         aria-haspopup={book?.status === 'complete' ? 'true' : undefined}

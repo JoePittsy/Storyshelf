@@ -39,6 +39,7 @@ import { usePlayerJump } from '../player/useUndoableJump';
 import { useRestoreSettled } from '../player/restoreStatus';
 import { ShortcutsDialog } from '../frame/ShortcutsDialog';
 import { NowPlayingEnd } from '../components/UpNext';
+import { BookDownload } from '../components/BookDownload';
 import { AirPlayControl } from '../player/AirPlayControl';
 import { fmtClock, sanitiseDescription } from './bookHelpers';
 import styles from './NowPlaying.module.css';
@@ -218,6 +219,7 @@ export function NowPlaying() {
           closeLabel="Close player"
           end={
             <>
+              <BookDownload itemId={p.item.id} title={p.item.title} quiet />
               <IconButton icon="car" label="Car mode" onClick={toCar} />
               <AirPlayControl />
             </>
@@ -313,6 +315,7 @@ export function NowPlaying() {
       <div className={styles.bar} ref={bar}>
         <PillButton onClick={close}>Close</PillButton>
         <span className={styles.barEnd}>
+          <BookDownload itemId={p.item.id} title={p.item.title} quiet />
           <IconButton icon="car" label="Car mode" shortcut={touch ? undefined : 'C'} onClick={toCar} />
           <AirPlayControl />
           {/* The car button's twin, named and with its key in the tooltip; it opens the same list as ? does. */}

@@ -17,6 +17,7 @@ import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { HandoffWatch } from './player/HandoffWatch';
 import { PlayerToasts } from './player/PlayerToasts';
+import { UpdatePrompt } from './frame/UpdatePrompt';
 import { AuthorList } from './screens/AuthorList';
 import { Collection, Playlist } from './screens/BookListDetail';
 import { CollectionList, PlaylistList } from './screens/BookListIndex';
@@ -77,6 +78,7 @@ export function App() {
   return (
     <>
       <PlayerToasts />
+      <UpdatePrompt />
       <HandoffWatch />
       <AppRoutes />
       <MiniPlayerPortal />

@@ -32,6 +32,15 @@
 .button:disabled {
   cursor: progress;
 }
+/* In the player's bar, beside car mode and AirPlay: no fill until hovered. */
+.quiet {
+  background: none;
+  color: var(--text-2);
+}
+.quiet:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
 /* Held long enough: letting go opens the options. */
 .button[data-holding] {
   background: rgba(var(--tint), 0.3);

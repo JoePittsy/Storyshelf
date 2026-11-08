@@ -7,6 +7,7 @@ import { pickLibrary, storeLibrary, storedLibrary, useLibraries } from '../api/l
 import { DownloadsCard } from '../components/DownloadsCard';
 import { downloadsSupported } from '../downloads';
 import { InstallCard } from '../frame/InstallCard';
+import { UpdateCheck } from '../frame/UpdateCheck';
 import { offersInstall, useInstall } from '../frame/install';
 import { ShortcutList } from '../frame/ShortcutList';
 import { useSignOut } from '../frame/useSignOut';
@@ -171,6 +172,7 @@ export function Settings() {
                   </a>
                 ),
               },
+              { label: 'Updates', value: <UpdateCheck /> },
               {
                 // On the phone, where the installed app has no address bar to type /debug into.
                 label: 'Diagnostics',
