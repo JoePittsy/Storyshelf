@@ -64,9 +64,45 @@
             if (all[i].name.indexOf(location.origin) === 0)
               files[all[i].name.replace(location.origin, '')] = timing(all[i]);
           keep('file timing at 6 s', files);
+          var boot = document.getElementById('boot');
+          if (!boot) return; // the app rendered
           var el = document.getElementById('boot-detail');
-          if (el && !el.textContent)
-            el.textContent = 'No app script has run yet. Settings > Player log > Start-up log has details.';
+          if (el && !el.textContent) el.textContent = 'No app script has run yet.';
+          // Still stuck: offer the log here, as the app's own log page can't be reached.
+          function logText() {
+            var list = [];
+            try {
+              list = JSON.parse(localStorage.getItem(KEY) || '[]');
+            } catch (e) {}
+            return list
+              .map(function (x) {
+                return x.t + ' ' + x.ev + (x.detail === undefined ? '' : ' ' + JSON.stringify(x.detail));
+              })
+              .reverse()
+              .join('\n');
+          }
+          var pre = document.createElement('pre');
+          pre.className = 'bootLog';
+          pre.textContent = logText();
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'bootCopy';
+          button.textContent = 'Copy start-up log';
+          button.onclick = function () {
+            var text = logText();
+            pre.textContent = text; // on screen too, to select by hand if copying fails
+            if (!navigator.clipboard) return void (button.textContent = 'Press and hold the text below to copy it');
+            navigator.clipboard.writeText(text).then(
+              function () {
+                button.textContent = 'Copied';
+              },
+              function () {
+                button.textContent = 'Couldn’t copy. Press and hold the text below';
+              }
+            );
+          };
+          boot.appendChild(button);
+          boot.appendChild(pre);
         }, 6000);
       })();
     </script>
