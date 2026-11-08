@@ -11,6 +11,8 @@
 # The service worker and the page it keeps must always be checked for a new release, never kept as they are.
 /sw.js
   Cache-Control: no-cache
+/version.json
+  Cache-Control: no-cache
 /
   Cache-Control: no-cache
 /index.html

@@ -39,6 +39,16 @@ const allowInlineScripts: Plugin = {
   },
 };
 
+// /version.json: what this build is, for the app to ask the server whether a waiting worker is really a new release
+// (src/pwa/updates.ts). Not kept by the worker (its globPatterns leave out .json), so the answer is always the server's.
+const versionFile: Plugin = {
+  name: 'storyshelf:version-file',
+  apply: 'build',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version, commit: commit() }) });
+  },
+};
+
 const leftAloneByRocketLoader: Plugin = {
   name: 'storyshelf:left-alone-by-rocket-loader',
   apply: 'build',
@@ -91,7 +101,7 @@ const devRemovesWorker: Plugin = {
 
 export default defineConfig(({ command, mode }) => {
   const common = {
-    plugins: [react(), leftAloneByRocketLoader, pwa, devRemovesWorker, allowInlineScripts],
+    plugins: [react(), versionFile, leftAloneByRocketLoader, pwa, devRemovesWorker, allowInlineScripts],
     resolve: { conditions: ['@joepittsy/source'] },
     define: { __APP_VERSION__: JSON.stringify(version), __APP_COMMIT__: JSON.stringify(commit()) },
   };

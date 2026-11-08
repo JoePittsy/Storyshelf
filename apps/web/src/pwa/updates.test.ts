@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyUpdate, checkForUpdate, resetUpdatesForTests, useUpdateReady, watchForUpdates } from './updates';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 type Listener = () => void;
 
@@ -42,7 +42,18 @@ function setup({ controller = true, waiting = false } = {}) {
 }
 
 const reload = vi.fn();
-beforeEach(() => vi.stubGlobal('location', { ...location, reload }));
+/** The version the server says it has (vitest.config.ts builds the running app as 9.9.9); null: it can't be reached. */
+let onServer: string | null = '10.0.0';
+const fetchVersion = vi.fn(() =>
+  onServer === null
+    ? Promise.reject(new TypeError('Failed to fetch'))
+    : Promise.resolve(new Response(JSON.stringify({ version: onServer, commit: 'def5678' })))
+);
+beforeEach(() => {
+  onServer = '10.0.0';
+  vi.stubGlobal('location', { ...location, reload });
+  vi.stubGlobal('fetch', fetchVersion);
+});
 afterEach(() => {
   resetUpdatesForTests();
   vi.unstubAllGlobals();
@@ -50,7 +61,7 @@ afterEach(() => {
 });
 
 describe('updates', () => {
-  it('says a release is ready once one finishes installing behind a running app', () => {
+  it('says a release is ready once one finishes installing behind a running app', async () => {
     const { reg } = setup();
     const ready = renderHook(() => useUpdateReady());
     expect(ready.result.current).toBe(false);
@@ -58,17 +69,40 @@ describe('updates', () => {
     reg.found(w);
     reg.waiting = w as never;
     act(() => w.finish());
-    expect(ready.result.current).toBe(true);
+    await waitFor(() => expect(ready.result.current).toBe(true));
+    expect(fetchVersion).toHaveBeenCalledWith('/version.json', { cache: 'no-store' });
   });
 
-  it('notices a release already waiting when the app opens', () => {
+  it('notices a release already waiting when the app opens', async () => {
     setup({ waiting: true });
-    expect(renderHook(() => useUpdateReady()).result.current).toBe(true);
+    const ready = renderHook(() => useUpdateReady());
+    await waitFor(() => expect(ready.result.current).toBe(true));
   });
 
-  it("the first install isn't an update: nothing was running", () => {
+  it("a worker waiting with the version that's already running isn't offered", async () => {
+    onServer = '9.9.9';
+    const { reg } = setup({ waiting: true });
+    const ready = renderHook(() => useUpdateReady());
+    await waitFor(() => expect(fetchVersion).toHaveBeenCalled());
+    await act(() => Promise.resolve());
+    expect(ready.result.current).toBe(false);
+    reg.update.mockResolvedValue(undefined);
+    await expect(checkForUpdate()).resolves.toBe('current');
+  });
+
+  it("offline, a waiting worker is trusted: the server can't be asked", async () => {
+    onServer = null;
+    setup({ waiting: true });
+    const ready = renderHook(() => useUpdateReady());
+    await waitFor(() => expect(ready.result.current).toBe(true));
+  });
+
+  it("the first install isn't an update: nothing was running", async () => {
     setup({ controller: false, waiting: true });
-    expect(renderHook(() => useUpdateReady()).result.current).toBe(false);
+    const ready = renderHook(() => useUpdateReady());
+    await act(() => Promise.resolve());
+    expect(ready.result.current).toBe(false);
+    expect(fetchVersion).not.toHaveBeenCalled();
   });
 
   it('checking asks the server, waits for a release it found to install, and says so', async () => {
