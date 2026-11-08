@@ -1,13 +1,13 @@
 name: Release check
 
-# Every PR into main says whether merging it releases, with one label:
-#   release: major | release: minor | release: patch   apps/web/package.json bumped to match, and release notes
-#   release: none                                       the version unchanged
+# apps/web/package.json's version decides whether merging a PR into main releases:
+#   unchanged                                  no release
+#   bumped one step (major, minor or patch)    release that version; the PR needs a "## Release notes" section
 # The rules are in .github/scripts/release.mjs. Merging a release PR tags and releases it (tag-release.yml).
 on:
   pull_request:
     branches: [main]
-    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   contents: read
@@ -17,25 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  labels:
-    name: Release labels exist
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    # Read-only on a fork's PR, and the labels only need making once.
-    continue-on-error: true
-    steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          gh label create "release: major" --color B60205 --description "Merging releases a major version" 2>/dev/null || true
-          gh label create "release: minor" --color FBCA04 --description "Merging releases a minor version" 2>/dev/null || true
-          gh label create "release: patch" --color 0E8A16 --description "Merging releases a patch version" 2>/dev/null || true
-          gh label create "release: none" --color C5DEF5 --description "Merging does not release" 2>/dev/null || true
-
   check:
-    name: Release label, version and notes
+    name: Release version and notes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -44,11 +27,10 @@ jobs:
       - name: Check
         shell: bash
         env:
-          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           base=$(git show "$BASE_SHA:apps/web/package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")
           head=$(node -p "require('./apps/web/package.json').version")
           printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
-          node .github/scripts/release.mjs check "$base" "$head" "$LABELS" "$RUNNER_TEMP/body.md" | tee -a "$GITHUB_STEP_SUMMARY"
+          node .github/scripts/release.mjs check "$base" "$head" "$RUNNER_TEMP/body.md" | tee -a "$GITHUB_STEP_SUMMARY"

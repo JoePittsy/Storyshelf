@@ -91,14 +91,12 @@ The repository is a pnpm workspace:
 | [`packages/ui`](packages/ui/README.md) | `@joepittsy/ui`, the design system: tokens, components and Storybook |
 | [`e2e`](e2e/README.md) | A local ABS server for end-to-end testing |
 
-Changes reach `main` through pull requests, and each one says whether merging it releases, with one label:
+Changes reach `main` through pull requests, and the version in `apps/web/package.json` decides whether merging one releases:
 
-| Label | The PR must | Merging it |
-| --- | --- | --- |
-| `release: major`, `release: minor` or `release: patch` | bump `apps/web/package.json` to match, and fill in the description's **Release notes** | tags `vX.Y.Z` and releases it |
-| `release: none` | leave the version alone | releases nothing |
+- **Leave it alone** and merging releases nothing.
+- **Bump it one step** (`pnpm --filter @storyshelf/web version patch|minor|major --no-git-tag-version`) and fill in the description's **Release notes**, and merging tags `vX.Y.Z` and releases it.
 
-To bump: `pnpm --filter @storyshelf/web version <x.y.z> --no-git-tag-version`. The **Release check** on the PR enforces the label, the version and the notes (the rules are in `.github/scripts/release.mjs`). A release runs the checks, publishes the Docker image, creates the GitHub Release with those notes and updates the hosted site. Pushing a `vX.Y.Z` tag on `main` by hand still releases too.
+The **Release check** on each PR enforces a single-step bump and the notes (the rules are in `.github/scripts/release.mjs`). A release runs the checks, publishes the Docker image, creates the GitHub Release with those notes and updates the hosted site. Pushing a `vX.Y.Z` tag on `main` by hand still releases too.
 
 ## Licence
 
