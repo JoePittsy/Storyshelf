@@ -3,6 +3,7 @@ name: Release check
 # apps/web/package.json's version decides whether merging a PR into main releases:
 #   unchanged                                  no release
 #   bumped one step (major, minor or patch)    release that version; the PR needs a "## Release notes" section
+#   a pre-release (0.3.0-alpha, -alpha.1, ...)  a GitHub pre-release and Docker tag; not `latest`, not the hosted site
 # The rules are in .github/scripts/release.mjs. Merging a release PR tags and releases it (tag-release.yml).
 on:
   pull_request:

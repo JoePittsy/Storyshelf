@@ -94,9 +94,10 @@ The repository is a pnpm workspace:
 Changes reach `main` through pull requests, and the version in `apps/web/package.json` decides whether merging one releases:
 
 - **Leave it alone** and merging releases nothing.
-- **Bump it one step** (`pnpm --filter @storyshelf/web version patch|minor|major --no-git-tag-version`) and fill in the description's **Release notes**, and merging tags `vX.Y.Z` and releases it.
+- **Bump it one step** (`cd apps/web && npm version patch|minor|major --no-git-tag-version`) and fill in the description's **Release notes**, and merging tags `vX.Y.Z` and releases it.
+- **Or make a pre-release** (for example `0.3.0-alpha`, then `0.3.0-alpha.1`, then `0.3.0`): it gets a GitHub pre-release and a Docker tag, but not `latest` and not the hosted site.
 
-The **Release check** on each PR enforces a single-step bump and the notes (the rules are in `.github/scripts/release.mjs`). A release runs the checks, publishes the Docker image, creates the GitHub Release with those notes and updates the hosted site. Pushing a `vX.Y.Z` tag on `main` by hand still releases too.
+The **Release check** on each PR enforces a single step and the notes (the rules are in `.github/scripts/release.mjs`). A release runs the checks, publishes the Docker image, creates the GitHub Release with those notes and updates the hosted site. Pushing a `vX.Y.Z` tag on `main` by hand still releases too.
 
 ## Licence
 

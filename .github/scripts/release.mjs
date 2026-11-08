@@ -9,26 +9,58 @@
 //     Prints the "## Release notes" section of a PR body (empty if there is none).
 import { readFileSync } from 'node:fs';
 
-const parse = (v) => {
-  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(v);
-  if (!m) throw new Error(`"${v}" is not MAJOR.MINOR.PATCH`);
-  return m.slice(1).map(Number);
-};
+// A pre-release (1.2.0-alpha, 1.2.0-beta.2) releases too, as a GitHub pre-release and a Docker tag, but not as
+// `latest` and not to the hosted site (release.yml). It may follow the last version one step on (1.1.4 → 1.2.0-alpha),
+// move to a later pre-release of the same version (1.2.0-alpha → 1.2.0-alpha.2), or graduate (1.2.0-alpha → 1.2.0).
 
-/** "1.2.3" bumped by kind. Pre-release suffixes are not part of this flow. */
+const parse = (v) => {
+  const m = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*))?$/.exec(v);
+  if (!m) throw new Error(`"${v}" is not MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-prerelease`);
+  return { core: m.slice(1, 4).map(Number), pre: m[4] ?? null };
+};
+const coreOf = (v) => parse(v).core.join('.');
+
+/** "1.2.3" (or "1.2.3-alpha") bumped by kind, on the MAJOR.MINOR.PATCH part. */
 export function bump(version, kind) {
-  const [maj, min, pat] = parse(version);
+  const [maj, min, pat] = parse(version).core;
   if (kind === 'major') return `${maj + 1}.0.0`;
   if (kind === 'minor') return `${maj}.${min + 1}.0`;
   if (kind === 'patch') return `${maj}.${min}.${pat + 1}`;
   throw new Error(`unknown bump "${kind}"`);
 }
 
-/** Which one-step bump takes base to head: 'none' if unchanged, null if it isn't one step. */
+/** Semver precedence of two pre-release strings: negative when a comes first. */
+function comparePre(a, b) {
+  const x = a.split('.');
+  const y = b.split('.');
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    if (x[i] === undefined) return -1;
+    if (y[i] === undefined) return 1;
+    const nx = /^\d+$/.test(x[i]);
+    const ny = /^\d+$/.test(y[i]);
+    if (nx && ny && Number(x[i]) !== Number(y[i])) return Number(x[i]) - Number(y[i]);
+    if (nx !== ny) return nx ? -1 : 1;
+    if (!nx && x[i] !== y[i]) return x[i] < y[i] ? -1 : 1;
+  }
+  return 0;
+}
+
+/**
+ * Which step takes base to head: 'none' if unchanged; 'major' | 'minor' | 'patch' for a release one step on;
+ * 'premajor' | 'preminor' | 'prepatch' for a pre-release of one; 'prerelease' for a later pre-release of the same
+ * version; 'graduate' for the release a pre-release led to. Null if it isn't one of those.
+ */
 export function bumpKind(base, head) {
   if (base === head) return 'none';
-  parse(head);
-  return ['major', 'minor', 'patch'].find((k) => bump(base, k) === head) ?? null;
+  const b = parse(base);
+  const h = parse(head);
+  const sameCore = coreOf(base) === coreOf(head);
+  if (b.pre && sameCore) {
+    if (!h.pre) return 'graduate';
+    return comparePre(h.pre, b.pre) > 0 ? 'prerelease' : null;
+  }
+  const kind = ['major', 'minor', 'patch'].find((k) => bump(base, k) === coreOf(head)) ?? null;
+  return kind && h.pre ? `pre${kind}` : kind;
 }
 
 /** The text under "## Release notes", up to the next heading of the same or higher level. HTML comments dropped. */
@@ -52,12 +84,16 @@ export function checkPr({ baseVersion, headVersion, body }) {
   if (kind === 'none') return { ok: true, message: `No release: apps/web stays at ${baseVersion}.` };
   if (!kind) {
     const steps = ['patch', 'minor', 'major'].map((k) => bump(baseVersion, k)).join(', ');
-    return { ok: false, message: `${baseVersion} → ${headVersion} isn't a single bump. From ${baseVersion} use ${steps}, or leave it at ${baseVersion} to not release.` };
+    const pre = parse(baseVersion).pre ? ` ${coreOf(baseVersion)} or a later ${coreOf(baseVersion)}-…,` : '';
+    return { ok: false, message: `${baseVersion} → ${headVersion} isn't a single step. From ${baseVersion} use${pre} ${steps} (each optionally with a -prerelease such as -alpha), or leave it at ${baseVersion} to not release.` };
   }
   if (!releaseNotes(body)) {
     return { ok: false, message: `This bumps ${baseVersion} → ${headVersion}, so add a "## Release notes" section to the PR description. It becomes the GitHub Release text.` };
   }
-  return { ok: true, message: `Merging releases v${headVersion} (${kind}).` };
+  const pre = parse(headVersion).pre
+    ? ' A pre-release: a GitHub pre-release and Docker tag, not `latest` and not the hosted site.'
+    : '';
+  return { ok: true, message: `Merging releases v${headVersion} (${kind}).${pre}` };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
