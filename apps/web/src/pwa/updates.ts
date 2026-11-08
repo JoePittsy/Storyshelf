@@ -5,6 +5,10 @@
  * next launch.
  */
 import { useSyncExternalStore } from 'react';
+import { diag } from '../player/diag';
+
+/** Written by the build next to the app (vite.config.ts), never kept by the worker: what the server has now. */
+export const VERSION_URL = '/version.json';
 
 let registration: ServiceWorkerRegistration | null = null;
 let container: ServiceWorkerContainer | null = null;
@@ -20,15 +24,51 @@ function setReady(next: boolean): void {
 /** A release is installed and waiting: there's an app running, so it isn't the first install. */
 const waitingNow = (): boolean => !!registration?.waiting && !!container?.controller;
 
+/** The version the server is serving now; null when it can't be asked (offline) or doesn't say. */
+async function serverVersion(): Promise<string | null> {
+  try {
+    const res = await fetch(VERSION_URL, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { version?: unknown };
+    return typeof body.version === 'string' ? body.version : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether there's a new release to offer. A waiting worker isn't enough on its own: iOS has been seen reporting one
+ * when the server has nothing newer than what's running, and offering that is an Update that changes nothing, offered
+ * again and again. So the server is asked which version it has. When it can't be (offline), the waiting worker is
+ * trusted: it was installed from the server, after all.
+ */
+async function newReleaseWaiting(): Promise<boolean> {
+  if (!waitingNow()) return false;
+  const server = await serverVersion();
+  const offer = server === null || server !== __APP_VERSION__;
+  diag.log('update: a worker is waiting', { running: __APP_VERSION__, server, offer });
+  // The worker may have moved on while the server was asked.
+  return offer && waitingNow();
+}
+
+let checks = 0;
+/** Works out readiness afresh; a check that's overtaken by a later one doesn't get the last word. */
+async function recheck(): Promise<boolean> {
+  const mine = ++checks;
+  const next = await newReleaseWaiting();
+  if (mine === checks) setReady(next);
+  return next;
+}
+
 /** Called once the worker is registered: notices a release waiting now, and one that finishes installing later. */
 export function watchForUpdates(reg: ServiceWorkerRegistration, c: ServiceWorkerContainer): void {
   registration = reg;
   container = c;
-  setReady(waitingNow());
+  void recheck();
   reg.addEventListener('updatefound', () => {
     const installing = reg.installing;
     installing?.addEventListener('statechange', () => {
-      if (installing.state === 'installed') setReady(waitingNow());
+      if (installing.state === 'installed') void recheck();
     });
   });
 }
@@ -67,9 +107,7 @@ export async function checkForUpdate(): Promise<CheckResult> {
         }
       });
     });
-  const now = waitingNow();
-  setReady(now);
-  return now ? 'ready' : 'current';
+  return (await recheck()) ? 'ready' : 'current';
 }
 
 /** Moves to the waiting release: it takes over, and the page reloads onto it once. */
@@ -85,5 +123,6 @@ export function resetUpdatesForTests(): void {
   registration = null;
   container = null;
   ready = false;
+  checks = 0;
   listeners.clear();
 }
