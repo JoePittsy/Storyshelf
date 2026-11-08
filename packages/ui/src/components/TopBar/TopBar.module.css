@@ -1,15 +1,25 @@
 .bar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: 0.8em;
   padding: calc(0.6em + env(safe-area-inset-top)) 1em 0.6em;
+  box-shadow: var(--material-edge);
+}
+/* The frost is a layer behind the bar's content, not the bar's own box: iOS Safari can rasterise text inside a
+   backdrop-filter at low resolution, which leaves it blurry. */
+.bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background: var(--material-bg);
   -webkit-backdrop-filter: var(--material-filter);
   backdrop-filter: var(--material-filter);
-  box-shadow: var(--material-edge);
 }
 .start,
 .end {
