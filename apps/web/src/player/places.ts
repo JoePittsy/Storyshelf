@@ -41,6 +41,14 @@ function save(all: Stored): void {
   }
 }
 
+/** Drops the signed-in user's places from the device: on signing out. */
+export function forgetPlaces(): void {
+  const prefix = keyFor('');
+  const all = load();
+  for (const k of Object.keys(all)) if (k.startsWith(prefix)) delete all[k];
+  save(all);
+}
+
 /** The place this device last left the book at, if any. */
 export function placeOf(itemId: string): Place | undefined {
   const p = load()[keyFor(itemId)];

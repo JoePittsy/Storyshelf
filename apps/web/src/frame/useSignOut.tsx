@@ -3,7 +3,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, PillButton } from '@joepittsy/ui';
 import { logout } from '../api/auth';
 import { stop } from '../player/engine';
+import { flushListening, forgetListening } from '../player/localSessions';
+import { forgetPlaces } from '../player/places';
 import { fmtBytes, removeAllDownloads, useDownloads } from '../downloads';
+
+/** How long signing out waits to send listening done offline. */
+const FLUSH_MS = 5000;
+
+const within = <T,>(p: Promise<T>, ms: number): Promise<T | void> =>
+  Promise.race([p, new Promise<void>((resolve) => setTimeout(resolve, ms))]);
 
 /**
  * The one way to sign out: `ask()` opens the confirmation (it stops playback, so it asks first), and the dialog's
@@ -19,8 +27,15 @@ export function useSignOut(): { ask: () => void; confirming: boolean; busy: bool
   const signOut = () => {
     setBusy(true);
     void stop()
-      // The device keeps nothing of the listener's once they sign out, downloads included.
+      // Listening done offline and not yet sent gets a last try (briefly: signing out mustn't hang on a bad connection).
+      .then(() => within(flushListening(), FLUSH_MS).catch(() => undefined))
+      // The device keeps nothing of the listener's once they sign out: downloads, places and unsent listening. Before
+      // logout, which forgets who they were.
       .then(removeAllDownloads)
+      .then(() => {
+        forgetListening();
+        forgetPlaces();
+      })
       .then(logout)
       .then(() => qc.setQueryData(['session'], null));
   };

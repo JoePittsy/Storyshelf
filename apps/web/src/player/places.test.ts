@@ -44,3 +44,18 @@ describe('where a book starts on the device', () => {
     expect(localStart(undefined, null, undefined, { lastUpdate: 1000 })).toEqual({ position: 0, at: null });
   });
 });
+
+describe('forgetPlaces', () => {
+  it("drops the signed-in user's places, and nobody else's", async () => {
+    const { forgetPlaces, PLACES_KEY } = await import('./places');
+    savePlace('li_1', 120, 1000);
+    const all = JSON.parse(localStorage.getItem(PLACES_KEY) ?? '{}') as Record<string, unknown>;
+    localStorage.setItem(
+      PLACES_KEY,
+      JSON.stringify({ ...all, 'https://other|u9|li_1': { position: 5, updatedAt: 1 } })
+    );
+    forgetPlaces();
+    expect(placeOf('li_1')).toBeUndefined();
+    expect(Object.keys(JSON.parse(localStorage.getItem(PLACES_KEY) ?? '{}'))).toEqual(['https://other|u9|li_1']);
+  });
+});

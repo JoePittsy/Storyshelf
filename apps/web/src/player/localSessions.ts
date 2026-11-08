@@ -211,6 +211,12 @@ export function flushListening(): Promise<SyncResult[]> {
   return flushing;
 }
 
+/** Drops the signed-in user's listening from the device: on signing out, after a last try at sending it. */
+export function forgetListening(): void {
+  const owner = ownerKey();
+  save(read().filter((e) => e.owner !== owner));
+}
+
 let beforeSend: () => Promise<void> = () => Promise.resolve();
 /** Something to do before any listening is sent (the player asks the server about the book it holds). */
 export function setBeforeSend(fn: () => Promise<void>): void {

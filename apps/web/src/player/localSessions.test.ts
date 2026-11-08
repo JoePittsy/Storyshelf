@@ -185,3 +185,14 @@ describe('sending it', () => {
     ]);
   });
 });
+
+describe('forgetListening', () => {
+  it("drops the signed-in user's queued listening, and nobody else's", () => {
+    q.recordListening(listened(410, 10), at(9));
+    const mine = JSON.parse(localStorage.getItem(q.QUEUE_KEY) ?? '[]') as { owner: string }[];
+    localStorage.setItem(q.QUEUE_KEY, JSON.stringify([...mine, { ...mine[0], owner: 'other|u9' }]));
+    q.forgetListening();
+    const left = JSON.parse(localStorage.getItem(q.QUEUE_KEY) ?? '[]') as { owner: string }[];
+    expect(left.map((e) => e.owner)).toEqual(['other|u9']);
+  });
+});
