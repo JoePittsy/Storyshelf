@@ -72,7 +72,7 @@ ABS_URL=https://your-abs-host
 pnpm --filter @storyshelf/web dev      # http://localhost:5173
 ```
 
-No ABS server to hand? [`e2e/`](e2e/README.md) runs a throwaway one in Docker on `http://localhost:13378`, with a few public-domain LibriVox audiobooks and two users; set `ABS_URL=http://localhost:13378` to use it.
+No ABS server to hand? `./e2e/up.sh` runs a throwaway one in Docker on `http://localhost:13378`, with a few public-domain LibriVox audiobooks (or stand-ins if archive.org is out of reach), two users and some listening history; set `ABS_URL=http://localhost:13378` to use it. See [`e2e/`](e2e/README.md).
 
 Checks, as CI runs them:
 
