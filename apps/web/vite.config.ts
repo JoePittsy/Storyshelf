@@ -2,10 +2,10 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ABS_PATHS, navigateFallbackDenylist } from './src/api/absPaths';
+import { inlineScriptHashes, optOutOfRocketLoader } from './src/pwa/builtPage';
 
 // Settings > About shows these. The version is package.json's (the release workflow checks the tag matches it). The
 // commit comes from Cloudflare Pages or GitHub Actions, else local git; a Docker build has neither, and shows none.
@@ -23,26 +23,27 @@ function commit(): string {
   }
 }
 
-/** The CSP hash of each inline <script> in a built page, as script-src sources. */
-export function inlineScriptHashes(html: string): string[] {
-  return [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
-    (m) => `'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`
-  );
-}
-
 // Hosted mode's Content-Security-Policy (public/_headers) allows scripts from this origin only. index.html's inline
 // start-up probe is allowed by its hash, worked out here from the built page so the two can never drift.
 const allowInlineScripts: Plugin = {
   name: 'storyshelf:allow-inline-scripts',
   apply: 'build',
   closeBundle() {
-    const dist = resolve(__dirname, 'dist');
+    const dist = resolve(import.meta.dirname, 'dist');
     const hashes = inlineScriptHashes(readFileSync(resolve(dist, 'index.html'), 'utf8'));
+    if (hashes.length === 0) throw new Error('dist/index.html: expected an inline start-up script');
     const headersPath = resolve(dist, '_headers');
     const headers = readFileSync(headersPath, 'utf8');
     if (!headers.includes("script-src 'self';")) throw new Error("public/_headers: expected script-src 'self';");
     writeFileSync(headersPath, headers.replace("script-src 'self';", `script-src 'self' ${hashes.join(' ')};`));
   },
+};
+
+const leftAloneByRocketLoader: Plugin = {
+  name: 'storyshelf:left-alone-by-rocket-loader',
+  apply: 'build',
+  // After Vite has added its own script tags.
+  transformIndexHtml: { order: 'post', handler: optOutOfRocketLoader },
 };
 
 // The service worker: the app shell kept on the device, so the installed app opens offline. How a new release takes
@@ -90,7 +91,7 @@ const devRemovesWorker: Plugin = {
 
 export default defineConfig(({ command, mode }) => {
   const common = {
-    plugins: [react(), pwa, devRemovesWorker, allowInlineScripts],
+    plugins: [react(), leftAloneByRocketLoader, pwa, devRemovesWorker, allowInlineScripts],
     resolve: { conditions: ['@joepittsy/source'] },
     define: { __APP_VERSION__: JSON.stringify(version), __APP_COMMIT__: JSON.stringify(commit()) },
   };
