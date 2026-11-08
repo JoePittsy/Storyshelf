@@ -152,3 +152,37 @@ export const Wide: Story = {
     await expect(art.width).toBeGreaterThanOrEqual(12 * emOf(canvasElement));
   },
 };
+
+/** A round control pinned top right at every width (a book's download): the title keeps out from under it. */
+export const PhoneWithAction: Story = {
+  args: {
+    art: <img src={portraitCover} alt="" />,
+    kind: undefined,
+    title: 'The Adventure of the Copper Beeches and Other Stories',
+    wash: '217, 164, 65',
+    children: bookLines,
+    action: (
+      <button
+        type="button"
+        aria-label="Download"
+        style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'none', color: 'inherit' }}
+      >
+        ↓
+      </button>
+    ),
+  },
+  decorators: [sized('22em')],
+  play: async ({ canvas }) => {
+    const action = box(canvas.getByRole('button', { name: 'Download' }));
+    const heading = canvas.getByRole('heading', { level: 1 });
+    const band = box(heading.closest('header'));
+    // Top right, on every width.
+    await expect(band.right - action.right).toBeLessThan(16);
+    await expect(action.top - band.top).toBeLessThan(16);
+    // The title's text stops short of it.
+    const range = document.createRange();
+    range.selectNodeContents(heading);
+    const text = [...range.getClientRects()].reduce((r, b) => Math.max(r, b.right), 0);
+    await expect(text).toBeLessThanOrEqual(action.left);
+  },
+};

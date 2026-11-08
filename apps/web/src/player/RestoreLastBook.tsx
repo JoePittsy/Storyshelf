@@ -4,6 +4,7 @@ import { useProgress } from '../api/libraries';
 import { refreshRestored, restore } from './engine';
 import { markRestoreSettled } from './restoreStatus';
 import { pickRestorable } from './restore';
+import { placeOf } from './places';
 
 /**
  * On load, puts the book the listener was last in back into the player, paused where they left it, so the mini
@@ -25,7 +26,7 @@ export function RestoreLastBook({
   const done = useRef(false);
   const ready = !!libraryId && !inProgress.isPending && !progress.isPending;
   const pick = useMemo(
-    () => (ready ? pickRestorable(inProgress.data, progress.data ?? new Map(), libraryId) : undefined),
+    () => (ready ? pickRestorable(inProgress.data, progress.data ?? new Map(), libraryId, placeOf) : undefined),
     [ready, inProgress.data, progress.data, libraryId]
   );
   const chapters = useChapters(pick ? [pick.id] : []).get(pick?.id ?? '');

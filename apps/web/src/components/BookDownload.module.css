@@ -1,47 +1,176 @@
-/* Under the hero's actions: a quiet line of state, its bar, and small ghost pills. */
+/* One round control, top right of the book's hero: the tonal circle of the hero's other round buttons (MoreMenu). */
 .root {
+  display: inline-flex;
+  anchor-scope: --book-download;
+}
+.button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-round);
+  background: rgba(var(--tint), 0.12);
+  color: var(--text);
+  cursor: pointer;
+  anchor-name: --book-download;
+  /* A hold opens the options: no text selection or iOS callout on the way. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  transition:
+    background var(--dur-fast) var(--ease-fast),
+    transform var(--dur-fast) var(--ease-fast);
+}
+.button:hover,
+.button[aria-expanded='true'] {
+  background: rgba(var(--tint), 0.22);
+}
+.button:disabled {
+  cursor: progress;
+}
+/* Held long enough: letting go opens the options. */
+.button[data-holding] {
+  background: rgba(var(--tint), 0.3);
+  transform: scale(0.92);
+}
+.glyph {
+  grid-area: 1 / 1;
+}
+
+/* The download's progress round the button's edge. */
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.track,
+.fill {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+.track {
+  opacity: 0.18;
+}
+.fill {
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-fast) linear;
+}
+
+/* Downloaded: the download icon with a small tick badge. */
+.done {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.tick {
+  position: absolute;
+  right: -0.4em;
+  bottom: -0.35em;
+  display: grid;
+  place-items: center;
+  width: 0.78em;
+  height: 0.78em;
+  border-radius: var(--r-round);
+  background: var(--text);
+  color: var(--bg);
+  /* A cut-out in the band's colour, so the badge and the arrow read apart. */
+  box-shadow: 0 0 0 0.12em var(--bg-1);
+}
+
+/* The options: solid Raised Slate, as MoreMenu's popover, under the button and flipped to stay on screen. */
+.pop {
+  position-anchor: --book-download;
+  position-area: bottom span-left;
+  position-try-fallbacks:
+    flip-inline,
+    flip-block,
+    flip-block flip-inline;
+  margin: 0.4em 0;
+  inset: auto;
+  min-width: 14em;
+  max-width: calc(100vw - 2em);
+  padding: 0.4em;
+  border: none;
+  border-radius: var(--r-tile);
+  background: var(--bg-1);
+  box-shadow: var(--float-shadow);
+  color: var(--text);
+}
+.pop:popover-open {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5em;
-  max-width: 24em;
+  gap: 0.1em;
 }
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6em 0.8em;
+@supports not (position-area: bottom) {
+  .pop {
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+  }
 }
 .state {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
   margin: 0;
-  font-size: var(--fs-body);
-  color: var(--text);
+  padding: 0.5em 0.9em 0.3em;
+  font-size: var(--fs-label);
+  color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
-.sizes {
-  color: var(--text-2);
-}
-.done {
-  flex: none;
-  color: var(--text-2);
-}
-.bar {
-  align-self: stretch;
-}
-.note {
+.reason {
   margin: 0;
-  max-width: 62ch;
-  font-size: var(--fs-prose);
-  line-height: 1.5;
-  color: var(--text-2);
+  padding: 0 0.9em 0.4em;
+  max-width: 22em;
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--text-3);
 }
+.item {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.9em;
+  border: none;
+  border-radius: var(--r-row);
+  background: none;
+  font-family: inherit;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+.danger {
+  color: rgb(var(--danger));
+}
+.danger:hover {
+  background: rgba(var(--danger), 0.16);
+}
+
 .dialogText {
   margin: 0;
   max-width: 62ch;
   font-size: var(--fs-prose);
   line-height: 1.55;
   color: var(--text-2);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .fill {
+    transition: none;
+  }
 }

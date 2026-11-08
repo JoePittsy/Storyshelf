@@ -15,8 +15,10 @@ interface Props {
   wash?: string | null;
   /** Lines under the title: credit, meta, actions. */
   children?: ReactNode;
-  /** A chip pinned top right (e.g. "Added 3 times"). */
+  /** A chip pinned top right (e.g. "Added 3 times"). On a phone it follows the lines. */
   corner?: ReactNode;
+  /** A small round control (44px) pinned top right at every width, e.g. a book's download. The title keeps clear of it. */
+  action?: ReactNode;
 }
 
 /**
@@ -25,12 +27,12 @@ interface Props {
  * On a phone-width container the art steps down beside the title and the lines run full width beneath, so the
  * page's action is on the first screen.
  */
-export function HeroBand({ art, kind, title, onTitleClick, titleHint, wash, children, corner }: Props) {
+export function HeroBand({ art, kind, title, onTitleClick, titleHint, wash, children, corner, action }: Props) {
   const style: CSSProperties | undefined = wash
     ? { background: `radial-gradient(120% 150% at 0% 0%, rgba(${wash}, 0.3), transparent 65%), var(--surface-hi)` }
     : undefined;
   return (
-    <header className={styles.header} style={style}>
+    <header className={[styles.header, action ? styles.withAction : ''].filter(Boolean).join(' ')} style={style}>
       <div className={styles.artWrap}>{art}</div>
       <div className={styles.meta}>
         {/* Two groups, so a phone can set the title beside the art and the lines under both; wider, they don't box. */}
@@ -47,6 +49,7 @@ export function HeroBand({ art, kind, title, onTitleClick, titleHint, wash, chil
         {children && <div className={styles.lines}>{children}</div>}
       </div>
       {corner && <div className={styles.corner}>{corner}</div>}
+      {action && <div className={styles.action}>{action}</div>}
     </header>
   );
 }
