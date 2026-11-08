@@ -17,3 +17,4 @@ e2e/.env
 
 # Impeccable engine binaries (fetched on first use)
 .claude/skills/impeccable/scripts/bin/
+__pycache__/
