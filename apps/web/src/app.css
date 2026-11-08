@@ -68,3 +68,19 @@ body {
   overflow-wrap: anywhere;
   user-select: text;
 }
+
+/*
+ * Where content pinned to the top of the screen starts. In an installed web app on iOS, the system softens what's drawn
+ * just under the status bar, fading out about 25px past it (measured with /debug/edge on iOS 26), so headers there start
+ * below that. Elsewhere it's the status bar's own height (0 with none).
+ */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+@media (display-mode: standalone) {
+  @supports (-webkit-touch-callout: none) {
+    :root {
+      --safe-top: calc(env(safe-area-inset-top, 0px) + 24px);
+    }
+  }
+}

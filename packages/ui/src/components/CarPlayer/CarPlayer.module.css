@@ -21,8 +21,9 @@
   width: 100%;
   min-height: 100dvh;
   margin: 0 auto;
-  padding: calc(var(--car-gap) + env(safe-area-inset-top)) calc(var(--car-gap) + env(safe-area-inset-right))
-    calc(var(--car-gap) + env(safe-area-inset-bottom)) calc(var(--car-gap) + env(safe-area-inset-left));
+  padding: calc(var(--car-gap) + var(--safe-top, env(safe-area-inset-top)))
+    calc(var(--car-gap) + env(safe-area-inset-right)) calc(var(--car-gap) + env(safe-area-inset-bottom))
+    calc(var(--car-gap) + env(safe-area-inset-left));
   font-family: var(--font-sans);
   font-size: var(--fs-car);
   color: var(--on-art);

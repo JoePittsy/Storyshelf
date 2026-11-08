@@ -4,7 +4,7 @@
   display: grid;
   place-items: center;
   min-height: calc(100dvh - env(safe-area-inset-bottom));
-  padding: calc(2em + env(safe-area-inset-top)) 0 2em;
+  padding: calc(2em + var(--safe-top, env(safe-area-inset-top))) 0 2em;
 }
 .panel {
   box-sizing: border-box;
