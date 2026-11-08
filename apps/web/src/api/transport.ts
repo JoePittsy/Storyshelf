@@ -29,7 +29,7 @@ const sameOrigin: Transport = {
       headers: json,
       body: credentials(username, password),
     }),
-  refresh: () => fetch(absUrl('/auth/refresh'), { method: 'POST', credentials: 'include' }),
+  refresh: () => fetch(absUrl('/auth/refresh'), { method: 'POST', credentials: 'include', signal: refreshDeadline() }),
   logout: async () => {
     await fetch(absUrl('/logout'), { method: 'POST', credentials: 'include' });
   },
@@ -38,6 +38,15 @@ const sameOrigin: Transport = {
 };
 
 export const REFRESH_TOKEN_KEY = 'storyshelf.refreshToken';
+
+/**
+ * A renewal that hasn't answered in this long is given up (a TimeoutError, which counts as offline). It must end
+ * sometime: every retry shares the one in flight, so one left hanging would hold the app offline after the network
+ * came back. Cutting it off can't cost a refresh token in practice: an answer this late has been lost on the way.
+ */
+export const REFRESH_DEADLINE_MS = 30_000;
+const refreshDeadline = () =>
+  typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(REFRESH_DEADLINE_MS) : undefined;
 
 const stored = (): string | null => {
   try {
@@ -65,7 +74,11 @@ const hosted: Transport = {
   refresh: async () => {
     const token = stored();
     if (!token) return new Response('No session', { status: 401 });
-    return fetch(absUrl('/auth/refresh'), { method: 'POST', headers: { 'x-refresh-token': token } });
+    return fetch(absUrl('/auth/refresh'), {
+      method: 'POST',
+      headers: { 'x-refresh-token': token },
+      signal: refreshDeadline(),
+    });
   },
   logout: async () => {
     const token = stored();

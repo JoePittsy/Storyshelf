@@ -4,6 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  PROBE_TIMEOUT_MS,
+  PROBE_TIMEOUT_REMEMBERED_MS,
   ServerProbeError,
   absUrl,
   decideMode,
@@ -108,6 +110,15 @@ describe('detectMode', () => {
       await expect(detectMode(f as never)).resolves.toBe('same-origin');
     }
     expect(localStorage.getItem('storyshelf.mode')).toBe('same-origin');
+  });
+  it('gives up sooner on a connection that hangs when a mode is remembered', async () => {
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    await detectMode((() => Promise.resolve(json(ABS))) as never);
+    expect(timeout).toHaveBeenLastCalledWith(PROBE_TIMEOUT_MS);
+    resetServerForTests();
+    await detectMode((() => Promise.resolve(json(ABS))) as never);
+    expect(timeout).toHaveBeenLastCalledWith(PROBE_TIMEOUT_REMEMBERED_MS);
+    timeout.mockRestore();
   });
   it('reuses the remembered mode when offline', async () => {
     await detectMode((() => Promise.resolve(new Response('x'))) as never);
