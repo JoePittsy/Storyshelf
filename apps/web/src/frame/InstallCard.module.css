@@ -1,0 +1,41 @@
+/* The App card in Settings: a line of text and its button, laid out like the Account row. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8em 1em;
+}
+.text {
+  flex: 1 1 14em;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.text strong {
+  color: var(--text);
+}
+
+/* The iPhone steps: numbered, each naming the button and drawing its glyph inline, as Safari draws it. */
+.steps {
+  display: grid;
+  gap: 0.7em;
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.5;
+}
+.steps strong {
+  color: var(--text);
+}
+.glyph {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+  color: var(--text);
+}
+.after {
+  margin: 1em 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-prose);
+  line-height: 1.5;
+}
