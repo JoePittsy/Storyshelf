@@ -59,7 +59,7 @@ export function ArtCard({
   onMouseEnter,
   className,
 }: Props) {
-  // A URL that fails to load drops its layer, leaving the raised-navy card behind it.
+  // A URL that fails to load drops its layer, leaving the raised-slate card behind it.
   const [cover, onCoverError] = useImageFallback(imageUrl);
   const [photo, onPhotoError] = useImageFallback(photoUrl);
   // The cover sits under the photo only while the photo fades in. Left stacked, the two layers can drift a pixel

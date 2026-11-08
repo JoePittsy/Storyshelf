@@ -1,4 +1,4 @@
-/* Opaque raised navy (the same solid the reduced-transparency materials fall back to), so page content never
+/* Opaque raised slate (the same solid the reduced-transparency materials fall back to), so page content never
    shows through it. A hairline on the top edge separates it from the page. */
 .mini {
   position: relative;

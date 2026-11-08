@@ -55,7 +55,7 @@ It's also a personal tool on a personal server, with nothing to sell and no cata
 ## Brand Commitments
 
 - The name is "Storyshelf".
-- The visual world inherits TrueTunes' "After-Hours Gallery": a dark navy ground, with the cover artwork carrying the colour.
+- The visual world inherits TrueTunes' "After-Hours Gallery": a dark slate ground (it began as navy), with the cover artwork carrying the colour.
 - Text is in UK English and sentence case.
 
 ## Evidence on Hand

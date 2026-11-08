@@ -61,7 +61,7 @@
   padding: 1em;
   border: none;
   border-radius: var(--r-tile);
-  /* Solid Raised Navy, not the frosted material: rows of words over a title or the big Play button read as both at
+  /* Solid Raised Slate, not the frosted material: rows of words over a title or the big Play button read as both at
      once through glass. The same surface as the reduced-transparency fallback and the Dialog. */
   background: var(--bg-1);
   box-shadow: var(--float-shadow);

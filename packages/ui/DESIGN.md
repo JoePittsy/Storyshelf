@@ -2,20 +2,20 @@
 name: Storyshelf UI
 description: A dark, quiet design system for content-led interfaces. Calm walls; the artwork and the people carry the colour.
 colors:
-  label: "rgba(246, 247, 255, 0.93)"
-  tint: "rgb(150, 158, 255)"
-  after-hours-navy: "#12131f"
-  raised-navy: "#1b1d2e"
-  wall: "rgba(150, 158, 255, 0.06)"
-  wall-lit: "rgba(150, 158, 255, 0.085)"
-  tint-fill: "rgba(150, 158, 255, 0.09)"
-  tint-chip: "rgba(150, 158, 255, 0.16)"
-  separator: "rgba(150, 158, 255, 0.1)"
-  border: "rgba(150, 158, 255, 0.13)"
-  border-strong: "rgba(150, 158, 255, 0.24)"
-  frosted-navy: "rgba(22, 23, 38, 0.62)"
-  label-secondary: "rgba(222, 226, 250, 0.62)"
-  label-tertiary: "rgba(224, 228, 252, 0.64)"
+  label: "rgba(245, 247, 250, 0.93)"
+  tint: "rgb(160, 174, 196)"
+  after-hours-slate: "#111418"
+  raised-slate: "#1a1e24"
+  wall: "rgba(160, 174, 196, 0.06)"
+  wall-lit: "rgba(160, 174, 196, 0.085)"
+  tint-fill: "rgba(160, 174, 196, 0.09)"
+  tint-chip: "rgba(160, 174, 196, 0.16)"
+  separator: "rgba(160, 174, 196, 0.1)"
+  border: "rgba(160, 174, 196, 0.13)"
+  border-strong: "rgba(160, 174, 196, 0.24)"
+  frosted-slate: "rgba(22, 25, 31, 0.62)"
+  label-secondary: "rgba(224, 229, 236, 0.62)"
+  label-tertiary: "rgba(226, 231, 238, 0.64)"
   title-rest: "rgba(255, 255, 255, 0.84)"
   on-art: "#ffffff"
   on-art-secondary: "rgba(255, 255, 255, 0.75)"
@@ -88,18 +88,18 @@ spacing:
 components:
   button-pill:
     backgroundColor: "{colors.label}"
-    textColor: "{colors.after-hours-navy}"
+    textColor: "{colors.after-hours-slate}"
     typography: "{typography.label}"
     rounded: "{rounded.pill}"
     padding: "0.55em 1.1em"
   button-pill-ghost:
-    backgroundColor: "rgba(150, 158, 255, 0.12)"
+    backgroundColor: "rgba(160, 174, 196, 0.12)"
     textColor: "{colors.label}"
     typography: "{typography.label}"
     rounded: "{rounded.pill}"
     padding: "0.55em 1.1em"
   button-pill-ghost-hover:
-    backgroundColor: "rgba(150, 158, 255, 0.22)"
+    backgroundColor: "rgba(160, 174, 196, 0.22)"
   button-pill-danger:
     backgroundColor: "rgba(248, 113, 113, 0.16)"
     textColor: "{colors.danger}"
@@ -125,7 +125,7 @@ components:
     rounded: "{rounded.card}"
     padding: "{spacing.featured-pad}"
   card-art:
-    backgroundColor: "{colors.raised-navy}"
+    backgroundColor: "{colors.raised-slate}"
     textColor: "{colors.on-art}"
     rounded: "{rounded.art-card}"
   item-row:
@@ -143,7 +143,7 @@ components:
     rounded: "{rounded.pill}"
     padding: "0.2em 0.7em 0.2em 0.2em"
   dialog:
-    backgroundColor: "{colors.raised-navy}"
+    backgroundColor: "{colors.raised-slate}"
     textColor: "{colors.label}"
     rounded: "{rounded.card}"
     width: "36em"
@@ -153,7 +153,7 @@ components:
     rounded: "{rounded.row}"
     padding: "0.65em 0.85em"
   floating-pill:
-    backgroundColor: "{colors.frosted-navy}"
+    backgroundColor: "{colors.frosted-slate}"
     textColor: "{colors.label}"
     rounded: "{rounded.shell}"
     height: "44px"
@@ -166,14 +166,14 @@ components:
 
 **Creative North Star: "After-Hours Gallery"**
 
-The system is a gallery after closing time: dark, quiet walls with covers and portraits hung like prints, each with its own caption. The walls are a deep, desaturated navy. Content sits on soft tonal panels a few percent lighter than the ground, never framed or outlined. Colour comes from the work on the walls: the dominant colour of a hero image washes into the card that holds it. Anything that floats (toasts, tooltips, bars) is frosted glass over whatever is behind it.
+The system is a gallery after closing time: dark, quiet walls with covers and portraits hung like prints, each with its own caption. The walls are a deep, desaturated slate: a cool blue-grey that steps back so the covers carry the colour. Content sits on soft tonal panels a few percent lighter than the ground, never framed or outlined. Colour comes from the work on the walls: the dominant colour of a hero image washes into the card that holds it. Anything that floats (toasts, tooltips, bars) is frosted glass over whatever is behind it.
 
 The benchmark is a calm media app played straight: no themed or novelty worlds, and the character lives in the content and the people, not in decoration. Type is one family, Manrope, set in sentence case with tight negative tracking on large sizes. Surfaces size everything in `em` from one fluid base, so a page scales from a laptop to an ultrawide without breakpoints jumping. Density is relaxed: generous rows, large artwork, nothing cramped.
 
 The components in this package are the way in: build new surfaces from them rather than from one page's local styles. A consumer retunes the system by overriding the custom properties on `:root`; nothing in the package depends on an app.
 
 **Key Characteristics:**
-- One navy tint. Every tonal surface, fill and hairline is `--tint` at a low alpha.
+- One slate tint. Every tonal surface, fill and hairline is `--tint` at a low alpha.
 - Borderless tonal cards on a tinted ground; artwork is the only thing that casts a shadow inside the content area.
 - Full-bleed image cards with a bottom scrim and a white caption, like a print and its label.
 - Accent colour is sampled from the artwork at runtime, never fixed.
@@ -182,22 +182,22 @@ The components in this package are the way in: build new surfaces from them rath
 
 ## Colors
 
-A near-monochrome navy room whose only saturated colour is borrowed, at runtime, from the artwork on its walls.
+A near-monochrome slate room whose only saturated colour is borrowed, at runtime, from the artwork on its walls.
 
 ### Primary
-- **Gallery Light** (`label`): the primary action colour. The pill button inverts the room, with a light label as its fill and After-Hours Navy text. It's also the default text colour. There is no fixed brand hue.
+- **Gallery Light** (`label`): the primary action colour. The pill button inverts the room, with a light label as its fill and After-Hours Slate text. It's also the default text colour. There is no fixed brand hue.
 
 ### Neutral
-- **Periwinkle Tint** (`tint`): never painted at full strength. It's the source triplet (`--tint: 150, 158, 255`) that every tonal token is mixed from at 6–24% alpha. On a #12131f ground it reads as a cool navy lift, not as purple.
-- **After-Hours Navy** (`after-hours-navy`): the page ground (`--bg`). It's also the text colour on the inverted pill button.
-- **Raised Navy** (`raised-navy`): the solid placeholder behind every artwork box while it loads, the Dialog surface, the popover menus (MoreMenu, speed and sleep), and the reduced-transparency fallback for the frosted materials.
+- **Slate Tint** (`tint`): never painted at full strength. It's the source triplet (`--tint: 160, 174, 196`) that every tonal token is mixed from at 6–24% alpha. It is a low-saturation blue-grey (hue about 217°, saturation 23%) on purpose: on a #111418 ground it reads as a cool lift, not as a colour. A saturated tint reads as purple at these alphas, which is why the earlier periwinkle (`150, 158, 255`) was retired.
+- **After-Hours Slate** (`after-hours-slate`): the page ground (`--bg`). It's also the text colour on the inverted pill button.
+- **Raised Slate** (`raised-slate`): the solid placeholder behind every artwork box while it loads, the Dialog surface, the popover menus (MoreMenu, speed and sleep), and the reduced-transparency fallback for the frosted materials.
 - **Wall** (`wall`): the resting fill of section cards and person cards (`--surface`).
 - **Lit Wall** (`wall-lit`): featured cards and hero bands (`--surface-hi`).
 - **Tint Fill** (`tint-fill`): row hover, quiet icon-button hover, the open menu item and the dialog field (`--bg-2` / `--row-hover`).
 - **Tint Chip** (`tint-chip`): chips.
 - **Separator** (`separator`): the 1px edge on floating surfaces. It isn't used on content cards.
 - **Border / Strong Border** (`border`, `border-strong`): the one control stroke, on a field, at rest and on hover; on focus the ring covers it.
-- **Frosted Navy** (`frosted-navy`): floating surfaces (toasts, tooltips, floating bars), the material token `--material-bg`, always paired with `--material-filter` (`blur(30px) saturate(1.8)`).
+- **Frosted Slate** (`frosted-slate`): floating surfaces (toasts, tooltips, floating bars), the material token `--material-bg`, always paired with `--material-filter` (`blur(30px) saturate(1.8)`).
 - **Label scale** (`label`, `label-secondary`, `label-tertiary`): primary text, secondary meta, tertiary meta and subtitles. `label-tertiary` (`--text-3`) carries real subtitles on cards and washes, so it is held at 4.5:1 or better there.
 - **Title at rest** (`title-rest`): item and chart titles at rest. They brighten to On-Art White on row or tile hover.
 - **On-Art White / On-Art Secondary** (`on-art`, `on-art-secondary`): text over imagery, always on a scrim, with a soft black text shadow on the larger lines.
@@ -217,7 +217,7 @@ Generated colours keep the same restraint: avatars are hashed onto hues 0–250�
 ### Named Rules
 **The One Tint Rule.** Every tonal surface, fill, separator and border is `rgba(var(--tint), α)`. To retune the room, change `--tint`; never introduce a second hue for chrome.
 
-**The Artwork Carries Colour Rule.** Saturated colour enters only from artwork: the `--wash` radial on featured cards and heroes, the person-header gradient. Chrome stays navy and white. Danger, success and attention are status, not decoration, and their fills are always tonal.
+**The Artwork Carries Colour Rule.** Saturated colour enters only from artwork: the `--wash` radial on featured cards and heroes, the person-header gradient. Chrome stays slate and white. Danger, success and attention are status, not decoration, and their fills are always tonal.
 
 **The Quiet Wall Rule.** Tint stays subtle and desaturated. Surfaces sit 6–9% tint over the ground. A wash peaks at 0.3 alpha, with stacked layers counted together, and fades to transparent by about 65%. No purple, no neon, no glow.
 
@@ -263,7 +263,7 @@ Put `.page-scale` on a page root and size everything inside it in `em`. Page roo
 
 ## Elevation & Depth
 
-Depth comes from tonal layers, not from shadows on content. The navy ground carries tonal cards a few percent lighter. Frosted materials and modals float above everything. Content cards are flat. Shadows appear only on artwork and on floating surfaces.
+Depth comes from tonal layers, not from shadows on content. The slate ground carries tonal cards a few percent lighter. Frosted materials and modals float above everything. Content cards are flat. Shadows appear only on artwork and on floating surfaces.
 
 ### Shadow Vocabulary
 - **Art rest** (`--art-shadow`: `0 2px 8px rgba(0, 0, 0, 0.35)`): shelf artwork at rest, paired with the inner keyline `inset 0 0 0 1px rgba(255,255,255,.06)` (`--art-keyline`) drawn by the art box's `::after`.
@@ -276,20 +276,20 @@ Black and white appear in the CSS only as the alpha tokens declared in `global.c
 ### Named Rules
 **The Shadows Belong to Prints Rule.** Inside the content area only artwork casts a shadow. Cards, rows and chips are flat tonal fills.
 
-**The Frosted Material Rule.** Anything floating over content uses the material tokens (`--material-bg` + `--material-filter: blur(30px) saturate(1.8)`). Under `prefers-reduced-transparency` they fall back to solid Raised Navy. Don't hand-roll a second glass recipe. The exception is a popover menu of rows to choose from (MoreMenu, SpeedControl, SleepTimerControl): it is solid Raised Navy, the fallback look, because rows of words over a title or a list of chapters read as both at once through glass.
+**The Frosted Material Rule.** Anything floating over content uses the material tokens (`--material-bg` + `--material-filter: blur(30px) saturate(1.8)`). Under `prefers-reduced-transparency` they fall back to solid Raised Slate. Don't hand-roll a second glass recipe. The exception is a popover menu of rows to choose from (MoreMenu, SpeedControl, SleepTimerControl): it is solid Raised Slate, the fallback look, because rows of words over a title or a list of chapters read as both at once through glass.
 
 ## Shapes
 
 Generously rounded, never sharp. Radii scale with the type in `em`: cards and dialogs 1.2em (`--r-card`), image cards 1em (`--r-art-card`), tiles, prints and menus 0.9em (`--r-tile`), artwork 0.7em (`--r-art`), rows and fields 0.65em (`--r-row`), row thumbnails 0.6em (`--r-thumb`), skeleton lines and small chips 0.4em (`--r-xs`). Fixed-px surfaces use the global scale (`--r-sm` 6px, `--r-md` 10px, `--r-lg` 16px). Floating pills are 22px (`--r-shell`, half a 44px height). Buttons and chips that carry a label are full pills (`--r-pill`, 2em), as are thin bars. Icon buttons, avatars and portraits are circles (`--r-round`, 50%). Every `border-radius` in the CSS is one of these. Imagery is always clipped to its container's radius with `object-fit: cover`. Large photo cards set `object-position: center 25%` to keep faces in frame.
 
-**The No-Outline Rule.** Content cards, rows, chips, tiles and fields have no border. Separation comes from a tonal step (Wall on navy), not from a line. The only 1px strokes are a floating surface's separator edge, the artwork's inner keyline, and a search box.
+**The No-Outline Rule.** Content cards, rows, chips, tiles and fields have no border. Separation comes from a tonal step (Wall on slate), not from a line. The only 1px strokes are a floating surface's separator edge, the artwork's inner keyline, and a search box.
 
 ## Components
 
 ### Buttons
-- **Pill (PillButton):** sentence case, weight 600 at 0.92em, padding 0.55em × 1.1em on a full pill. *Primary* is the room inverted (Gallery Light fill, After-Hours Navy text, hover to 0.78 opacity), one per view. *Ghost* is tonal (tint 0.12, hover 0.22) for secondary actions. *Danger* is tonal red (0.16, hover 0.28) for destructive ones. Disabled drops to 0.4. A play action carries a filled play glyph before its words (pause while playing), the same glyph as the ResumeHero action, and reads one way everywhere: "Resume · 51m left" where there is a place to resume, "Play" where there isn't, "Play again" for a finished book; a series names the book ("Resume book 2 · 51m left").
+- **Pill (PillButton):** sentence case, weight 600 at 0.92em, padding 0.55em × 1.1em on a full pill. *Primary* is the room inverted (Gallery Light fill, After-Hours Slate text, hover to 0.78 opacity), one per view. *Ghost* is tonal (tint 0.12, hover 0.22) for secondary actions. *Danger* is tonal red (0.16, hover 0.28) for destructive ones. Disabled drops to 0.4. A play action carries a filled play glyph before its words (pause while playing), the same glyph as the ResumeHero action, and reads one way everywhere: "Resume · 51m left" where there is a place to resume, "Play" where there isn't, "Play again" for a finished book; a series names the book ("Resume book 2 · 51m left").
 - **Add (AddButton):** the one + button, borderless, and its click never bubbles. *Quiet* is a 2.2em circle in tertiary label colour, revealed when its row is hovered or focused within, filling with Tint Fill on hover. *Art* is a 2.6em translucent white circle on image cards. *Corner* is a dark circle on tile corners, revealed on hover. The parent owns position and reveal.
-- **More (MoreMenu):** a surface's secondary actions behind one quiet 44px circle (an ellipsis on the ghost tint, 0.12, hover 0.22), beside the primary pill. It opens a native popover on solid Raised Navy, in the top layer and anchored under the button (flipping to stay on screen), of 44px rows in label weight 600; a place- or data-losing row is Danger text with a tonal red hover. A disclosure, not an ARIA menu: the rows are plain buttons, Esc and an outside click close it, and choosing a row closes it first. Pair anything it changes with an Undo toast rather than a confirm. Its *quiet* variant has no fill until hovered and sits in tertiary label colour, for a tile's caption (ImageTile `menu`).
+- **More (MoreMenu):** a surface's secondary actions behind one quiet 44px circle (an ellipsis on the ghost tint, 0.12, hover 0.22), beside the primary pill. It opens a native popover on solid Raised Slate, in the top layer and anchored under the button (flipping to stay on screen), of 44px rows in label weight 600; a place- or data-losing row is Danger text with a tonal red hover. A disclosure, not an ARIA menu: the rows are plain buttons, Esc and an outside click close it, and choosing a row closes it first. Pair anything it changes with an Undo toast rather than a confirm. Its *quiet* variant has no fill until hovered and sits in tertiary label colour, for a tile's caption (ImageTile `menu`).
 - **Text link ("See all", TitleButton, PeopleLinks):** no chrome. Secondary label colour, which turns full label with an underline on hover or focus.
 - **Transport (TransportButtons):** previous, play-pause and next, stateless: the caller passes `playing` and the handlers. Previous and next are quiet; play-pause is the inverted circle.
 - **Focus (all):** one global ring, `outline: 2px solid var(--text-2); outline-offset: 2px`. Over art that may be pale (TopResultCard) the ring sits inside, in white with a black edge. A stroked field (TextField, SearchField, Select) draws the same ring at `outline-offset: -1px`, over its own stroke, so focus is one outline, never two.
@@ -313,7 +313,7 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **DetailList:** label and value pairs as a `<dl>`: a small tertiary label over a body-size value, stacked, so it fits a narrow side column. It has no surface of its own; put it on a card.
 
 ### Image card (signature)
-A print with its label (ArtCard). The artwork fills the card edge to edge (`object-fit: cover`). A two-part scrim, `rgba(0,0,0,.4)` fading over the top 22% and `rgba(0,0,0,.74) → .26 → 0` up from the bottom by 70%, keeps a sentence-case top-left caption and a bottom-left title and credit legible in white. The whole card is one button. Links and the add button sit above it. Hover or focus-within scales the image to 1.03 and dims it to `brightness(.88)` over 0.15s. A second image (a portrait) fades in over the cover when it arrives. An image that fails to load drops its layer and leaves Raised Navy behind the caption.
+A print with its label (ArtCard). The artwork fills the card edge to edge (`object-fit: cover`). A two-part scrim, `rgba(0,0,0,.4)` fading over the top 22% and `rgba(0,0,0,.74) → .26 → 0` up from the bottom by 70%, keeps a sentence-case top-left caption and a bottom-left title and credit legible in white. The whole card is one button. Links and the add button sit above it. Hover or focus-within scales the image to 1.03 and dims it to `brightness(.88)` over 0.15s. A second image (a portrait) fades in over the cover when it arrives. An image that fails to load drops its layer and leaves Raised Slate behind the caption.
 
 **Top result (TopResultCard)** is the same print at feature scale. The art fills a 1.2em card (at least 20em high, 4:3 when stacked), and the heading, title (3 lines), meta and children sit bottom left on a scrim of their own (0.82 → 0 up the text block), so the text holds on pale covers. With no art it falls back to Lit Wall and the tint wash.
 
@@ -334,14 +334,14 @@ Stateless pieces (SeekBar, WavyProgress and EqBars first, then the controls belo
 - **WavyProgress:** the played part is a 0.32em `--title-rest` stroke shaped as a sine wave, 0.16em amplitude and 2em wavelength, travelling slowly forward, its height ramping up from flat over the first wavelength so a just-started item shows a short flat line; a 0.35em gap; then the flat 0.32em `--track`. Paused, the wave eases to a straight line over 0.6s and stops; under reduced motion it is a still, flat line.
 - **EqBars:** three bars on the compositor meaning "this is the current item". Still when paused and under reduced motion.
 - **SkipButton:** a circular arrow with the seconds inside it, in two sizes (2.6em, 3.4em), quiet like the transport buttons. Named "Back 30 seconds" or "Forward 30 seconds".
-- **SpeedControl and SleepTimerControl:** a quiet pill trigger ("1.3×", or a moon and "Sleep", "12:30", "End of chapter") that opens a native popover on solid Raised Navy. The popover is in the top layer, so nothing clips it, closes on Esc and outside click, and is placed with CSS anchor positioning, flipping to stay on screen. The trigger is lit while its popover is open, and on hover only with a real pointer. Speed is a range slider plus preset pills; `fixedDecimal` reads tenths ("1.0×") on the trigger, readout and presets alike. Sleep is a list of rows in full label colour: "End of chapter" first (the bedtime choice), then 15, 30, 45 and 60 minutes, then "Off". The current choice is weight 600 with a tick and `aria-pressed`, never brightness alone; a minutes timer that passes its `minutes` keeps its row ticked while it counts down. A `compact` trigger (a tray cell) shows a chapter timer's `remainingMs` as a time rather than the words "End of chapter", which don't fit. Remaining time reads m:ss, or h:mm:ss from an hour.
+- **SpeedControl and SleepTimerControl:** a quiet pill trigger ("1.3×", or a moon and "Sleep", "12:30", "End of chapter") that opens a native popover on solid Raised Slate. The popover is in the top layer, so nothing clips it, closes on Esc and outside click, and is placed with CSS anchor positioning, flipping to stay on screen. The trigger is lit while its popover is open, and on hover only with a real pointer. Speed is a range slider plus preset pills; `fixedDecimal` reads tenths ("1.0×") on the trigger, readout and presets alike. Sleep is a list of rows in full label colour: "End of chapter" first (the bedtime choice), then 15, 30, 45 and 60 minutes, then "Off". The current choice is weight 600 with a tick and `aria-pressed`, never brightness alone; a minutes timer that passes its `minutes` keeps its row ticked while it counts down. A `compact` trigger (a tray cell) shows a chapter timer's `remainingMs` as a time rather than the words "End of chapter", which don't fit. Remaining time reads m:ss, or h:mm:ss from an hour.
 - **MiniPlayer:** the frosted material in a bottom slot, padded by the safe-area inset. A 0.2em progress line runs along its top edge; art and title are one button ("Open player"), then skip back and the inverted play-pause circle (a filled glyph, like every play glyph), which shows a spinner (and `aria-busy`) while loading. Under the title, the subtitle (the chapter) and an optional `remaining` ("12m left") share a line; the subtitle truncates first, so the time always shows whole, and when it can't keep a few letters it drops out rather than leave a lone "P…". Storyshelf passes the time left in the chapter (in the book without chapters) and, wide, puts the book's time left or the sleep timer's "Stops in 8:30" in the readout, in place of a clock. Wide, it adds skip forward, the time and Expand; chapter buttons, the progress modes, speed, sleep and a chapters button are optional zones that appear only when their props are given. Storyshelf passes none of them, so its bar stays slim and those controls live on Now Playing.
-- **UpNextCard:** what to play once the current item is done, offered, never auto-played. One row: small art, a sentence-case heading ("Up next", or "Next in <series>", which also names the region), the title (a link, two lines) and its place ("Book 2 of Sherlock Holmes"), then the inverted Play action and an optional 44px close. Under 28em of container the action is a 44px round Play and the words wrap; wider, it is a labelled pill ("Play", or "Resume" for a book already begun, the same words as everywhere else). The *card* variant is Lit Wall with the art's `--wash`; the *bar* variant is an opaque Raised Navy strip with the top hairline and one line each of title and caption, for sitting on the MiniPlayer, its content in the app column.
+- **UpNextCard:** what to play once the current item is done, offered, never auto-played. One row: small art, a sentence-case heading ("Up next", or "Next in <series>", which also names the region), the title (a link, two lines) and its place ("Book 2 of Sherlock Holmes"), then the inverted Play action and an optional 44px close. Under 28em of container the action is a 44px round Play and the words wrap; wider, it is a labelled pill ("Play", or "Resume" for a book already begun, the same words as everywhere else). The *card* variant is Lit Wall with the art's `--wash`; the *bar* variant is an opaque Raised Slate strip with the top hairline and one line each of title and caption, for sitting on the MiniPlayer, its content in the app column.
 - **FinishedCard:** the quiet end of an item with nothing after it, in UpNextCard's family: the Lit Wall with the item's own colour washed in from the top left, no art (the cover is already on the page), a sentence-case title ("Finished", a real heading that names the region), one honest secondary line ("1h 3m over 4 days", left out rather than guessed), then a ghost pill and the inverted pill, both 44px. Under 28em of container the pills share a row of their own under the words; roomy, they sit at the row's end. No confetti and no animation; the app announces the end once in its own live region.
 - **IconButton:** the AirPlayButton's twin for other header actions: a quiet 44px circle with a named glyph (`car`, `keyboard`), no fill until hovered, the label as its name and tooltip, with an optional keyboard shortcut in both ("Car mode (C)", "Keyboard shortcuts (?)").
-- **CarPlayer:** car mode, a full-screen, one-handed player to glance at. The chapter (title size, two lines), the time left in it in big tabular numerals (`--fs-glyph-lg`) with "left in chapter" after it, and a thick 0.75em progress bar; then the chapter buttons as two wide pills at the row's ends, and skip back, Play and skip forward. Every target is at least 64px, sized from the viewport's smaller side (`vmin`); Play is 112px and up, inverted as everywhere else, and neighbours sit 1.5 gaps apart so a missed tap lands on nothing. Close is a 64px circle top left; a chapter jump's Undo is a large tonal pill opposite it while offered. White text on the navy ground, tonal tint fills for the quiet buttons, no artwork. In landscape it becomes two columns: words left, controls right. Stateless, padded by the safe-area insets; the app keeps the screen on.
+- **CarPlayer:** car mode, a full-screen, one-handed player to glance at. The chapter (title size, two lines), the time left in it in big tabular numerals (`--fs-glyph-lg`) with "left in chapter" after it, and a thick 0.75em progress bar; then the chapter buttons as two wide pills at the row's ends, and skip back, Play and skip forward. Every target is at least 64px, sized from the viewport's smaller side (`vmin`); Play is 112px and up, inverted as everywhere else, and neighbours sit 1.5 gaps apart so a missed tap lands on nothing. Close is a 64px circle top left; a chapter jump's Undo is a large tonal pill opposite it while offered. White text on the slate ground, tonal tint fills for the quiet buttons, no artwork. In landscape it becomes two columns: words left, controls right. Stateless, padded by the safe-area insets; the app keeps the screen on.
 - **AirPlayButton:** a quiet 44px circle with the AirPlay glyph, named "AirPlay", shown only while the browser reports a target. While playback is on an AirPlay device it takes Tint Chip and full label colour, and its description says so.
-- **OfferButton:** a small one-tap offer made in passing ("Go back to where the timer began, 41:10"): the ghost pill's tint (0.12, hover 0.22) at label size and weight 600, an optional glyph in secondary label (a moon for the sleep timer, a monitor and phone for another device's place), a 44px minimum height, and words that wrap rather than truncate; an optional short form replaces them under 22em of screen, so a small phone keeps it to one line. *Inline* sits on a page; *bar* puts it on the same opaque Raised Navy strip with a top hairline as the UpNextCard bar, to sit on the MiniPlayer. The app decides when it shows and goes.
+- **OfferButton:** a small one-tap offer made in passing ("Go back to where the timer began, 41:10"): the ghost pill's tint (0.12, hover 0.22) at label size and weight 600, an optional glyph in secondary label (a moon for the sleep timer, a monitor and phone for another device's place), a 44px minimum height, and words that wrap rather than truncate; an optional short form replaces them under 22em of screen, so a small phone keeps it to one line. *Inline* sits on a page; *bar* puts it on the same opaque Raised Slate strip with a top hairline as the UpNextCard bar, to sit on the MiniPlayer. The app decides when it shows and goes.
 - **Sheet:** the Dialog surface as a bottom sheet under 40em wide (full width, rounded on top, safe-area padding) and a centred panel above that. It is a native `<dialog>`, so Esc and a backdrop click close it. An optional Done pill at the bottom, in thumb reach, is primary by default and `ghost` (`doneVariant`) when the body holds its own primary action, as the Bookmarks sheet's "Bookmark 11:51" does.
 - **GrabSheet:** the shell of a full-height phone sheet, as Now Playing uses: a grab handle and a 44px chevron-down button (named by `closeLabel`) along the top, the content below. Pulled down from the handle or any non-interactive part it follows the finger with `transform` and dismisses past a quarter of its height (80 to 160px) or on a flick (0.5px/ms, at least 24px); sooner and it springs back. A swipe that starts on a slider, button or link is theirs. Reduced motion: no dragging, the chevron still works.
 - **IconTray:** one tonal container (Wall) of evenly spread icon buttons (speed, sleep, chapters, bookmarks, history, settings), all with the same quiet treatment and 48px height; labels are for assistive tech, except the values (speed "1.0×", a running sleep time). There is one bookmark control: Bookmarks opens the list, which holds the button that adds one. A button is lit while its popover is open, and on hover only with a real pointer (`hover: hover`), so a touch screen never leaves one lit at rest.
@@ -350,7 +350,7 @@ Stateless pieces (SeekBar, WavyProgress and EqBars first, then the controls belo
 - **SegmentedControl underline:** `variant="underline"` draws the same radio group as plain text with a 2px line under the chosen option (the line scales in): the compact Whole book / This chapter / Sleep switch.
 
 ### Dialog
-One modal (Dialog): a native `<dialog>` opened with `showModal()`, so the page behind is inert, Tab stays inside, Esc closes it and focus returns to the opener. Raised Navy, 1.2em radius, the Floating shadow, widths of 26, 36 or 64em. The sentence-case title names the dialog, beside a 2.2em round close button. The action row is right-aligned: secondary actions first, the primary or danger pill last. An outside click closes it, except in a form dialog, so a stray click can't lose typed text.
+One modal (Dialog): a native `<dialog>` opened with `showModal()`, so the page behind is inert, Tab stays inside, Esc closes it and focus returns to the opener. Raised Slate, 1.2em radius, the Floating shadow, widths of 26, 36 or 64em. The sentence-case title names the dialog, beside a 2.2em round close button. The action row is right-aligned: secondary actions first, the primary or danger pill last. An outside click closes it, except in a form dialog, so a stray click can't lose typed text.
 
 ### Toast and InfoTip
 **Toast** is the frosted material with a status dot and an optional action, such as Undo (a 44px target). It sits above the bottom player and any other pinned bar by offsets the app publishes on the root, pauses its timer while hovered or focused, and on closing returns focus to the control that raised it if focus would otherwise fall to the page. **InfoTip** is a small info button whose tooltip is portalled to the page, flips to stay on screen and closes on Escape.
@@ -372,7 +372,7 @@ Skeletons (the global `.skeleton` class: tint at 0.18, pulsing between 0.45 and 
 
 Every custom property declared in `global.css` or `depth.css` is named in this file, and `src/designSync.test.ts` fails when the two drift. The ones not described above:
 
-- **Colour aliases:** `--bg-1` (Raised Navy), `--label` and `--text` (Gallery Light), `--label-2` (secondary label), `--title-rest`, `--on-art`, `--on-art-2`, `--separator`, `--border` and `--border-2` are the CSS names of the colours in the front matter.
+- **Colour aliases:** `--bg-1` (Raised Slate), `--label` and `--text` (Gallery Light), `--label-2` (secondary label), `--title-rest`, `--on-art`, `--on-art-2`, `--separator`, `--border` and `--border-2` are the CSS names of the colours in the front matter.
 - **Chart colours:** `--series-1`, `--series-2`, `--series-3`, `--series-4`, `--series-5`, `--series-6`, `--series-7` and `--series-8` are the categorical series colours, and `--ramp-lo` and `--ramp-hi` the ends of the sequential ramp in the heatmaps.
 - **Scrims:** `--scrim-top` is the light top fade on image cards and heroes, `--scrim-text` the fade under the TopResultCard's text block.
 - **Sizing and rhythm:** `--page-scale` is the fluid page base, `--card-size` the width of shelf cards, `--font-sans` the one font stack.

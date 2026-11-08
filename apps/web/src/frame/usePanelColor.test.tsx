@@ -30,7 +30,7 @@ describe('usePanelColor', () => {
     expect(root().getPropertyValue('--panel-on')).toBe('');
   });
 
-  it('leaves the frame alone until a colour is known (the navy default stays)', () => {
+  it('leaves the frame alone until a colour is known (the slate default stays)', () => {
     render(<Page cover={null} />);
     expect(root().getPropertyValue('--panel-on')).toBe('');
   });

@@ -1,8 +1,8 @@
 :root {
-  /* Deep navy-indigo world. Everything tinted is derived from --tint, so one value retunes the lot. */
-  --tint: 150, 158, 255;
-  --bg: #12131f;
-  --bg-1: #1b1d2e;
+  /* Deep cool-slate world. Everything tinted is derived from --tint, so one value retunes the lot. */
+  --tint: 160, 174, 196;
+  --bg: #111418;
+  --bg-1: #1a1e24;
   --bg-2: rgba(var(--tint), 0.09);
   --border: rgba(var(--tint), 0.13);
   --border-2: rgba(var(--tint), 0.24);
@@ -13,12 +13,12 @@
   --row-hover: rgba(var(--tint), 0.09);
 
   /* Dark-mode label scale, tinted to match the window */
-  --label: rgba(246, 247, 255, 0.93);
-  --label-2: rgba(222, 226, 250, 0.62);
+  --label: rgba(245, 247, 250, 0.93);
+  --label-2: rgba(224, 229, 236, 0.62);
   --text: var(--label);
   --text-2: var(--label-2);
   /* --text-3 carries real subtitles on raised surfaces and washes; .64 measures >= 4.5:1 on cards. */
-  --text-3: rgba(224, 228, 252, 0.64);
+  --text-3: rgba(226, 231, 238, 0.64);
   /* Titles at rest, and text over artwork (always sits on a scrim). */
   --title-rest: rgba(255, 255, 255, 0.84);
   --on-art: #fff;

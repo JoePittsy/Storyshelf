@@ -53,7 +53,7 @@
   padding: 0.4em;
   border: none;
   border-radius: var(--r-tile);
-  /* Solid Raised Navy, as the speed and sleep popovers: a list of actions over a list of chapters reads as both through
+  /* Solid Raised Slate, as the speed and sleep popovers: a list of actions over a list of chapters reads as both through
      glass. The same surface as the reduced-transparency fallback and the Dialog. */
   background: var(--bg-1);
   box-shadow: var(--float-shadow);

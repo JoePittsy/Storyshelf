@@ -22,7 +22,7 @@
   display: none;
 }
 
-/* A floating surface (frosted navy), with a small status dot instead of a coloured slab. */
+/* A floating surface (frosted slate), with a small status dot instead of a coloured slab. */
 .toast {
   display: flex;
   align-items: center;

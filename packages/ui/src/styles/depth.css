@@ -8,7 +8,7 @@
  *   --float-shadow    the floating shadow, edge included
  */
 :root {
-  --material-bg: rgba(22, 23, 38, 0.62);
+  --material-bg: rgba(22, 25, 31, 0.62);
   --material-filter: blur(30px) saturate(1.8);
   --material-edge: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   /* Floating shadow: floating bars, dropdowns, menus, toasts, Dialog. */
@@ -18,7 +18,7 @@
 /* Accessibility fallback: solid surfaces */
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --material-bg: #1b1d2e;
+    --material-bg: #1a1e24;
     --material-filter: none;
   }
 }

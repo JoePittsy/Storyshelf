@@ -32,7 +32,7 @@ type Story = StoryObj<typeof meta>;
 export const Large: Story = {};
 export const Medium: Story = { args: { size: 'medium' } };
 export const WithPhoto: Story = { args: { photoUrl: portrait, label: 'Author' } };
-/** A broken URL drops its layer, leaving the raised-navy card behind the caption. */
+/** A broken URL drops its layer, leaving the raised-slate card behind the caption. */
 export const BrokenImage: Story = { args: { imageUrl: 'data:image/png;base64,broken' } };
 export const WithAddButton: Story = { args: { onAdd: fn() } };
 export const WithPeopleLinks: Story = {

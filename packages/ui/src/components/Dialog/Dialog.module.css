@@ -1,4 +1,4 @@
-/* The one modal surface (Dialog.tsx). Raised navy, 1.2em radius, the floating shadow, a 2.2em round close button. */
+/* The one modal surface (Dialog.tsx). Raised slate, 1.2em radius, the floating shadow, a 2.2em round close button. */
 .dialog {
   --dialog-w: 36em;
   width: min(calc(100vw - 32px), var(--dialog-w));
