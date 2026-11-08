@@ -8,6 +8,7 @@ import { OfflineLaunch } from './frame/Offline';
 import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
 import { Debug } from './screens/Debug';
+import { diag } from './player/diag';
 import { StorageTest } from './screens/StorageTest';
 import { Book } from './screens/Book';
 import { CarMode } from './screens/CarMode';
@@ -29,7 +30,23 @@ import { Series } from './screens/Series';
 import { Settings } from './screens/Settings';
 import { SignIn } from './screens/SignIn';
 
-const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreSession, staleTime: Infinity });
+/** restoreSession, with what it decided in the player log: how the app opened, readable later from Settings. */
+async function restoreLogged() {
+  document.documentElement.dataset.boot = 'waiting for the session';
+  diag.log('session: restoring');
+  try {
+    const user = await restoreSession();
+    diag.log(
+      `session: ${!user ? 'signed out' : user.accessToken ? 'renewed online' : 'offline, as the remembered user'}`
+    );
+    return user;
+  } catch (e) {
+    diag.log('session: failed', e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+    throw e;
+  }
+}
+
+const useSession = () => useQuery({ queryKey: ['session'], queryFn: restoreLogged, staleTime: Infinity });
 
 /**
  * Holds the session; sends signed-out visitors to /sign-in, remembering where they were going. Offline is not signed

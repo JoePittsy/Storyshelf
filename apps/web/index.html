@@ -14,7 +14,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Until the app renders over it: says the page is here, and (public/boot.js) why it might be stuck. -->
+    <div id="root">
+      <div id="boot" class="boot" role="status">
+        <p>Opening Storyshelf…</p>
+        <p id="boot-detail" class="bootDetail"></p>
+      </div>
+    </div>
+    <script src="/boot.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
