@@ -9,6 +9,7 @@ import {
   deviceNotes,
   listenedBeforeThisYear,
   fmtTimeRange,
+  listeningDay,
   mergeSessions,
   recentDays,
   deviceLabel,
@@ -335,6 +336,15 @@ describe('fmtTimeRange', () => {
   });
 });
 
+describe('listeningDay', () => {
+  it('counts the small hours as the night before, until 4am', () => {
+    expect(listeningDay(Date.UTC(2026, 10, 8, 23, 50), 'UTC')).toBe('2026-11-08');
+    expect(listeningDay(Date.UTC(2026, 10, 9, 0, 20), 'UTC')).toBe('2026-11-08');
+    expect(listeningDay(Date.UTC(2026, 10, 9, 3, 59), 'UTC')).toBe('2026-11-08');
+    expect(listeningDay(Date.UTC(2026, 10, 9, 4, 0), 'UTC')).toBe('2026-11-09');
+  });
+});
+
 describe('deviceNotes', () => {
   const iphone = { osName: 'iOS', deviceType: 'mobile', clientName: 'Storyshelf' };
   const windows = { osName: 'Windows', clientName: 'Storyshelf' };
@@ -359,6 +369,14 @@ describe('deviceNotes', () => {
     const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: chrome }]);
     expect(note(iphone)).toBe('iPhone · Storyshelf');
     expect(note(chrome)).toBe('Windows · Chrome');
+  });
+  it('with apps off, the same phone in two apps is one device', () => {
+    const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: absApp }], { apps: false });
+    expect(note(iphone)).toBeUndefined();
+    const both = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: windows }, { deviceInfo: absApp }], {
+      apps: false,
+    });
+    expect(both(absApp)).toBe('iPhone');
   });
   it('does not count a row with no device as a difference, and says nothing on it', () => {
     const note = deviceNotes([{ deviceInfo: iphone }, { deviceInfo: null }, { deviceInfo: windows }]);

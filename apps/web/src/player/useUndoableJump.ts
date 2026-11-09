@@ -70,7 +70,7 @@ export function usePlayerJump(offer?: (o: UndoOffer) => void) {
   const go = useCallback((t: number) => {
     const { item, position, seek } = latest.current;
     const dist = Math.abs(t - position);
-    if (item && dist >= MIN_UNDO_DISTANCE && dist <= BIG_SEEK_SECONDS) recordJump(item.id, position);
+    if (item && dist >= MIN_UNDO_DISTANCE && dist <= BIG_SEEK_SECONDS) recordJump(item.id, position, { to: t });
     seek(t);
   }, []);
   const jump = useUndoableJump(go, offer);

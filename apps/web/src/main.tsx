@@ -23,6 +23,7 @@ import { listenForInstall } from './frame/install';
 import { startServiceWorker } from './pwa/serviceWorker';
 import { diag } from './player/diag';
 import { setProgressLookup } from './player/engine';
+import { clearJumpLog } from './player/jumpLog';
 import { startListeningSync } from './player/localSessions';
 import type { Progress } from './api/libraries';
 
@@ -65,7 +66,10 @@ function render() {
   // Back online, or a 401 renewed: the session query holds the fresh user.
   onSessionRenewed((user) => queryClient.setQueryData(['session'], user));
   // Signed out, or the server no longer knows the session: the device keeps nothing of the user's.
-  onForgetUser(() => void persister.removeClient());
+  onForgetUser(() => {
+    void persister.removeClient();
+    clearJumpLog();
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void persister.flush();
   });

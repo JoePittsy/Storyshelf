@@ -1057,7 +1057,7 @@ export function toggle(): void {
 
 export function seek(t: number): void {
   // A big move leaves the place it came from in the book's history. Shorter ones go through usePlayerJump, which logs its own.
-  if (state.item && Math.abs(t - position()) > BIG_SEEK_SECONDS) recordJump(state.item.id, position());
+  if (state.item && Math.abs(t - position()) > BIG_SEEK_SECONDS) recordJump(state.item.id, position(), { to: t });
   seekBook(t);
 }
 export const skip = (dir: -1 | 1): void => seekBook(position() + (dir < 0 ? -state.skipBack : state.skipForward));
@@ -1256,14 +1256,14 @@ async function check(): Promise<CheckResult> {
 /** Takes another device's newer place: Play was pressed with it newer. The place left goes in History, and Undo is offered. */
 function adopt(h: Handoff): void {
   const from = position();
-  recordJump(h.itemId, from);
+  recordJump(h.itemId, from, { to: h.position });
   seekBook(h.position); // a chosen place now: the offer goes, and it is sent
   notify({ kind: 'adopted', itemId: h.itemId, from, to: h.position, device: h.device });
 }
 
 /** Another device moved the book while this one played: this one wins. Their place stays in History, a tap away. */
 function conflict(h: Handoff): void {
-  recordJump(h.itemId, h.position);
+  recordJump(h.itemId, h.position, { device: true });
   if (Date.now() - conflictAt < CONFLICT_QUIET_MS) return;
   conflictAt = Date.now();
   notify({ kind: 'conflict', itemId: h.itemId, at: h.position, device: h.device });
@@ -1273,7 +1273,7 @@ function conflict(h: Handoff): void {
 function dismissHandoff(t: number): void {
   const h = state.handoff;
   if (!h) return;
-  if (Math.abs(t - h.position) > SAME_PLACE_S) recordJump(h.itemId, h.position);
+  if (Math.abs(t - h.position) > SAME_PLACE_S) recordJump(h.itemId, h.position, { device: true });
   set({ handoff: null });
 }
 

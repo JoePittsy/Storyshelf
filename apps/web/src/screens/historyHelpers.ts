@@ -25,6 +25,14 @@ export function addDays(key: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Hours after midnight that still belong to the day before, so a night's listening stays together. */
+export const NIGHT_ENDS_AT_HOUR = 4;
+
+/** The listening day of a moment: its local day, with the small hours counted as the night before. */
+export function listeningDay(ms: number, tz?: string): string {
+  return dayKey(ms - NIGHT_ENDS_AT_HOUR * 3_600_000, tz);
+}
+
 /** Consecutive runs by local day, in the order given (the log arrives newest first). */
 export function groupByDay<T>(items: T[], at: (item: T) => number, tz?: string): { key: string; items: T[] }[] {
   const groups: { key: string; items: T[] }[] = [];
@@ -323,12 +331,14 @@ export function fmtTimeRange(startMs: number, endMs: number, tz?: string): strin
  * device is not a difference, and gets no note.
  */
 export function deviceNotes(
-  sessions: { deviceInfo?: SessionDevice | null }[]
+  sessions: { deviceInfo?: SessionDevice | null }[],
+  { apps = true }: { apps?: boolean } = {}
 ): (info?: SessionDevice | null) => string | undefined {
   const parts = sessions.map((s) => deviceParts(s.deviceInfo));
   const varies = (key: 'hardware' | 'app') => new Set(parts.map((p) => p[key]).filter(Boolean)).size > 1;
   const hardware = varies('hardware');
-  const app = varies('app');
+  // `apps: false` names devices only: the same phone in Safari and in Storyshelf is one place to a listener.
+  const app = apps && varies('app');
   return (info) => {
     const p = deviceParts(info);
     return joinParts([hardware ? p.hardware : '', app ? p.app : '']) || undefined;
