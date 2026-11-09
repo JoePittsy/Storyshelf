@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent, ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import styles from './Dialog.module.css';
@@ -21,6 +21,10 @@ interface Props {
   size?: 'sm' | 'md' | 'lg';
   closeLabel?: string;
   className?: string;
+  /** The <dialog> itself, for a caller that moves it (Sheet's pull-down). */
+  rootRef?: RefObject<HTMLDialogElement | null>;
+  /** The scrolling body. */
+  bodyRef?: RefObject<HTMLDivElement | null>;
   children: ReactNode;
 }
 
@@ -39,9 +43,12 @@ export function Dialog({
   size = 'md',
   closeLabel = 'Close',
   className,
+  rootRef,
+  bodyRef,
   children,
 }: Props) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const ownRef = useRef<HTMLDialogElement>(null);
+  const ref = rootRef ?? ownRef;
   const titleId = useId();
 
   useLayoutEffect(() => {
@@ -58,11 +65,14 @@ export function Dialog({
       dialog.close();
       opener?.focus();
     };
-  }, []);
+    // `ref` is the caller's or our own, and the same object for the dialog's life: this runs once.
+  }, [ref]);
 
   const content = (
     <>
-      <div className={styles.body}>{children}</div>
+      <div ref={bodyRef} className={styles.body}>
+        {children}
+      </div>
       {actions && <div className={styles.actions}>{actions}</div>}
     </>
   );

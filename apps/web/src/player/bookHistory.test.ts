@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { ListeningSession } from '../api/history';
-import { addMark, historyRows, sessionMarks, MAX_JUMP_MARKS } from './bookHistory';
+import { addMark, historyEntries, MAX_JUMP_MARKS } from './bookHistory';
 
 const session = (o: Partial<ListeningSession>): ListeningSession => ({
   id: 's',
@@ -16,113 +16,71 @@ const session = (o: Partial<ListeningSession>): ListeningSession => ({
   ...o,
 });
 
-const NOW = 1_000_000;
-const base = { itemId: 'book', jumps: [], now: NOW };
+const base = { itemId: 'book', jumps: [] };
 
-describe('sessionMarks', () => {
-  it('gives each session of the book a start and an end', () => {
-    const marks = sessionMarks([session({ startTime: 100, currentTime: 900, startedAt: 10, updatedAt: 20 })], 'book');
-    expect(marks).toEqual([
-      { position: 100, at: 10 },
-      { position: 900, at: 20 },
-    ]);
-  });
-
-  it('ignores a null link, a podcast and another book', () => {
-    const marks = sessionMarks(
-      [
-        session({ libraryItemId: null, startTime: 1000 }),
-        session({ mediaType: 'podcast', startTime: 2000 }),
-        session({ libraryItemId: 'other', startTime: 3000 }),
-      ],
-      'book'
-    );
-    expect(marks).toEqual([]);
-  });
-});
-
-describe('historyRows', () => {
-  it('leads with the current position, then the rest newest first', () => {
-    const rows = historyRows({
+describe('historyEntries', () => {
+  it('lists each session of the book as a stretch from one place to another, newest first', () => {
+    const entries = historyEntries({
       ...base,
       position: 5000,
       sessions: [
-        session({ startTime: 100, currentTime: 900, startedAt: 10_000, updatedAt: 20_000 }),
-        session({ id: 't', startTime: 2000, currentTime: 3000, startedAt: 500_000, updatedAt: 600_000 }),
+        session({
+          id: 'a',
+          startTime: 100,
+          currentTime: 900,
+          startedAt: 10_000,
+          updatedAt: 20_000,
+          timeListening: 800,
+        }),
+        session({ id: 'b', startTime: 2000, currentTime: 3000, startedAt: 500_000, updatedAt: 600_000 }),
       ],
     });
-    expect(rows.map((r) => [r.current, r.position])).toEqual([
-      [true, 5000],
-      [false, 3000],
-      [false, 2000],
-      [false, 900],
-      [false, 100],
+    expect(entries.map((e) => (e.kind === 'session' ? [e.from, e.to, e.at] : null))).toEqual([
+      [2000, 3000, 600_000],
+      [100, 900, 20_000],
     ]);
-    expect(rows[0]).toMatchObject({ key: 'now', at: NOW });
+    expect(entries[1]).toMatchObject({ kind: 'session', startedAt: 10_000, listened: 800 });
   });
 
-  it("merges this visit's jump marks with the sessions by time", () => {
-    const rows = historyRows({
+  it("puts this visit's jump marks among the sessions by time", () => {
+    const entries = historyEntries({
       ...base,
       position: 9000,
       sessions: [session({ startTime: 100, currentTime: 200, startedAt: 10, updatedAt: 20 })],
       jumps: [{ position: 4000, at: 900_000 }],
     });
-    expect(rows.slice(1).map((r) => r.position)).toEqual([4000, 200, 100]);
+    expect(entries.map((e) => e.kind)).toEqual(['jump', 'session']);
+    expect(entries[0]).toMatchObject({ position: 4000 });
   });
 
-  it('drops a point within the window of where the book is now', () => {
-    const rows = historyRows({
-      ...base,
-      position: 3000,
-      sessions: [session({ startTime: 100, currentTime: 3020, startedAt: 10, updatedAt: 20 })],
-    });
-    expect(rows.map((r) => r.position)).toEqual([3000, 100]);
-  });
-
-  it('collapses points within 30s of each other, keeping the newer, but not ones further apart', () => {
-    const rows = historyRows({
+  it('leaves out a jump mark near where the book is now, a session end or a newer mark', () => {
+    const entries = historyEntries({
       ...base,
       position: 9000,
-      sessions: [],
+      sessions: [session({ startTime: 100, currentTime: 2000, startedAt: 10, updatedAt: 20 })],
       jumps: [
-        { position: 1010, at: 100 },
-        { position: 1030, at: 200 },
-        { position: 1031, at: 300 },
+        { position: 9010, at: 100 },
+        { position: 2020, at: 200 },
+        { position: 5000, at: 300 },
+        { position: 5020, at: 400 },
+        { position: 6000, at: 500 },
       ],
     });
-    expect(rows.slice(1).map((r) => r.position)).toEqual([1031]);
-    const apart = historyRows({
-      ...base,
-      position: 9000,
-      sessions: [],
-      jumps: [
-        { position: 1000, at: 100 },
-        { position: 1100, at: 200 },
-      ],
-    });
-    expect(apart.slice(1).map((r) => r.position)).toEqual([1100, 1000]);
+    expect(entries.flatMap((e) => (e.kind === 'jump' ? [e.position] : []))).toEqual([6000, 5020]);
   });
 
-  it('marks only the first row as current and has just it for a book with no history', () => {
-    const rows = historyRows({ ...base, position: 0, sessions: [] });
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.current).toBe(true);
-    const more = historyRows({ ...base, position: 0, sessions: [session({ startTime: 500, currentTime: 700 })] });
-    expect(more.filter((r) => r.current)).toHaveLength(1);
-  });
-
-  it('ignores sessions for another book, a podcast and a lost link', () => {
-    const rows = historyRows({
+  it('leaves out a session that never moved, and ones for another book, a podcast or a lost link', () => {
+    const entries = historyEntries({
       ...base,
       position: 0,
       sessions: [
-        session({ libraryItemId: null, startTime: 500 }),
-        session({ mediaType: 'podcast', startTime: 1500 }),
-        session({ libraryItemId: 'x', startTime: 2500 }),
+        session({ startTime: 700, currentTime: 700.5 }),
+        session({ libraryItemId: null, startTime: 500, currentTime: 900 }),
+        session({ mediaType: 'podcast', startTime: 1500, currentTime: 1900 }),
+        session({ libraryItemId: 'x', startTime: 2500, currentTime: 2900 }),
       ],
     });
-    expect(rows).toHaveLength(1);
+    expect(entries).toEqual([]);
   });
 });
 
