@@ -9,6 +9,10 @@ export const MAX_JUMP_MARKS = 20;
 export interface Mark {
   position: number;
   at: number;
+  /** Where the jump went, when this device jumped. */
+  to?: number;
+  /** Another device's place (a handoff turned down or overridden), not one this device left. */
+  device?: boolean;
 }
 
 /** A session of this book: where it began and stopped in the book, and when. */
