@@ -12,6 +12,20 @@
     border-radius: var(--r-card) var(--r-card) 0 0;
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* The grab bar: says the sheet pulls down. Decorative; the close button is the way out without a swipe. */
+  .sheet.sheet::before {
+    content: '';
+    flex: none;
+    align-self: center;
+    width: 2.8em;
+    height: 0.38em;
+    margin-top: 0.6em;
+    border-radius: var(--r-pill);
+    background: var(--track);
+  }
+  .sheet.sheet > :first-child {
+    padding-top: 0.4em;
+  }
   .sheet.sheet[open] {
     animation: sheetIn var(--dur) var(--ease);
   }

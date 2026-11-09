@@ -2,163 +2,162 @@
 name: Storyshelf UI
 description: A dark, quiet design system for content-led interfaces. Calm walls; the artwork and the people carry the colour.
 colors:
-  label: "rgba(245, 247, 250, 0.93)"
-  tint: "rgb(160, 174, 196)"
-  after-hours-slate: "#111418"
-  raised-slate: "#1a1e24"
-  wall: "rgba(160, 174, 196, 0.06)"
-  wall-lit: "rgba(160, 174, 196, 0.085)"
-  tint-fill: "rgba(160, 174, 196, 0.09)"
-  tint-chip: "rgba(160, 174, 196, 0.16)"
-  separator: "rgba(160, 174, 196, 0.1)"
-  border: "rgba(160, 174, 196, 0.13)"
-  border-strong: "rgba(160, 174, 196, 0.24)"
-  frosted-slate: "rgba(22, 25, 31, 0.62)"
-  label-secondary: "rgba(224, 229, 236, 0.62)"
-  label-tertiary: "rgba(226, 231, 238, 0.64)"
-  title-rest: "rgba(255, 255, 255, 0.84)"
-  on-art: "#ffffff"
-  on-art-secondary: "rgba(255, 255, 255, 0.75)"
-  caption-scrim: "rgba(0, 0, 0, 0.74)"
-  danger: "rgb(248, 113, 113)"
+  label: 'rgba(245, 247, 250, 0.93)'
+  tint: 'rgb(160, 174, 196)'
+  after-hours-slate: '#111418'
+  raised-slate: '#1a1e24'
+  wall: 'rgba(160, 174, 196, 0.06)'
+  wall-lit: 'rgba(160, 174, 196, 0.085)'
+  tint-fill: 'rgba(160, 174, 196, 0.09)'
+  tint-chip: 'rgba(160, 174, 196, 0.16)'
+  separator: 'rgba(160, 174, 196, 0.1)'
+  border: 'rgba(160, 174, 196, 0.13)'
+  border-strong: 'rgba(160, 174, 196, 0.24)'
+  frosted-slate: 'rgba(22, 25, 31, 0.62)'
+  label-secondary: 'rgba(224, 229, 236, 0.62)'
+  label-tertiary: 'rgba(226, 231, 238, 0.64)'
+  title-rest: 'rgba(255, 255, 255, 0.84)'
+  on-art: '#ffffff'
+  on-art-secondary: 'rgba(255, 255, 255, 0.75)'
+  caption-scrim: 'rgba(0, 0, 0, 0.74)'
+  danger: 'rgb(248, 113, 113)'
 typography:
   display:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "96px" # max of clamp(44px, 6cqw, 96px); the lint format has no fluid sizes
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '96px' # max of clamp(44px, 6cqw, 96px); the lint format has no fluid sizes
     fontWeight: 800
     lineHeight: 1.04
-    letterSpacing: "-0.03em"
+    letterSpacing: '-0.03em'
   headline:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "2.2em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '2.2em'
     fontWeight: 600
     lineHeight: 1.15
-    letterSpacing: "-0.01em"
+    letterSpacing: '-0.01em'
   title-feature:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "1.9em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '1.9em'
     fontWeight: 600
     lineHeight: 1.15
-    letterSpacing: "-0.02em"
+    letterSpacing: '-0.02em'
   title:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "1.6em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '1.6em'
     fontWeight: 600
     lineHeight: 1.2
-    letterSpacing: "-0.015em"
+    letterSpacing: '-0.015em'
   title-caption:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "1.5em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '1.5em'
     fontWeight: 600
-    letterSpacing: "-0.01em"
+    letterSpacing: '-0.01em'
   body:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "1.07em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '1.07em'
     fontWeight: 500
   body-prose:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "0.95em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '0.95em'
     fontWeight: 400
     lineHeight: 1.55
   label:
-    fontFamily: "Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "0.93em"
+    fontFamily: 'Manrope Variable, -apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif'
+    fontSize: '0.93em'
     fontWeight: 500
 rounded:
-  sm: "6px"
-  md: "10px"
-  lg: "16px"
-  row: "0.65em"
-  thumb: "0.6em"
-  tile: "0.9em"
-  art-card: "1em"
-  card: "1.2em"
-  pill: "2em"
-  shell: "22px"
-  round: "9999px" # a circle: --r-round is 50%
+  sm: '6px'
+  md: '10px'
+  lg: '16px'
+  row: '0.65em'
+  thumb: '0.6em'
+  tile: '0.9em'
+  art-card: '1em'
+  card: '1.2em'
+  pill: '2em'
+  shell: '22px'
+  round: '9999px' # a circle: --r-round is 50%
 spacing:
-  page-base: "clamp(14px, calc(0.45vw + 8.2px), 16px)"
-  gutter: "28px"
-  band: "1.4em"
-  card-pad: "1.5em"
-  featured-pad: "1.7em"
-  head-gap: "1.1em"
-  row-gap: "0.9em"
-  row-pad: "0.45em 0.6em"
+  page-base: 'clamp(14px, calc(0.45vw + 8.2px), 16px)'
+  gutter: '28px'
+  band: '1.4em'
+  card-pad: '1.5em'
+  featured-pad: '1.7em'
+  head-gap: '1.1em'
+  row-gap: '0.9em'
+  row-pad: '0.45em 0.6em'
 components:
   button-pill:
-    backgroundColor: "{colors.label}"
-    textColor: "{colors.after-hours-slate}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0.55em 1.1em"
+    backgroundColor: '{colors.label}'
+    textColor: '{colors.after-hours-slate}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '0.55em 1.1em'
   button-pill-ghost:
-    backgroundColor: "rgba(160, 174, 196, 0.12)"
-    textColor: "{colors.label}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0.55em 1.1em"
+    backgroundColor: 'rgba(160, 174, 196, 0.12)'
+    textColor: '{colors.label}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '0.55em 1.1em'
   button-pill-ghost-hover:
-    backgroundColor: "rgba(160, 174, 196, 0.22)"
+    backgroundColor: 'rgba(160, 174, 196, 0.22)'
   button-pill-danger:
-    backgroundColor: "rgba(248, 113, 113, 0.16)"
-    textColor: "{colors.danger}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0.55em 1.1em"
+    backgroundColor: 'rgba(248, 113, 113, 0.16)'
+    textColor: '{colors.danger}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '0.55em 1.1em'
   button-pill-danger-hover:
-    backgroundColor: "rgba(248, 113, 113, 0.28)"
+    backgroundColor: 'rgba(248, 113, 113, 0.28)'
   button-add-quiet:
-    backgroundColor: "transparent"
-    textColor: "{colors.label-tertiary}"
-    rounded: "{rounded.round}"
-    size: "2.2em"
+    backgroundColor: 'transparent'
+    textColor: '{colors.label-tertiary}'
+    rounded: '{rounded.round}'
+    size: '2.2em'
   button-add-quiet-hover:
-    backgroundColor: "{colors.tint-fill}"
-    textColor: "{colors.label}"
+    backgroundColor: '{colors.tint-fill}'
+    textColor: '{colors.label}'
   card-section:
-    backgroundColor: "{colors.wall}"
-    rounded: "{rounded.card}"
-    padding: "{spacing.card-pad}"
+    backgroundColor: '{colors.wall}'
+    rounded: '{rounded.card}'
+    padding: '{spacing.card-pad}'
   card-featured:
-    backgroundColor: "{colors.wall-lit}"
-    rounded: "{rounded.card}"
-    padding: "{spacing.featured-pad}"
+    backgroundColor: '{colors.wall-lit}'
+    rounded: '{rounded.card}'
+    padding: '{spacing.featured-pad}'
   card-art:
-    backgroundColor: "{colors.raised-slate}"
-    textColor: "{colors.on-art}"
-    rounded: "{rounded.art-card}"
+    backgroundColor: '{colors.raised-slate}'
+    textColor: '{colors.on-art}'
+    rounded: '{rounded.art-card}'
   item-row:
-    backgroundColor: "transparent"
-    textColor: "{colors.title-rest}"
-    rounded: "{rounded.row}"
-    padding: "{spacing.row-pad}"
+    backgroundColor: 'transparent'
+    textColor: '{colors.title-rest}'
+    rounded: '{rounded.row}'
+    padding: '{spacing.row-pad}'
   item-row-hover:
-    backgroundColor: "{colors.tint-fill}"
-    textColor: "{colors.on-art}"
+    backgroundColor: '{colors.tint-fill}'
+    textColor: '{colors.on-art}'
   chip-person:
-    backgroundColor: "{colors.tint-chip}"
-    textColor: "{colors.label-secondary}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0.2em 0.7em 0.2em 0.2em"
+    backgroundColor: '{colors.tint-chip}'
+    textColor: '{colors.label-secondary}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '0.2em 0.7em 0.2em 0.2em'
   dialog:
-    backgroundColor: "{colors.raised-slate}"
-    textColor: "{colors.label}"
-    rounded: "{rounded.card}"
-    width: "36em"
+    backgroundColor: '{colors.raised-slate}'
+    textColor: '{colors.label}'
+    rounded: '{rounded.card}'
+    width: '36em'
   dialog-input:
-    backgroundColor: "{colors.tint-fill}"
-    textColor: "{colors.label}"
-    rounded: "{rounded.row}"
-    padding: "0.65em 0.85em"
+    backgroundColor: '{colors.tint-fill}'
+    textColor: '{colors.label}'
+    rounded: '{rounded.row}'
+    padding: '0.65em 0.85em'
   floating-pill:
-    backgroundColor: "{colors.frosted-slate}"
-    textColor: "{colors.label}"
-    rounded: "{rounded.shell}"
-    height: "44px"
+    backgroundColor: '{colors.frosted-slate}'
+    textColor: '{colors.label}'
+    rounded: '{rounded.shell}'
+    height: '44px'
 ---
-
 
 # Design System: Storyshelf UI
 
@@ -173,6 +172,7 @@ The benchmark is a calm media app played straight: no themed or novelty worlds, 
 The components in this package are the way in: build new surfaces from them rather than from one page's local styles. A consumer retunes the system by overriding the custom properties on `:root`; nothing in the package depends on an app.
 
 **Key Characteristics:**
+
 - One slate tint. Every tonal surface, fill and hairline is `--tint` at a low alpha.
 - Borderless tonal cards on a tinted ground; artwork is the only thing that casts a shadow inside the content area.
 - Full-bleed image cards with a bottom scrim and a white caption, like a print and its label.
@@ -185,9 +185,11 @@ The components in this package are the way in: build new surfaces from them rath
 A near-monochrome slate room whose only saturated colour is borrowed, at runtime, from the artwork on its walls.
 
 ### Primary
+
 - **Gallery Light** (`label`): the primary action colour. The pill button inverts the room, with a light label as its fill and After-Hours Slate text. It's also the default text colour. There is no fixed brand hue.
 
 ### Neutral
+
 - **Slate Tint** (`tint`): never painted at full strength. It's the source triplet (`--tint: 160, 174, 196`) that every tonal token is mixed from at 6–24% alpha. It is a low-saturation blue-grey (hue about 217°, saturation 23%) on purpose: on a #111418 ground it reads as a cool lift, not as a colour. A saturated tint reads as purple at these alphas, which is why the earlier periwinkle (`150, 158, 255`) was retired.
 - **After-Hours Slate** (`after-hours-slate`): the page ground (`--bg`). It's also the text colour on the inverted pill button.
 - **Raised Slate** (`raised-slate`): the solid placeholder behind every artwork box while it loads, the Dialog surface, the popover menus (MoreMenu, speed and sleep), and the reduced-transparency fallback for the frosted materials.
@@ -204,17 +206,20 @@ A near-monochrome slate room whose only saturated colour is borrowed, at runtime
 - **Caption Scrim** (`caption-scrim`): the darkest stop of the image-card scrim (`--scrim-art`). Tiles and heroes that need more weight under the text use the deeper, bottom-only `--scrim-deep` (0.86 → 0.4 → 0 by 68%).
 
 ### Status
+
 - **Danger** (`danger`, `--danger: 248, 113, 113`): destructive actions (Clear, Delete) and errors. A triplet like `--tint`, used tonally (a 0.16 fill under full-strength text), never as a slab.
 - **Success** (`--success: 74, 222, 128`): the success toast's status dot and tonal "ready" actions (a 0.16 fill under full-strength green text). A triplet, never a slab.
 - **Attention** (`--attention: 251, 146, 60`): something waiting for the person, as a tonal button (0.16 fill under full-strength orange text). A triplet, used sparingly.
 - **Danger solid** (`--danger-solid: 220, 50, 50`): the one solid slab, an error banner, because white text needs more contrast than tonal Danger gives.
 
 ### Runtime accent (artwork-derived)
+
 The accent isn't a token. `useDominantColor` samples an image and returns an `r, g, b` triplet, which a surface passes in as `--wash` (SectionCard and HeroBand), or uses inline as a gradient on a person-card header. Washes fall back to the tint triplet when no colour is available.
 
 Generated colours keep the same restraint: avatars are hashed onto hues 0–250° and 330–360°, skipping the 250–330° violets, at 20–30% lightness so a white initial holds 4.5:1.
 
 ### Named Rules
+
 **The One Tint Rule.** Every tonal surface, fill, separator and border is `rgba(var(--tint), α)`. To retune the room, change `--tint`; never introduce a second hue for chrome.
 
 **The Artwork Carries Colour Rule.** Saturated colour enters only from artwork: the `--wash` radial on featured cards and heroes, the person-header gradient. Chrome stays slate and white. Danger, success and attention are status, not decoration, and their fills are always tonal.
@@ -231,7 +236,9 @@ Generated colours keep the same restraint: avatars are hashed onto hues 0–250�
 **Character:** One geometric-humanist sans used across the whole hierarchy. Weight and negative tracking do the work that a second family would: 600 for titles, 800 only for the single name a hero is about.
 
 ### Hierarchy
+
 Sizes are in `em` from the page base `clamp(14px, calc(0.45vw + 8.2px), 16px)` (14px at 1280 wide, 16px from about 1730px up), applied by the `.page-scale` class. Display sizes follow the page container (`cqw`), not the viewport.
+
 - **Display** (`--fs-display`, 800, `clamp(44px, 6cqw, 96px)`, 1.04, -0.03em): the one name a hero is about, clamped to 2 lines. A long credit steps down to `clamp(30px, 3.4cqw, 56px)` (`--fs-display-sm`). Nothing else.
 - **Headline** (`--fs-headline`, 600, 2.2em, 1.15, -0.01em): a page greeting.
 - **Title, feature** (`--fs-title-feature`, 600, 1.9em, 1.15, -0.02em): HeroBand titles (2 lines) and the TopResultCard title (3 lines).
@@ -246,6 +253,7 @@ Sizes are in `em` from the page base `clamp(14px, calc(0.45vw + 8.2px), 16px)` (
 Every font size in the CSS is one of these tokens, enforced by Stylelint. Glyph and icon sizes have tokens too: `--fs-glyph-sm` 2em, `--fs-glyph-md` 2.4em, `--fs-glyph` 3em and `--fs-glyph-lg` 4em (empty-art glyphs, rank numerals), `--fs-icon` 18px and `--fs-icon-sm` 16px (icon glyphs). Car mode has its own base, `--fs-car` (`clamp(17px, 4vmin, 28px)`), which follows the viewport's smaller side so a phone on its side and a desktop window both get glanceable type; everything in the CarPlayer is sized in em from it.
 
 ### Named Rules
+
 **The Sentence Case Rule.** Titles, captions, buttons and chips are sentence case. Hierarchy comes from size, weight 600 and negative tracking, not from capitals or a second face. Server strings in title case are sentence-cased in CSS.
 
 **The 13px Floor Rule.** No content text renders below 13px at any window width. 0.93em is the smallest plain `em` step that holds 13px at the 14px base; anything smaller is written `max(13px, Xem)`. Tabular numerals (`font-variant-numeric: tabular-nums`) are used for ranks, counts, facts and times.
@@ -266,6 +274,7 @@ Put `.page-scale` on a page root and size everything inside it in `em`. Page roo
 Depth comes from tonal layers, not from shadows on content. The slate ground carries tonal cards a few percent lighter. Frosted materials and modals float above everything. Content cards are flat. Shadows appear only on artwork and on floating surfaces.
 
 ### Shadow Vocabulary
+
 - **Art rest** (`--art-shadow`: `0 2px 8px rgba(0, 0, 0, 0.35)`): shelf artwork at rest, paired with the inner keyline `inset 0 0 0 1px rgba(255,255,255,.06)` (`--art-keyline`) drawn by the art box's `::after`.
 - **Art lifted** (`--art-lift-shadow`: `0 8px 18px rgba(0, 0, 0, 0.4)`): tiles on hover or focus, with a 2px rise.
 - **Hero art** (`--hero-shadow`: `0 10px 28px rgba(0, 0, 0, 0.35)`; hover `--hero-lift-shadow`: `0 14px 34px rgba(0,0,0,.45)`): HeroBand artwork and other detail-page prints.
@@ -274,6 +283,7 @@ Depth comes from tonal layers, not from shadows on content. The slate ground car
 Black and white appear in the CSS only as the alpha tokens declared in `global.css`: `--overlay`, `--overlay-strong`, `--well`, `--glass`, `--glass-hi`, `--glass-faint` and `--track`. Stylelint (`pnpm lint:css`, config in `stylelint.config.mjs`) fails on a raw colour, radius, font size or shadow colour anywhere else.
 
 ### Named Rules
+
 **The Shadows Belong to Prints Rule.** Inside the content area only artwork casts a shadow. Cards, rows and chips are flat tonal fills.
 
 **The Frosted Material Rule.** Anything floating over content uses the material tokens (`--material-bg` + `--material-filter: blur(30px) saturate(1.8)`). Under `prefers-reduced-transparency` they fall back to solid Raised Slate. Don't hand-roll a second glass recipe. The exception is a popover menu of rows to choose from (MoreMenu, SpeedControl, SleepTimerControl): it is solid Raised Slate, the fallback look, because rows of words over a title or a list of chapters read as both at once through glass.
@@ -287,14 +297,16 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 ## Components
 
 ### Buttons
-- **Pill (PillButton):** sentence case, weight 600 at 0.92em, padding 0.55em × 1.1em on a full pill. *Primary* is the room inverted (Gallery Light fill, After-Hours Slate text, hover to 0.78 opacity), one per view. *Ghost* is tonal (tint 0.12, hover 0.22) for secondary actions. *Danger* is tonal red (0.16, hover 0.28) for destructive ones. Disabled drops to 0.4. A play action carries a filled play glyph before its words (pause while playing), the same glyph as the ResumeHero action, and reads one way everywhere: "Resume · 51m left" where there is a place to resume, "Play" where there isn't, "Play again" for a finished book; a series names the book ("Resume book 2 · 51m left").
-- **Add (AddButton):** the one + button, borderless, and its click never bubbles. *Quiet* is a 2.2em circle in tertiary label colour, revealed when its row is hovered or focused within, filling with Tint Fill on hover. *Art* is a 2.6em translucent white circle on image cards. *Corner* is a dark circle on tile corners, revealed on hover. The parent owns position and reveal.
-- **More (MoreMenu):** a surface's secondary actions behind one quiet 44px circle (an ellipsis on the ghost tint, 0.12, hover 0.22), beside the primary pill. It opens a native popover on solid Raised Slate, in the top layer and anchored under the button (flipping to stay on screen), of 44px rows in label weight 600; a place- or data-losing row is Danger text with a tonal red hover. A disclosure, not an ARIA menu: the rows are plain buttons, Esc and an outside click close it, and choosing a row closes it first. Pair anything it changes with an Undo toast rather than a confirm. Its *quiet* variant has no fill until hovered and sits in tertiary label colour, for a tile's caption (ImageTile `menu`).
+
+- **Pill (PillButton):** sentence case, weight 600 at 0.92em, padding 0.55em × 1.1em on a full pill. _Primary_ is the room inverted (Gallery Light fill, After-Hours Slate text, hover to 0.78 opacity), one per view. _Ghost_ is tonal (tint 0.12, hover 0.22) for secondary actions. _Danger_ is tonal red (0.16, hover 0.28) for destructive ones. Disabled drops to 0.4. A play action carries a filled play glyph before its words (pause while playing), the same glyph as the ResumeHero action, and reads one way everywhere: "Resume · 51m left" where there is a place to resume, "Play" where there isn't, "Play again" for a finished book; a series names the book ("Resume book 2 · 51m left").
+- **Add (AddButton):** the one + button, borderless, and its click never bubbles. _Quiet_ is a 2.2em circle in tertiary label colour, revealed when its row is hovered or focused within, filling with Tint Fill on hover. _Art_ is a 2.6em translucent white circle on image cards. _Corner_ is a dark circle on tile corners, revealed on hover. The parent owns position and reveal.
+- **More (MoreMenu):** a surface's secondary actions behind one quiet 44px circle (an ellipsis on the ghost tint, 0.12, hover 0.22), beside the primary pill. It opens a native popover on solid Raised Slate, in the top layer and anchored under the button (flipping to stay on screen), of 44px rows in label weight 600; a place- or data-losing row is Danger text with a tonal red hover. A disclosure, not an ARIA menu: the rows are plain buttons, Esc and an outside click close it, and choosing a row closes it first. Pair anything it changes with an Undo toast rather than a confirm. Its _quiet_ variant has no fill until hovered and sits in tertiary label colour, for a tile's caption (ImageTile `menu`).
 - **Text link ("See all", TitleButton, PeopleLinks):** no chrome. Secondary label colour, which turns full label with an underline on hover or focus.
 - **Transport (TransportButtons):** previous, play-pause and next, stateless: the caller passes `playing` and the handlers. Previous and next are quiet; play-pause is the inverted circle.
 - **Focus (all):** one global ring, `outline: 2px solid var(--text-2); outline-offset: 2px`. Over art that may be pale (TopResultCard) the ring sits inside, in white with a black edge. A stroked field (TextField, SearchField, Select) draws the same ring at `outline-offset: -1px`, over its own stroke, so focus is one outline, never two.
 
 ### Chips and faces
+
 - **Person chip (PersonChip):** a toggle for choosing people. Tint Chip fill, a full pill, a round avatar at the leading edge, tonal fill when selected, and an optional series-colour dot. Pair colour with the name, never alone.
 - **Chip (Chip):** a pill link to a person, series or page. Tint Chip fill, an optional round avatar and a muted count after the name; hover steps to the row-hover tint.
 - **Filter chip (FilterChip):** an applied filter. A full pill in the selected tonal fill (tint 0.16) with the label and a round remove button at the trailing edge; the button's name is "Remove filter: {label}".
@@ -303,6 +315,7 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **Avatar (UserAvatar):** a round photo, or the person's initial on a per-name gradient (also when the photo fails to load). It is decorative: the name always sits beside it. Without a class it is a 2em circle; a caller's class sets its own size.
 
 ### Cards / Containers
+
 - **Corner Style:** 1.2em (section and featured cards), 1em (person cards, image cards).
 - **Background:** Wall at rest, Lit Wall for featured. The featured cards add a radial `--wash` from the top-left corner (120% 110% at 15% 0%, 0.26 alpha, fading by 62%; HeroBand 120% 150% at 0% 0%, 0.3, by 65%).
 - **Shadow Strategy:** none (see Elevation & Depth).
@@ -313,36 +326,42 @@ Generously rounded, never sharp. Radii scale with the type in `em`: cards and di
 - **DetailList:** label and value pairs as a `<dl>`: a small tertiary label over a body-size value, stacked, so it fits a narrow side column. It has no surface of its own; put it on a card.
 
 ### Image card (signature)
+
 A print with its label (ArtCard). The artwork fills the card edge to edge (`object-fit: cover`). A two-part scrim, `rgba(0,0,0,.4)` fading over the top 22% and `rgba(0,0,0,.74) → .26 → 0` up from the bottom by 70%, keeps a sentence-case top-left caption and a bottom-left title and credit legible in white. The whole card is one button. Links and the add button sit above it. Hover or focus-within scales the image to 1.03 and dims it to `brightness(.88)` over 0.15s. A second image (a portrait) fades in over the cover when it arrives. An image that fails to load drops its layer and leaves Raised Slate behind the caption.
 
 **Top result (TopResultCard)** is the same print at feature scale. The art fills a 1.2em card (at least 20em high, 4:3 when stacked), and the heading, title (3 lines), meta and children sit bottom left on a scrim of their own (0.82 → 0 up the text block), so the text holds on pale covers. With no art it falls back to Lit Wall and the tint wash.
 
 ### Item and chart rows
+
 Borderless rows (ItemRow, ChartRow) with a 0.65em radius and 3.2em rounded thumbnails. The title is at Title-at-rest white (500) and the credit in tertiary label on the same line. Hover or focus-within fills the row with Tint Fill, brightens the title to white and reveals the quiet add button. Chart rows are a fixed grid (rank · title · credit · count · add) with zero-padded tabular ranks and counts, and optional ChartHead column labels on the same grid.
 
 **ActionRow** is a row you can open that also carries its own actions (rename, delete), such as a bookmark: the open button holds the title (it wraps rather than truncates), a tertiary detail line and a secondary tabular figure, and each action is a separate 44px quiet circle after it, always visible so a phone can reach it. The whole row takes Tint Fill on hover or focus-within; Delete turns tonal Danger on hover. Each action's name includes the row's title ("Delete Chapter 3").
 
 ### Tiles
+
 Square art (ImageTile, 0.7–0.9em radius, or a circle for people) over a caption: the title in Title-at-rest, clamped to two lines (the full text is its `title` attribute), then the sub in tertiary label on one line. The tile's accessible name is one `aria-label`, "Title, Author". Hover or focus rises the tile 2px and gives the art the Art-lifted shadow. With `href` the tile is a real link (a plain click still calls `onOpen`), and `overlay` draws over the art, e.g. a ProgressBar.
 
 ### Top bar
+
 TopBar is a sticky header on the frosted material with start, centre and end slots; it pads its top by the safe-area inset and has no tokens of its own.
 
 ### Playback
+
 Stateless pieces (SeekBar, WavyProgress and EqBars first, then the controls below); the app owns playback and passes values in.
+
 - **SeekBar:** a slider (`position`, `duration`, `onSeek`). A tall hit area around a thin `--track` line, which grows on hover; click to scrub, arrow keys move 5 seconds, Home and End jump. With no duration it is disabled. Optional `markers` (`{ at, label }`, ms) draw 1px decorative ticks for chapter starts; they flip colour against the fill and never take the pointer. Hovering (or dragging a finger across) the bar shows a frosted preview of the time and the marker it falls in, pinned inside the bar ends; with two or more markers the hovered chapter's segment (marker to next marker) is also drawn white and lifted above the bar (`aria-hidden`, no pointer events; not on `readOnly`); the preview is `aria-hidden`, and the marker at the playhead is spoken in `aria-valuetext`. **PlaybackTime** and **PlaybackRemaining** print the times in tabular numerals.
 - **WavyProgress:** the played part is a 0.32em `--title-rest` stroke shaped as a sine wave, 0.16em amplitude and 2em wavelength, travelling slowly forward, its height ramping up from flat over the first wavelength so a just-started item shows a short flat line; a 0.35em gap; then the flat 0.32em `--track`. Paused, the wave eases to a straight line over 0.6s and stops; under reduced motion it is a still, flat line.
 - **EqBars:** three bars on the compositor meaning "this is the current item". Still when paused and under reduced motion.
 - **SkipButton:** a circular arrow with the seconds inside it, in two sizes (2.6em, 3.4em), quiet like the transport buttons. Named "Back 30 seconds" or "Forward 30 seconds".
 - **SpeedControl and SleepTimerControl:** a quiet pill trigger ("1.3×", or a moon and "Sleep", "12:30", "End of chapter") that opens a native popover on solid Raised Slate. The popover is in the top layer, so nothing clips it, closes on Esc and outside click, and is placed with CSS anchor positioning, flipping to stay on screen. The trigger is lit while its popover is open, and on hover only with a real pointer. Speed is a range slider plus preset pills; `fixedDecimal` reads tenths ("1.0×") on the trigger, readout and presets alike. Sleep is a list of rows in full label colour: "End of chapter" first (the bedtime choice), then 15, 30, 45 and 60 minutes, then "Off". The current choice is weight 600 with a tick and `aria-pressed`, never brightness alone; a minutes timer that passes its `minutes` keeps its row ticked while it counts down. A `compact` trigger (a tray cell) shows a chapter timer's `remainingMs` as a time rather than the words "End of chapter", which don't fit. Remaining time reads m:ss, or h:mm:ss from an hour.
 - **MiniPlayer:** the frosted material in a bottom slot, padded by the safe-area inset. A 0.2em progress line runs along its top edge; art and title are one button ("Open player"), then skip back and the inverted play-pause circle (a filled glyph, like every play glyph), which shows a spinner (and `aria-busy`) while loading. Under the title, the subtitle (the chapter) and an optional `remaining` ("12m left") share a line; the subtitle truncates first, so the time always shows whole, and when it can't keep a few letters it drops out rather than leave a lone "P…". Storyshelf passes the time left in the chapter (in the book without chapters) and, wide, puts the book's time left or the sleep timer's "Stops in 8:30" in the readout, in place of a clock. Wide, it adds skip forward, the time and Expand; chapter buttons, the progress modes, speed, sleep and a chapters button are optional zones that appear only when their props are given. Storyshelf passes none of them, so its bar stays slim and those controls live on Now Playing.
-- **UpNextCard:** what to play once the current item is done, offered, never auto-played. One row: small art, a sentence-case heading ("Up next", or "Next in <series>", which also names the region), the title (a link, two lines) and its place ("Book 2 of Sherlock Holmes"), then the inverted Play action and an optional 44px close. Under 28em of container the action is a 44px round Play and the words wrap; wider, it is a labelled pill ("Play", or "Resume" for a book already begun, the same words as everywhere else). The *card* variant is Lit Wall with the art's `--wash`; the *bar* variant is an opaque Raised Slate strip with the top hairline and one line each of title and caption, for sitting on the MiniPlayer, its content in the app column.
+- **UpNextCard:** what to play once the current item is done, offered, never auto-played. One row: small art, a sentence-case heading ("Up next", or "Next in <series>", which also names the region), the title (a link, two lines) and its place ("Book 2 of Sherlock Holmes"), then the inverted Play action and an optional 44px close. Under 28em of container the action is a 44px round Play and the words wrap; wider, it is a labelled pill ("Play", or "Resume" for a book already begun, the same words as everywhere else). The _card_ variant is Lit Wall with the art's `--wash`; the _bar_ variant is an opaque Raised Slate strip with the top hairline and one line each of title and caption, for sitting on the MiniPlayer, its content in the app column.
 - **FinishedCard:** the quiet end of an item with nothing after it, in UpNextCard's family: the Lit Wall with the item's own colour washed in from the top left, no art (the cover is already on the page), a sentence-case title ("Finished", a real heading that names the region), one honest secondary line ("1h 3m over 4 days", left out rather than guessed), then a ghost pill and the inverted pill, both 44px. Under 28em of container the pills share a row of their own under the words; roomy, they sit at the row's end. No confetti and no animation; the app announces the end once in its own live region.
 - **IconButton:** the AirPlayButton's twin for other header actions: a quiet 44px circle with a named glyph (`car`, `keyboard`), no fill until hovered, the label as its name and tooltip, with an optional keyboard shortcut in both ("Car mode (C)", "Keyboard shortcuts (?)").
 - **CarPlayer:** car mode, a full-screen, one-handed player to glance at. The chapter (title size, two lines), the time left in it in big tabular numerals (`--fs-glyph-lg`) with "left in chapter" after it, and a thick 0.75em progress bar; then the chapter buttons as two wide pills at the row's ends, and skip back, Play and skip forward. Every target is at least 64px, sized from the viewport's smaller side (`vmin`); Play is 112px and up, inverted as everywhere else, and neighbours sit 1.5 gaps apart so a missed tap lands on nothing. Close is a 64px circle top left; a chapter jump's Undo is a large tonal pill opposite it while offered. White text on the slate ground, tonal tint fills for the quiet buttons, no artwork. In landscape it becomes two columns: words left, controls right. Stateless, padded by the safe-area insets; the app keeps the screen on.
 - **AirPlayButton:** a quiet 44px circle with the AirPlay glyph, named "AirPlay", shown only while the browser reports a target. While playback is on an AirPlay device it takes Tint Chip and full label colour, and its description says so.
-- **OfferButton:** a small one-tap offer made in passing ("Go back to where the timer began, 41:10"): the ghost pill's tint (0.12, hover 0.22) at label size and weight 600, an optional glyph in secondary label (a moon for the sleep timer, a monitor and phone for another device's place), a 44px minimum height, and words that wrap rather than truncate; an optional short form replaces them under 22em of screen, so a small phone keeps it to one line. *Inline* sits on a page; *bar* puts it on the same opaque Raised Slate strip with a top hairline as the UpNextCard bar, to sit on the MiniPlayer. The app decides when it shows and goes.
-- **Sheet:** the Dialog surface as a bottom sheet under 40em wide (full width, rounded on top, safe-area padding) and a centred panel above that. It is a native `<dialog>`, so Esc and a backdrop click close it. An optional Done pill at the bottom, in thumb reach, is primary by default and `ghost` (`doneVariant`) when the body holds its own primary action, as the Bookmarks sheet's "Bookmark 11:51" does.
+- **OfferButton:** a small one-tap offer made in passing ("Go back to where the timer began, 41:10"): the ghost pill's tint (0.12, hover 0.22) at label size and weight 600, an optional glyph in secondary label (a moon for the sleep timer, a monitor and phone for another device's place), a 44px minimum height, and words that wrap rather than truncate; an optional short form replaces them under 22em of screen, so a small phone keeps it to one line. _Inline_ sits on a page; _bar_ puts it on the same opaque Raised Slate strip with a top hairline as the UpNextCard bar, to sit on the MiniPlayer. The app decides when it shows and goes.
+- **Sheet:** the Dialog surface as a bottom sheet under 40em wide (full width, rounded on top, safe-area padding) and a centred panel above that. It is a native `<dialog>`, so Esc and a backdrop click close it. As a bottom sheet it has a grab bar and pulls down to close like GrabSheet (same distance and flick), from the bar, the title row, or the body while the body is scrolled to the top; an upward swipe still scrolls, and a swipe that starts on a slider or a field is theirs. Rows and buttons don't keep the swipe, and a tap is swallowed after a drag. Reduced motion: no dragging. An optional Done pill at the bottom, in thumb reach, is primary by default and `ghost` (`doneVariant`) when the body holds its own primary action, as the Bookmarks sheet's "Bookmark 11:51" does.
 - **GrabSheet:** the shell of a full-height phone sheet, as Now Playing uses: a grab handle and a 44px chevron-down button (named by `closeLabel`) along the top, the content below. Pulled down from the handle or any non-interactive part it follows the finger with `transform` and dismisses past a quarter of its height (80 to 160px) or on a flick (0.5px/ms, at least 24px); sooner and it springs back. A swipe that starts on a slider, button or link is theirs. Reduced motion: no dragging, the chevron still works.
 - **IconTray:** one tonal container (Wall) of evenly spread icon buttons (speed, sleep, chapters, bookmarks, history, settings), all with the same quiet treatment and 48px height; labels are for assistive tech, except the values (speed "1.0×", a running sleep time). There is one bookmark control: Bookmarks opens the list, which holds the button that adds one. A button is lit while its popover is open, and on hover only with a real pointer (`hover: hover`), so a touch screen never leaves one lit at rest.
 - **StepperRow:** a ‹ previous button, the current item's title (one line, truncated; it opens the list) and a › next button, 44px targets. The count ("7 of 28") is shown only when the title does not already name the place.
@@ -350,22 +369,28 @@ Stateless pieces (SeekBar, WavyProgress and EqBars first, then the controls belo
 - **SegmentedControl underline:** `variant="underline"` draws the same radio group as plain text with a 2px line under the chosen option (the line scales in): the compact Whole book / This chapter / Sleep switch.
 
 ### Dialog
+
 One modal (Dialog): a native `<dialog>` opened with `showModal()`, so the page behind is inert, Tab stays inside, Esc closes it and focus returns to the opener. Raised Slate, 1.2em radius, the Floating shadow, widths of 26, 36 or 64em. The sentence-case title names the dialog, beside a 2.2em round close button. The action row is right-aligned: secondary actions first, the primary or danger pill last. An outside click closes it, except in a form dialog, so a stray click can't lose typed text.
 
 ### Toast and InfoTip
+
 **Toast** is the frosted material with a status dot and an optional action, such as Undo (a 44px target). It sits above the bottom player and any other pinned bar by offsets the app publishes on the root, pauses its timer while hovered or focused, and on closing returns focus to the control that raised it if focus would otherwise fall to the page. **InfoTip** is a small info button whose tooltip is portalled to the page, flips to stay on screen and closes on Escape.
 
 ### Inputs / Fields
+
 - **Dialog field:** a borderless tonal field (Tint Fill, hover tint 0.12, 0.65em radius, padding 0.65em × 0.85em) under a secondary-label label. Focus shows the global ring. Placeholders are tertiary label; errors are Danger text.
 - **Shelf search:** the Carousel's filter is a 26px pill with a `border` stroke on a `rgba(255,255,255,.05)` fill. Focus steps the stroke to `border-strong`.
 
 ### Charts
+
 BarList, ColumnChart, Heatmap and ChartTooltip draw data on the dark ground. ColumnChart is one series over an ordered scale (months): thin columns (at most 1.6em) in `--series-1` with 4px-ish rounded tops on a hairline baseline, 2px apart, a value on the tallest only, a hover readout per column, and the figures as a table behind a "Show as a table" disclosure, its text alternative. A zero draws nothing; labels shorten to one letter under 30em of container. Series use `--series-1` to `--series-8` (the first three are the colour-blind-safe trio); heatmaps use the sequential ramp between `--ramp-lo` and `--ramp-hi`. Highlighted rows are bold as well as coloured.
 
 ### Loading
+
 Skeletons (the global `.skeleton` class: tint at 0.18, pulsing between 0.45 and 1 opacity over 1.4s) sit at the exact size and pitch of the content they replace, so nothing shifts on load. They hold still at 0.7 under `prefers-reduced-motion`. When results refresh, the previous content stays on screen until the new content arrives.
 
 ### Named Rules
+
 **The Not By Colour Alone Rule.** Status colour is always paired with a mark or a word: success and failure carry a tick or cross or a label, and a chart series carries a name.
 
 ## Token Index
@@ -385,6 +410,7 @@ Every custom property declared in `global.css` or `depth.css` is named in this f
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** derive every chrome colour from `--tint` at low alpha (Wall 0.06, Lit Wall 0.085, Tint Fill 0.09, Tint Chip 0.16).
 - **Do** let artwork bring the colour: pass the dominant colour in as `--wash`, cap it at 0.3 and fade it to transparent by about 65%.
 - **Do** size new surfaces in `em` from the fluid page base and respond with `@container` queries.
@@ -396,6 +422,7 @@ Every custom property declared in `global.css` or `depth.css` is named in this f
 - **Do** keep ambient motion (the wavy progress line, the EQ bars) on the compositor: animate `transform` and `opacity`, never layout, and run it only while something is really playing.
 
 ### Don't:
+
 - **Don't** use purple, neon or glow, and keep generated hues off 250–330°.
 - **Don't** set text below 13px or build cramped, dense rows. No sub-13px metadata.
 - **Don't** outline cards, rows, tiles or fields. Separate with a tonal step.

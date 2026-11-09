@@ -99,12 +99,16 @@ export function listenedBeforeThisYear(days: Record<string, number>, todayKey: s
 }
 
 /**
- * "Ch 7 → Ch 9" for what a session covered, or "Ch 7" within one chapter. The start counts in the chapter it begins
- * in; an end exactly on a boundary belongs to the chapter that just finished. With fewer than two chapters there is
- * nothing to name, so it is the time range, "0:12:00 → 0:45:10".
+ * The chapters a stretch of listening began and ended in, by index. The start counts in the chapter it begins in; an
+ * end exactly on a boundary belongs to the chapter that just finished. Null with fewer than two chapters: nothing to
+ * name.
  */
-export function chapterRange(chapters: Chapter[], startTime: number, endTime: number): string {
-  if (chapters.length < 2) return `${fmtClock(startTime)} → ${fmtClock(endTime)}`;
+export function chapterSpan(
+  chapters: Chapter[],
+  startTime: number,
+  endTime: number
+): { from: number; to: number } | null {
+  if (chapters.length < 2) return null;
   const last = chapters.length - 1;
   const lastEnd = chapters[last]!.end;
   const from =
@@ -116,7 +120,17 @@ export function chapterRange(chapters: Chapter[], startTime: number, endTime: nu
         );
   const hit = chapters.findIndex((c) => endTime > c.start && endTime <= c.end);
   const to = endTime <= startTime ? from : hit >= 0 ? hit : endTime > lastEnd ? last : from;
-  return from === to ? `Ch ${from + 1}` : `Ch ${from + 1} → Ch ${to + 1}`;
+  return { from, to };
+}
+
+/**
+ * "Ch 7 → Ch 9" for what a session covered, or "Ch 7" within one chapter (chapterSpan's rules). With fewer than two
+ * chapters there is nothing to name, so it is the time range, "0:12:00 → 0:45:10".
+ */
+export function chapterRange(chapters: Chapter[], startTime: number, endTime: number): string {
+  const span = chapterSpan(chapters, startTime, endTime);
+  if (!span) return `${fmtClock(startTime)} → ${fmtClock(endTime)}`;
+  return span.from === span.to ? `Ch ${span.from + 1}` : `Ch ${span.from + 1} → Ch ${span.to + 1}`;
 }
 
 type DeviceInfo = {

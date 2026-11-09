@@ -11,21 +11,41 @@ export interface Mark {
   at: number;
 }
 
-export interface HistoryRow extends Mark {
-  /** Stable for a render list. */
+/** A session of this book: where it began and stopped in the book, and when. */
+export interface SessionEntry {
+  kind: 'session';
   key: string;
-  /** The row for the current position: not a place to go back to. */
-  current: boolean;
+  /** Book seconds. */
+  from: number;
+  to: number;
+  /** Epoch ms it began, and last saved (its end). */
+  startedAt: number;
+  at: number;
+  /** Seconds heard. */
+  listened: number;
+  session: ListeningSession;
 }
 
-/** A session's two places for one book: where it began and where it stopped. Nothing for a podcast, another book or a lost link. */
-export function sessionMarks(sessions: ListeningSession[], itemId: string): Mark[] {
-  const marks: Mark[] = [];
-  for (const s of sessions) {
-    if (s.mediaType === 'podcast' || !s.libraryItemId || s.libraryItemId !== itemId) continue;
-    marks.push({ position: s.startTime, at: s.startedAt }, { position: s.currentTime, at: s.updatedAt });
-  }
-  return marks.filter((m) => Number.isFinite(m.position) && m.position >= 0 && Number.isFinite(m.at) && m.at > 0);
+/** Where this visit jumped from (a chapter skip, a seek): one place. */
+export interface JumpEntry extends Mark {
+  kind: 'jump';
+  key: string;
+}
+
+export type HistoryEntry = SessionEntry | JumpEntry;
+
+/** A session of this book that moved: not a podcast, another book, a lost link, or one opened and left where it was. */
+function bookSessions(sessions: ListeningSession[], itemId: string): ListeningSession[] {
+  return sessions.filter(
+    (s) =>
+      s.mediaType !== 'podcast' &&
+      !!s.libraryItemId &&
+      s.libraryItemId === itemId &&
+      [s.startTime, s.currentTime].every((t) => Number.isFinite(t) && t >= 0) &&
+      Number.isFinite(s.updatedAt) &&
+      s.updatedAt > 0 &&
+      Math.abs(s.currentTime - s.startTime) >= 1
+  );
 }
 
 /** Adds a jump mark, newest last, capped. A repeat of the last mark (the same place within a second) is not added. */
@@ -41,22 +61,33 @@ interface Input {
   jumps: Mark[];
   /** Where the book is now, in seconds. */
   position: number;
-  now: number;
-  /** Collapse points this close together (seconds). */
+  /** A jump mark this close (seconds) to the current position or to a session's ends adds nothing. */
   window?: number;
 }
 
 /**
- * The places in a book to go back to, newest first, led by "now". Session starts and stops and this visit's jump marks
- * are merged; a point within the window of the current position, or of a newer point already kept, is dropped, so a
- * session that stopped where the book is now, or two marks a few seconds apart, show once.
+ * This book's listening, newest first: each session as a stretch from one place to another, and this visit's jump
+ * marks between them. A jump mark within the window of where the book is now, of a session's start or end, or of a
+ * newer jump mark is left out: it is a place already on the list.
  */
-export function historyRows({ itemId, sessions, jumps, position, now, window = DEDUPE_SECONDS }: Input): HistoryRow[] {
-  const candidates = [...sessionMarks(sessions, itemId), ...jumps].sort((a, b) => b.at - a.at);
-  const rows: HistoryRow[] = [{ key: 'now', at: now, position, current: true }];
-  for (const m of candidates) {
-    if (rows.some((r) => Math.abs(r.position - m.position) <= window)) continue;
-    rows.push({ key: `${m.at}-${Math.round(m.position)}`, ...m, current: false });
+export function historyEntries({ itemId, sessions, jumps, position, window = DEDUPE_SECONDS }: Input): HistoryEntry[] {
+  const own = bookSessions(sessions, itemId);
+  const places = [position, ...own.flatMap((s) => [s.startTime, s.currentTime])];
+  const entries: HistoryEntry[] = own.map((s) => ({
+    kind: 'session',
+    key: `s-${s.id}`,
+    from: s.startTime,
+    to: s.currentTime,
+    startedAt: s.startedAt,
+    at: Math.max(s.updatedAt, s.startedAt),
+    listened: Number(s.timeListening) || 0,
+    session: s,
+  }));
+  for (const m of [...jumps].sort((a, b) => b.at - a.at)) {
+    if (!Number.isFinite(m.position) || m.position < 0) continue;
+    if (places.some((p) => Math.abs(p - m.position) <= window)) continue;
+    places.push(m.position);
+    entries.push({ kind: 'jump', key: `j-${m.at}-${Math.round(m.position)}`, ...m });
   }
-  return rows;
+  return entries.sort((a, b) => b.at - a.at);
 }
