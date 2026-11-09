@@ -30,7 +30,8 @@
     'places meta';
   align-items: center;
   column-gap: 0.9em;
-  padding: 0.35em 0.6em;
+  row-gap: 0.3em;
+  padding: 0.55em 0.6em;
   font-size: var(--fs-body);
 }
 /* No chapters to name: the places lead. */
@@ -85,11 +86,11 @@
   height: 1em;
   color: var(--text-3);
 }
-/* A 44px target around a tonal pill. */
+/* A tonal pill, with a 44px target drawn round it that doesn't add to the row's height. */
 .place {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
   padding: 0;
   border: none;
   background: none;
@@ -102,8 +103,13 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.place::before {
+  content: '';
+  position: absolute;
+  inset: calc((100% - 44px) / 2) 0;
+}
 .chip {
-  padding: 0.3em 0.75em;
+  padding: 0.2em 0.7em;
   border-radius: var(--r-pill);
   background: rgba(var(--tint), 0.12);
   transition: background var(--dur-fast) var(--ease-fast);

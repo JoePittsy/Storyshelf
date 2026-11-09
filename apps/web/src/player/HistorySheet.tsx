@@ -24,7 +24,7 @@ import styles from './HistorySheet.module.css';
 /** This book's listening: each session from where it began to where it stopped, and where this visit jumped from. */
 export function HistorySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
-    <Sheet open={open} onClose={onClose} title="History" doneLabel="Done">
+    <Sheet open={open} onClose={onClose} title="History">
       <HistoryList onClose={onClose} />
     </Sheet>
   );
