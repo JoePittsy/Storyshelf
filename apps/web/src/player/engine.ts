@@ -26,7 +26,16 @@ import { supportedMimeTypes } from './mime';
 import { isRepeatFailure, srcNotSupportedError } from './failure';
 import type { Progress as LibraryProgress } from '../api/libraries';
 import { chooseStart, refreshedPosition, restoredPatch, restoredSeek, type Restorable } from './restore';
-import { createRetryOnce, decide, freshAfterPause, stalledFor, STALL_MS, type Intent } from './resume';
+import {
+  createRetryOnce,
+  decide,
+  freshAfterPause,
+  GIVE_UP_MS,
+  stalledFor,
+  STALL_MS,
+  wentQuiet,
+  type Intent,
+} from './resume';
 import {
   UnsupportedFormatError,
   closeSession,
@@ -152,6 +161,13 @@ let lastMs: number | null = null; // performance.now() at the last accounted pla
 let pendingOffset = 0;
 let ownChange = false; // from our own src change until its `loadstart`: the pause that implies isn't the listener's
 let awaitingPlaying: number | null = null; // performance.now() of a play() that hasn't produced `playing` yet
+let playSeq = 0; // bumped by every play() on the element, so a late rejection can tell it was superseded
+let watchdog: ReturnType<typeof setTimeout> | undefined; // looks in on a play() that hasn't produced `playing`
+// Date.now() when the element last surely had a live stream: its file was loaded, or audio came out of it. How long a
+// resume has been without one is measured from here, not from the `pause` event: iOS can deliver that event hours
+// late (a call or another app stops the audio and the page is suspended before it hears), and a move made while
+// paused must not make an old stream look new.
+let aliveAt: number | null = null;
 const retry = createRetryOnce();
 let recovering = false;
 let token = 0; // bumped by every play()/stop() so a slow session open can tell it was superseded
@@ -396,6 +412,7 @@ let lastFailAt: number | null = null;
 
 function fail(e: unknown): void {
   awaitingPlaying = null;
+  clearTimeout(watchdog);
   const now = performance.now();
   // The error event and the play() rejection report one failure twice; say it once.
   if (isRepeatFailure(lastFailAt, now)) return void diag.log('fail (repeat)', errInfo(e));
@@ -413,25 +430,59 @@ function fail(e: unknown): void {
   updatePlaybackState('paused');
 }
 
-/** play() on the element, logged. A rejection that isn't an abort or a missing gesture gets one reload-and-retry. */
+/**
+ * play() on the element, logged. A rejection that isn't a missing gesture gets one reload-and-retry, and so does an
+ * abort nothing here caused: iOS can abort a play() on an element whose audio it took away while it sat paused.
+ */
 function startPlay(a: HTMLAudioElement, why = 'play'): void {
+  const mine = ++playSeq;
   awaitingPlaying = performance.now();
+  watch();
   note(`play() called (${why})`);
   a.play().then(
     () => note('play() resolved'),
     (e: unknown) => {
       note('play() rejected', errInfo(e));
-      if (e instanceof DOMException && e.name === 'AbortError') return; // superseded by another src or pause
-      if (e instanceof DOMException && e.name === 'NotAllowedError') {
-        // The browser wants a tap. Keep the lock screen truthful.
-        awaitingPlaying = null;
-        set({ status: 'paused' });
-        updatePlaybackState('paused');
+      // Superseded by another play() (a new src), or by a pause: nothing to do.
+      if (mine !== playSeq || awaitingPlaying === null) return;
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        if (session && !reloadAndPlay('aborted')) giveUp('aborted');
         return;
       }
+      if (e instanceof DOMException && e.name === 'NotAllowedError') return giveUp('not allowed'); // the browser wants a tap
       if (!reloadAndPlay('rejected')) fail(e);
     }
   );
+}
+
+/**
+ * Looks in on the play() just asked for. The media events do this too (`checkStall`), but an element iOS has let go of
+ * can fire none at all, and then nothing would ever notice. A backup only: a suspended page runs no timers, and the
+ * wake-up events cover that.
+ */
+function watch(): void {
+  const mine = playSeq;
+  const pending = () => mine === playSeq && awaitingPlaying !== null;
+  clearTimeout(watchdog);
+  watchdog = setTimeout(() => {
+    if (!pending()) return;
+    checkStall('timer');
+    if (!pending()) return; // reloaded: that play() has its own watch
+    watchdog = setTimeout(() => {
+      if (pending() && stalledFor(awaitingPlaying, performance.now(), GIVE_UP_MS)) giveUp('timer');
+    }, GIVE_UP_MS - STALL_MS);
+  }, STALL_MS);
+}
+
+/** The play() asked for isn't going to play: back to paused, with a Play button to press, rather than left waiting. */
+function giveUp(why: string): void {
+  note(`gave up (${why})`);
+  clearTimeout(watchdog);
+  awaitingPlaying = null;
+  ownChange = false;
+  if (audio && !audio.paused) audio.pause(); // its handler does the rest, when a book is loaded
+  if (state.status !== 'paused') set({ status: 'paused' });
+  updatePlaybackState('paused');
 }
 
 /** Reload the current track at the current position and play. False when nothing is loaded. */
@@ -440,6 +491,7 @@ function reload(why: string): boolean {
   const here = audio.currentTime > 0 ? toBookTime(track, audio.currentTime) : state.position;
   const { track: tr, offset } = locate(session.audioTracks, here);
   note(`reload (${why})`, { to: Math.round(here) });
+  set({ status: 'loading', error: null });
   load(tr, offset, true);
   return true;
 }
@@ -450,13 +502,10 @@ function reloadAndPlay(why: string): boolean {
   return retry.attempt() && reload(`retry: ${why}`);
 }
 
-/** Called from events and wake-ups: if play() was asked for 3 s ago and nothing has played, reload. */
+/** Called from events, wake-ups and the watchdog: if play() was asked for 3 s ago and nothing has played, reload (once). */
 function checkStall(why: string): void {
-  if (awaitingPlaying !== null && stalledFor(awaitingPlaying, performance.now(), STALL_MS)) {
-    note(`stalled (${why})`);
-    awaitingPlaying = null;
-    reloadAndPlay('stalled');
-  }
+  if (awaitingPlaying !== null && stalledFor(awaitingPlaying, performance.now(), STALL_MS))
+    reloadAndPlay(`stalled, ${why}`);
 }
 
 /** Resume or pause the element, deciding on what it is doing rather than on what we last heard. */
@@ -465,6 +514,10 @@ function act(intent: Intent, why: string): void {
   note(`action ${intent} (${why})`);
   const todo = decide(intent, a.paused);
   if (todo === 'pause') return a.pause();
+  // Play, from the lock screen or a headset, with the element saying it isn't paused. The system only offers Play when
+  // it believes nothing is playing, and if no audio has come out for a while it is right: the element is stuck (an
+  // interruption that never told the page, or a play() that never started). Load the file afresh, inside this action.
+  if (todo === 'none' && intent === 'play' && session && track && stuck()) return void reload('play while stuck');
   if (todo !== 'play') return;
   // Offline, a book that streams can't carry on: say why rather than fail (a downloaded one plays from the device).
   if (session && track && !localSrc && isOffline()) return offlinePlay();
@@ -478,12 +531,21 @@ function act(intent: Intent, why: string): void {
  * since iOS may have dropped the stream (and, in a home-screen app, the page's hold on the audio) while it sat paused.
  */
 function resume(a: HTMLAudioElement, why: string): void {
-  const since = pausedAt; // read before anything below clears it
+  const since = aliveAt ?? pausedAt; // read before anything below changes them
   takeNewerOnPlay();
+  // Not `paused` any more: Play has been pressed. The button shows it, so a second tap can't land as a pause.
+  set({ status: 'loading', error: null });
   if (rewindOnResume()) return; // crossed into another file: already loading it afresh
   const broken = !!a.error || a.networkState === HTMLMediaElement.NETWORK_NO_SOURCE;
   if ((broken || freshAfterPause(since, Date.now())) && reload(broken ? 'no source' : 'long pause')) return;
   startPlay(a, why);
+}
+
+/** The element says it is playing, but no audio has come out of it for a while and no play() is still in its first moments. */
+function stuck(): boolean {
+  if (!audio || audio.paused || audio.ended) return false;
+  if (awaitingPlaying !== null) return stalledFor(awaitingPlaying, performance.now(), STALL_MS);
+  return wentQuiet(aliveAt, Date.now());
 }
 
 /** Point the element at a track. Called synchronously from a gesture or the `ended` handler when autoplay is true. */
@@ -494,6 +556,7 @@ function load(tr: AudioTrack, offset: number, autoplay: boolean): void {
   ownChange = true;
   pendingOffset = offset;
   pendingAt = tr.startOffset + offset;
+  aliveAt = Date.now();
   a.src = localSrc?.get(tr.index) ?? trackUrl(session, tr.index);
   a.defaultPlaybackRate = a.playbackRate = state.rate; // loading a new src resets the rate to the default
   if (autoplay) startPlay(a, 'load');
@@ -603,6 +666,7 @@ function rememberWhereAsleep(stoppedAt: number): void {
 
 function onTimeUpdate(): void {
   if (!session || state.status !== 'playing') return;
+  aliveAt = Date.now();
   const dt = accountPlayingTime();
   if (state.sleep) {
     const pos = position();
@@ -615,6 +679,23 @@ function onTimeUpdate(): void {
   }
   refresh();
   if (dueWhilePlaying(clock)) void doSync();
+}
+
+/** The loaded book has stopped playing: the listener paused it, or the sleep timer or the system did. */
+function paused(): void {
+  restoreVolume();
+  // When it was last heard, where that is known: the `pause` event itself can arrive long after the audio stopped.
+  pausedAt = state.status === 'playing' && aliveAt !== null ? aliveAt : Date.now();
+  awaitingPlaying = null;
+  clearTimeout(watchdog);
+  accountPlayingTime();
+  set({ status: 'paused' });
+  updatePlaybackState('paused');
+  refresh();
+  void syncIfDue().then(emitSaved);
+  // That sync carries the place just played. From here until the listener chooses a place, it isn't sent unchecked.
+  verified = false;
+  mediaPosition();
 }
 
 function getAudio(): HTMLAudioElement {
@@ -649,6 +730,8 @@ function getAudio(): HTMLAudioElement {
     ownChange = false;
     recovering = false;
     awaitingPlaying = null;
+    clearTimeout(watchdog);
+    aliveAt = Date.now();
     retry.reset();
     lastMs = performance.now();
     set({ status: 'playing', ended: false });
@@ -668,17 +751,7 @@ function getAudio(): HTMLAudioElement {
     note(ownChange ? 'audio pause (ours, ignored)' : 'audio pause');
     if (!session || a.ended) return;
     if (ownChange) return; // our own src change: not the listener pausing
-    restoreVolume();
-    pausedAt = Date.now();
-    awaitingPlaying = null;
-    accountPlayingTime();
-    set({ status: 'paused' });
-    updatePlaybackState('paused');
-    refresh();
-    void syncIfDue().then(emitSaved);
-    // That sync carries the place just played. From here until the listener chooses a place, it isn't sent unchecked.
-    verified = false;
-    mediaPosition();
+    paused();
   });
   a.addEventListener('timeupdate', onTimeUpdate);
   a.addEventListener('seeked', mediaPosition);
@@ -737,6 +810,11 @@ if (typeof document !== 'undefined') {
   const wake = (ev: string) => {
     note(ev);
     installHandlers(mediaActions);
+    // The audio stopped while the page was asleep and the `pause` never came: catch up, so Play means play.
+    if (session && audio?.paused && !audio.ended && state.status === 'playing' && !ownChange) {
+      note('paused while away');
+      paused();
+    }
     syncPlaybackState();
     checkStall(ev);
   };
@@ -786,6 +864,9 @@ function detach(): Detached | null {
   pendingAt = null;
   lastMs = null;
   pausedAt = null;
+  aliveAt = null;
+  awaitingPlaying = null;
+  clearTimeout(watchdog);
   localSrc = null;
   localSession = false;
   getAudio().pause();
