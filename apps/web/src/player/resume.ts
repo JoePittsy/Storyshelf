@@ -47,3 +47,14 @@ export const FRESH_AFTER_MS = 30_000;
 export function freshAfterPause(pausedAt: number | null, now: number, limit = FRESH_AFTER_MS): boolean {
   return pausedAt !== null && now - pausedAt >= limit;
 }
+
+/** With no `playing` this long after Play, the player stops waiting and shows Play again. */
+export const GIVE_UP_MS = 20_000;
+
+/**
+ * True when an element that says it is playing hasn't been heard from since `aliveAt` (Date.now()) for `limit` ms.
+ * `timeupdate` comes several times a second while audio is coming out, so a gap this long means it isn't.
+ */
+export function wentQuiet(aliveAt: number | null, now: number, limit = STALL_MS): boolean {
+  return aliveAt === null || now - aliveAt >= limit;
+}

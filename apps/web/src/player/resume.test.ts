@@ -6,7 +6,7 @@
  * lock-screen play a no-op. The reload retry happens once per resume and re-arms on `playing`.
  */
 import { describe, expect, it } from 'vitest';
-import { createRetryOnce, decide, freshAfterPause, stalledFor } from './resume';
+import { createRetryOnce, decide, freshAfterPause, stalledFor, wentQuiet } from './resume';
 
 describe('decide', () => {
   it('play resumes a paused element and ignores a playing one', () => {
@@ -58,5 +58,13 @@ describe('freshAfterPause', () => {
   it('is false for a short pause and true from 30 s', () => {
     expect(freshAfterPause(1000, 30_999)).toBe(false);
     expect(freshAfterPause(1000, 31_000)).toBe(true);
+  });
+});
+
+describe('wentQuiet', () => {
+  it('is quiet once nothing has been heard for the limit, or ever', () => {
+    expect(wentQuiet(1000, 3999)).toBe(false);
+    expect(wentQuiet(1000, 4000)).toBe(true);
+    expect(wentQuiet(null, 0)).toBe(true);
   });
 });

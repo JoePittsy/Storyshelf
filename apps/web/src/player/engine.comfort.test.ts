@@ -103,6 +103,7 @@ beforeEach(async () => {
   engine = await import('./engine');
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.clearAllMocks();
   vi.restoreAllMocks();
@@ -197,6 +198,148 @@ describe('resuming after a long pause (iOS may have dropped the stream)', () => 
     a.paused = false;
     a.fire('playing');
     expect(setActionHandler).toHaveBeenCalledWith('play', expect.any(Function));
+  });
+
+  it('a move made while paused does not make an old stream look new: Play still loads the file afresh', async () => {
+    const a = await playing();
+    await pauseFor(a, 10 * 60_000);
+    engine.skip(-1);
+    a.src = '';
+    engine.toggle();
+    expect(a.src).toBe('/t/2');
+    expect(a.paused).toBe(false);
+  });
+
+  it('a pause the page only hears about long after the audio stopped still counts as a long one', async () => {
+    const a = await playing();
+    run(a, 1000);
+    now += 10 * 60_000; // a call took the audio, and the page slept through it
+    a.pause(); // the event arrives as the page wakes
+    await vi.waitFor(() => expect(snapshot().status).toBe('paused'));
+    a.src = '';
+    engine.toggle();
+    expect(a.src).toBe('/t/2');
+    expect(snapshot().position).toBe(435); // and the rewind counts those ten minutes: 15 s back, not none
+  });
+
+  it('shows that Play was pressed until the audio starts', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    engine.toggle();
+    expect(snapshot().status).toBe('loading');
+    a.fire('playing');
+    expect(snapshot().status).toBe('playing');
+  });
+
+  it('with no sound and no event 3 s after Play, loads the file afresh; with none after that, shows Play again', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    a.src = '';
+    engine.toggle(); // a plain resume, and the element does nothing at all
+    expect(a.src).toBe('');
+    perf += 3000;
+    vi.advanceTimersByTime(3000);
+    expect(a.src).toBe('/t/2');
+    expect(snapshot().status).toBe('loading');
+    perf += 20_000;
+    vi.advanceTimersByTime(20_000);
+    expect(a.paused).toBe(true);
+    expect(snapshot().status).toBe('paused');
+  });
+
+  it('once the audio starts, the watch on it ends', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    engine.toggle();
+    a.fire('playing');
+    a.src = '';
+    perf += 30_000;
+    vi.advanceTimersByTime(30_000);
+    expect(a.src).toBe('');
+    expect(snapshot().status).toBe('playing');
+  });
+
+  it('a play() the system aborts, with nothing here having paused or replaced it, gets a fresh load', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    a.src = '';
+    a.play = () => {
+      a.play = FakeAudio.prototype.play.bind(a);
+      return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'));
+    };
+    engine.toggle();
+    await vi.waitFor(() => expect(a.src).toBe('/t/2'));
+    expect(a.paused).toBe(false);
+  });
+
+  it('a play() aborted by the listener pausing is left alone', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    a.src = '';
+    let reject: (e: unknown) => void = () => {};
+    a.play = () => {
+      a.paused = false;
+      return new Promise<void>((_, r) => (reject = r));
+    };
+    engine.toggle();
+    engine.toggle(); // changed their mind
+    reject(new DOMException('The operation was aborted.', 'AbortError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(a.src).toBe('');
+    expect(snapshot().status).toBe('paused');
+  });
+
+  it('a play() the browser refuses for want of a tap shows Play again', async () => {
+    const a = await playing();
+    await pauseFor(a, 3000);
+    a.play = () => Promise.reject(new DOMException('Not allowed', 'NotAllowedError'));
+    engine.toggle();
+    await vi.waitFor(() => expect(snapshot().status).toBe('paused'));
+  });
+
+  describe('from the lock screen', () => {
+    let handlers: Record<string, () => void>;
+    beforeEach(() => {
+      handlers = {};
+      const setActionHandler = (name: string, h: () => void) => void (handlers[name] = h);
+      vi.stubGlobal('navigator', { ...navigator, mediaSession: { setActionHandler, setPositionState() {} } });
+      vi.stubGlobal(
+        'MediaMetadata',
+        class {
+          constructor(public init: unknown) {}
+        }
+      );
+    });
+
+    it('Play, with the element claiming to play but silent for a while, loads the file afresh', async () => {
+      const a = await playing();
+      run(a, 1000);
+      now += 60_000; // an interruption the page never heard of: no pause event, and no more audio
+      a.src = '';
+      handlers.play();
+      expect(a.src).toBe('/t/2');
+      expect(a.paused).toBe(false);
+    });
+
+    it('Play while the audio really is coming out does nothing', async () => {
+      const a = await playing();
+      run(a, 1000);
+      a.src = '';
+      handlers.play();
+      expect(a.src).toBe('');
+      expect(snapshot().status).toBe('playing');
+    });
+  });
+
+  it('waking to find the audio stopped, with no pause event having come, shows it paused', async () => {
+    const a = await playing();
+    run(a, 1000);
+    a.paused = true; // stopped while the page was asleep
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(snapshot().status).toBe('paused');
   });
 });
 
