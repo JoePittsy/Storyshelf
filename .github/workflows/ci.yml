@@ -51,6 +51,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # --with-deps adds apt packages (extra fonts; the runner image already has Chromium's libraries). When the
+      # runner can't reach the Ubuntu mirror, install the browser alone rather than fail before any test runs.
       - name: Install Playwright Chromium
-        run: pnpm --filter @joepittsy/ui exec playwright install --with-deps chromium
+        run: |
+          pnpm --filter @joepittsy/ui exec playwright install --with-deps chromium ||
+            pnpm --filter @joepittsy/ui exec playwright install chromium
       - run: pnpm --filter @joepittsy/ui test:stories
