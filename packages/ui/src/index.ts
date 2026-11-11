@@ -34,6 +34,7 @@ export { SkipButton } from './components/SkipButton';
 export { SleepTimerControl } from './components/SleepTimerControl';
 export type { SleepValue, SleepChoice } from './components/SleepTimerControl';
 export { SpeedControl } from './components/SpeedControl';
+export { VolumeControl } from './components/VolumeControl';
 export { ToastProvider, useToast } from './components/Toast';
 export { TextField } from './components/TextField';
 export { TopBar } from './components/TopBar';

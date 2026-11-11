@@ -41,14 +41,16 @@ export function App() {
 
 `react`, `react-dom` and `@fontsource-variable/manrope` are peer dependencies. The package does not bundle the font (so its SIL OFL 1.1 licence travels with the font package, and the CSS stays small); `--font-sans` falls back to the system UI fonts if you skip the import. Tokens are plain custom properties on `:root`, so a consumer can override any of them (start with `--tint`).
 
-Playback components (`SeekBar`, `WavyProgress`, `TransportButtons`, `MiniPlayer`, `SkipButton`, `SpeedControl`, `SleepTimerControl`) are stateless: pass `position` and `duration` in milliseconds and handlers, and keep playback state in the app.
+Playback components (`SeekBar`, `WavyProgress`, `TransportButtons`, `MiniPlayer`, `SkipButton`, `SpeedControl`, `VolumeControl`, `SleepTimerControl`) are stateless: pass `position` and `duration` in milliseconds and handlers, and keep playback state in the app.
 
 ### From source, inside this workspace
 
 The package exports an `@joepittsy/source` condition, so an app in this workspace can use it with no build, under a package-specific condition (not the generic `source`, which an external consumer might enable, and which the published tarball cannot satisfy, as it ships `dist` only). In the app's Vite config:
 
 ```ts
-resolve: { conditions: ['@joepittsy/source'] }
+resolve: {
+  conditions: ['@joepittsy/source'];
+}
 ```
 
 Then `@joepittsy/ui` resolves to `src/index.ts` and `@joepittsy/ui/styles.css` to `src/styles/index.css`.

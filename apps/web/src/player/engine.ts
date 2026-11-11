@@ -48,6 +48,7 @@ import {
   type Progress,
 } from './session';
 import { clampRate, loadSettings, saveSettings } from './settings';
+import { clampVolume, loadVolume, saveVolume } from './volume';
 import { bookSpeed, forgetBookSpeeds, putBackBookSpeeds, rememberBookSpeed } from './bookSpeeds';
 import { fellAsleepPlace, forgetFellAsleep, rememberFellAsleep } from './fellAsleep';
 import { rewindSeconds, rewindTarget } from './rewind';
@@ -99,6 +100,10 @@ export interface PlayerState {
   skipForward: number;
   /** Go back a little when playback resumes after a pause (see rewind). */
   rewindOnResume: boolean;
+  /** The player's own volume, 0 to 1, for browsers that let a page set it (see volume.ts). */
+  volume: number;
+  /** Silenced, keeping the level. For this visit only: the app never opens muted. */
+  muted: boolean;
   sleep: SleepTimer | null;
   /** Book seconds at the moment the sleep timer was set or changed: where the sleep progress window starts. */
   sleepFrom: number;
@@ -134,6 +139,8 @@ const initial = (): PlayerState => ({
   chapters: [],
   chapterIndex: -1,
   ...settingsState(),
+  volume: loadVolume(),
+  muted: false,
   sleep: null,
   sleepFrom: 0,
   error: null,
@@ -704,6 +711,8 @@ function getAudio(): HTMLAudioElement {
   audio = a;
   a.setAttribute('playsinline', '');
   a.preload = 'auto';
+  a.volume = state.volume; // does nothing on iOS, where the hardware buttons own the volume
+  a.muted = state.muted;
   attachAirPlay(a);
 
   for (const ev of ['play', 'waiting', 'stalled', 'suspend', 'emptied', 'loadstart', 'canplay', 'abort'])
@@ -1194,6 +1203,25 @@ export function resetBookSpeeds(): () => void {
   };
 }
 
+/** The player's volume, 0 to 1. Choosing a level above zero unmutes. Kept for this device. */
+export function setVolume(level: number): void {
+  const v = clampVolume(level);
+  restoreVolume(); // mid-fade: the level changes under the fade, and the next tick fades from the new one
+  const muted = v > 0 ? false : state.muted;
+  if (audio) {
+    audio.volume = v;
+    audio.muted = muted;
+  }
+  set({ volume: v, muted });
+  saveVolume(v);
+}
+
+/** Silences the player, or lets it be heard again at the level it had. */
+export function setMuted(muted: boolean): void {
+  if (audio) audio.muted = muted;
+  set({ muted });
+}
+
 export function setSkip(back: number, forward: number): void {
   set({ skipBack: back, skipForward: forward });
   persist();
@@ -1224,8 +1252,8 @@ export async function stop(): Promise<void> {
   lastRequest = null;
   movedHere = null;
   clearTimeout(moveTimer);
-  const { defaultRate, skipBack, skipForward, rewindOnResume } = state;
-  set({ ...initial(), rate: defaultRate, defaultRate, skipBack, skipForward, rewindOnResume });
+  const { defaultRate, skipBack, skipForward, rewindOnResume, volume, muted } = state;
+  set({ ...initial(), rate: defaultRate, defaultRate, skipBack, skipForward, rewindOnResume, volume, muted });
   updateMetadata(null, '');
   updatePlaybackState('none');
   if (old) {
@@ -1451,6 +1479,8 @@ const actions = {
   resetBookSpeeds,
   setSkip,
   setRewindOnResume,
+  setVolume,
+  setMuted,
   setSleep,
   stop,
 };
