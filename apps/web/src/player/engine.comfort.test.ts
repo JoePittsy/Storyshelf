@@ -406,6 +406,62 @@ describe('each book keeps its speed', () => {
   });
 });
 
+describe('the volume', () => {
+  it('sets the element, shows in the player and is kept for next time', async () => {
+    const a = await playing();
+    engine.setVolume(0.4);
+    expect(a.volume).toBe(0.4);
+    expect(snapshot().volume).toBe(0.4);
+    vi.resetModules();
+    FakeAudio.last = null;
+    engine = await import('./engine');
+    expect(snapshot().volume).toBe(0.4);
+    engine.prepareAudio();
+    expect(audio().volume).toBe(0.4);
+  });
+
+  it('muting keeps the level, and choosing a level unmutes', async () => {
+    const a = (await playing()) as FakeAudio & { muted?: boolean };
+    engine.setVolume(0.6);
+    engine.setMuted(true);
+    expect(a.muted).toBe(true);
+    expect(snapshot()).toMatchObject({ volume: 0.6, muted: true });
+    engine.setVolume(0.5);
+    expect(a.muted).toBe(false);
+    expect(snapshot()).toMatchObject({ volume: 0.5, muted: false });
+  });
+
+  it('is clamped to 0..1', async () => {
+    const a = await playing();
+    engine.setVolume(3);
+    expect(a.volume).toBe(1);
+    engine.setVolume(-2);
+    expect(a.volume).toBe(0);
+  });
+
+  it('stopping the book keeps the level', async () => {
+    await playing();
+    engine.setVolume(0.3);
+    await engine.stop();
+    expect(snapshot().volume).toBe(0.3);
+  });
+
+  it('changed during a sleep fade, the fade carries on from the new level and ends back at it', async () => {
+    const a = await playing();
+    engine.setSleep({ minutes: 1 });
+    run(a, 55_000); // 5 s left: into the fade
+    expect(a.volume).toBeCloseTo(0.25);
+    engine.setVolume(0.5);
+    expect(a.volume).toBe(0.5);
+    perf += 1000;
+    a.fire('timeupdate'); // 4 s left
+    expect(a.volume).toBeCloseTo(0.08);
+    run(a, 4000); // the timer ends: paused, and the volume is the listener's again
+    expect(a.paused).toBe(true);
+    expect(a.volume).toBe(0.5);
+  });
+});
+
 describe('rewinding after a pause', () => {
   it('after a pause of a couple of minutes, playback resumes 5 seconds back', async () => {
     const a = await playing();

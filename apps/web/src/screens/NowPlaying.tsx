@@ -16,6 +16,7 @@ import {
   SkipButton,
   SleepTimerControl,
   SpeedControl,
+  VolumeControl,
   StepperRow,
   TrayButton,
   TransportButtons,
@@ -25,6 +26,7 @@ import {
 import { useBook } from '../api/items';
 import { narratorPath } from '../api/libraries';
 import { usePlayer } from '../player/engine';
+import { canSetVolume } from '../player/volume';
 import { ProgressModeControl } from '../player/ProgressModeControl';
 import { ProgressModeTabs } from '../player/ProgressModeTabs';
 import { chapterRowText } from '../player/chapterRow';
@@ -390,6 +392,10 @@ export function NowPlaying() {
 
             <div className={styles.options}>
               <SpeedControl value={p.rate} onChange={p.setRate} fixedDecimal />
+              {/* Not on iOS, where only the hardware buttons set the volume. The phone layout leaves it to them too. */}
+              {canSetVolume() && (
+                <VolumeControl value={p.volume} muted={p.muted} onChange={p.setVolume} onMutedChange={p.setMuted} />
+              )}
               <SleepTimerControl value={sleepValue} onChange={p.setSleep} chapterOptionDisabled={!hasChapters} />
               <PillButton onClick={() => setSheet('bookmarks')}>Bookmarks</PillButton>
               <PillButton onClick={() => setSheet('history')}>History</PillButton>
