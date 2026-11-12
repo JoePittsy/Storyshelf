@@ -12,7 +12,7 @@ const at = (position: number, more: Partial<Parameters<typeof miniPlayerTimes>[0
 describe('miniPlayerTimes', () => {
   it('in a chapter: the time left in it after the chapter name, and the book’s time left on the wide bar', () => {
     // 1038 - 311 = 727 s, 12 whole minutes; 3784 - 311 = 3473 s, 57 minutes.
-    expect(at(311)).toEqual({ remaining: '12m left', side: '57m left in book' });
+    expect(at(311)).toEqual({ remaining: '12m left in chapter', side: '57m left in book' });
   });
 
   it('with no chapters: the book’s time left, and the wide bar leaves its own readout alone', () => {

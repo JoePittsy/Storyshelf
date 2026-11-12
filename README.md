@@ -7,10 +7,16 @@ _Screenshot to follow._
 
 - Pick up where you left off, with your place kept in sync through ABS so any device resumes in the same spot.
 - Browse and search your library by book, author, narrator and series.
-- Chapter-aware playback: book, chapter and sleep progress views, speed, and a sleep timer that can stop at the end of the chapter.
+- Chapter-aware playback: book, chapter and sleep progress views, speed (each book keeps its own on this device), and a sleep timer that can stop at the end of the chapter.
 - History in the player: jump back to where earlier sessions started and stopped, or to where you were before a skip.
-- A History page of what you have listened to and finished, with listening stats.
+- A History page of what you have listened to and finished, with listening stats and a year in review.
 - Settings: your account, which library to use, how far the skip buttons move, and the keyboard shortcuts.
+- Downloads: a book can be downloaded from its page and then plays with no connection. Settings shows downloads and free space.
+- Bookmarks: mark a place in a book, name it, and jump back to it. Bookmarks are kept on the ABS server, so every device has them.
+- Car mode: a full-screen player with large controls and the time left in the chapter.
+- Collections and playlists made in Audiobookshelf can be browsed and played. They are not created or edited in Storyshelf.
+- Hand-off between devices: when another device has moved the book on, the player offers that newer place.
+- Keyboard shortcuts on desktop: press `?` to list them.
 
 Storyshelf needs ABS 2.26.0 or later with local (username and password) sign-in enabled.
 
