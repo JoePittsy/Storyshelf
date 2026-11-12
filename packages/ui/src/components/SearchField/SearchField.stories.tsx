@@ -12,7 +12,7 @@ function Stateful(props: React.ComponentProps<typeof SearchField>) {
 const meta = {
   title: 'Common/SearchField',
   component: SearchField,
-  args: { label: 'Search library', placeholder: 'Search books, authors, series', value: '', onChange: () => {} },
+  args: { label: 'Search your library', placeholder: 'Search your library', value: '', onChange: () => {} },
   render: (args) => <Stateful {...args} />,
 } satisfies Meta<typeof SearchField>;
 
