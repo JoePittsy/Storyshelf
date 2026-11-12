@@ -40,7 +40,8 @@ const EXPECTED_ERROR = /status of 401\b/;
  * @param {string}  [o.label]  extra profile name, for a second throwaway browser for the same persona
  * @param {boolean} [o.signIn] sign in when the app shows the sign-in form (default true)
  * @param {string}  [o.out]    folder for screenshots (default: PERSONA_OUT, else runs/adhoc-<time>)
- * @returns {Promise<{context, page, errors, close, url, go, account, device, out}>}
+ * @returns {Promise<{context, page, errors, close, url, go, account, device, out, build}>} `build` says which release
+ *   the page is running and whether it is the server's current one (see `ensureCurrentBuild`)
  */
 export async function openSession({ persona, device = 'desktop', fresh = false, account, label, signIn = true, out } = {}) {
   if (!persona) throw new Error('openSession needs a persona');
@@ -82,7 +83,19 @@ export async function openSession({ persona, device = 'desktop', fresh = false, 
   const page = context.pages()[0] ?? (await context.newPage());
 
   const base = appUrl();
-  const go = (path = '/') => page.goto(`${base}${path.startsWith('/') ? path : `/${path}`}`, { waitUntil: 'domcontentloaded' });
+  // An overlay that has just closed takes its own history entry away a moment later (Back closes an overlay), and a
+  // page load started in that moment is aborted by it. No person types an address that fast; a script does, so it
+  // tries once more.
+  const go = async (path = '/') => {
+    const to = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+    try {
+      return await page.goto(to, { waitUntil: 'domcontentloaded' });
+    } catch (e) {
+      if (!/ERR_ABORTED/.test(String(e?.message))) throw e;
+      await page.waitForTimeout(300);
+      return page.goto(to, { waitUntil: 'domcontentloaded' });
+    }
+  };
   const session = {
     context,
     page,
@@ -96,12 +109,48 @@ export async function openSession({ persona, device = 'desktop', fresh = false, 
   };
   try {
     await go('/');
+    session.build = await ensureCurrentBuild(page, base, go);
     if (signIn) await signInIfShown(page, who);
   } catch (e) {
     await session.close();
     throw e;
   }
   return session;
+}
+
+const BUILD_SCRIPT = /assets\/(index-[\w-]+\.js)/;
+
+/** The app's main script as the server has it now, read past any service worker. Null when it names none (the dev server). */
+async function servedBuild(base) {
+  try {
+    const html = await (await fetch(`${base}/index.html`, { cache: 'no-store' })).text();
+    return BUILD_SCRIPT.exec(html)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Makes sure the page runs the build the server has now. A persistent profile keeps the last release in its service
+ * worker, and the app only moves to a new one at a launch, so the first run after a rebuild would otherwise test the
+ * old release without saying so (a fixed bug then "reproduces", and a scorecard is for the wrong code). Each reload
+ * is a launch; a few are enough for the new worker to install and take over.
+ *
+ * @returns {Promise<{served: string|null, running: string|null, current: boolean|null}>} `current` is null when the
+ *   server's build can't be told (the dev server), false when the old release is still running after the reloads.
+ */
+async function ensureCurrentBuild(page, base, go) {
+  const running = () =>
+    page.evaluate((src) => [...document.scripts].map((el) => new RegExp(src).exec(el.src)?.[1]).find(Boolean) ?? null, BUILD_SCRIPT.source);
+  const served = await servedBuild(base);
+  let now = await running();
+  if (!served) return { served, running: now, current: null };
+  for (let launch = 0; launch < 4 && now !== served; launch++) {
+    await page.waitForTimeout(1500); // the new worker installs in the background
+    await go('/');
+    now = await running();
+  }
+  return { served, running: now, current: now === served };
 }
 
 /**

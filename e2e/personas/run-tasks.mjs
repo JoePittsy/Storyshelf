@@ -59,6 +59,11 @@ const md = (card) => {
     '',
     `App ${card.url}, ${card.fresh ? 'fresh profile (a new device)' : 'persistent profile'}, service worker: ${card.serviceWorker ? 'yes' : 'no'}. ${card.startedAt}`,
     `Server state: ${card.seeded}.`,
+    ...(card.build?.current === false
+      ? [`**Old release under test:** the page ran ${card.build.running}, the server has ${card.build.served}. These results are not for the current build; run again.`]
+      : card.build?.running
+        ? [`Build ${card.build.running}${card.build.current ? ", the server's current one" : ''}.`]
+        : []),
     '',
     `Passed ${s.passed}, failed ${s.failed}, skipped ${s.skipped}, script errors ${s.scriptErrors}.`,
     '',
@@ -146,6 +151,7 @@ async function main() {
       url: session.url,
       fresh: args.fresh,
       serviceWorker,
+      build: session.build ?? null,
       startedAt: new Date().toISOString(),
       seeded,
       tasks: results,
