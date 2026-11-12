@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { Gauge } from 'lucide-react';
 import { fmtSpeed, snapSpeed } from '../../lib/snapSpeed';
+import { usePopoverBackToClose } from '../../hooks/useBackToClose';
 import styles from './SpeedControl.module.css';
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
 
 /**
  * A button showing the rate ("1.3×") that opens a popover with a range slider and preset buttons. The popover is
- * native (popover attribute): it light-dismisses, closes on Esc, returns focus to the button and sits in the top
+ * native (popover attribute): it light-dismisses, closes on Esc and the browser's Back, returns focus to the button and sits in the top
  * layer. Every value passed to onChange is clamped to min..max and rounded to the step.
  */
 export function SpeedControl({
@@ -33,6 +34,7 @@ export function SpeedControl({
   className,
 }: Props) {
   const id = useId();
+  const back = usePopoverBackToClose();
   const current = snapSpeed(value, min, max, step);
   const text = `${fixedDecimal ? current.toFixed(1) : fmtSpeed(current)}×`;
   const set = (v: number) => onChange(snapSpeed(v, min, max, step));
@@ -42,7 +44,7 @@ export function SpeedControl({
         <Gauge size="1.2em" aria-hidden="true" />
         <span aria-hidden="true">{text}</span>
       </button>
-      <div id={id} popover="auto" className={styles.pop} role="group" aria-label="Playback speed">
+      <div id={id} popover="auto" {...back} className={styles.pop} role="group" aria-label="Playback speed">
         <span className={styles.readout} aria-hidden="true">
           {text}
         </span>
