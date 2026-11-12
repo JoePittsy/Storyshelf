@@ -83,9 +83,8 @@ export async function openSession({ persona, device = 'desktop', fresh = false, 
   const page = context.pages()[0] ?? (await context.newPage());
 
   const base = appUrl();
-  // An overlay that has just closed takes its own history entry away a moment later (Back closes an overlay), and a
-  // page load started in that moment is aborted by it. No person types an address that fast; a script does, so it
-  // tries once more.
+  // A page load can be aborted by a navigation the app itself starts in the same moment (a redirect, a new release
+  // taking over). A script loads pages faster than a person can, so it tries once more.
   const go = async (path = '/') => {
     const to = `${base}${path.startsWith('/') ? path : `/${path}`}`;
     try {
