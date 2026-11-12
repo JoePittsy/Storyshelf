@@ -27,7 +27,7 @@ Do not edit the task files to make a task pass.
 
 ## 2. Explore, in character, for a bounded time
 
-After the tasks, explore the app the way {persona} would, beyond what the tasks cover. **At most 60 actions** (a tap, a click, a key press, a page load each count as one). Stop when you reach it, even if you are in the middle of something. Count them as you go.
+After the tasks, explore the app the way {persona} would, beyond what the tasks cover. **At most 60 actions** (a tap, a click, a page load each count as one; for a keyboard-only persona, count each purposeful step, not each Tab press, and reach a control with `locator.focus()` when the number of presses is not what you are measuring). Stop when you reach it, even if you are in the middle of something. Count them as you go.
 
 Drive the app with Playwright through the kit's session helper, so you use the same persistent profile as the tasks. A scratch script is fine:
 

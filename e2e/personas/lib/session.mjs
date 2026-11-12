@@ -83,9 +83,8 @@ export async function openSession({ persona, device = 'desktop', fresh = false, 
   const page = context.pages()[0] ?? (await context.newPage());
 
   const base = appUrl();
-  // An overlay that has just closed takes its own history entry away a moment later (Back closes an overlay), and a
-  // page load started in that moment is aborted by it. No person types an address that fast; a script does, so it
-  // tries once more.
+  // A page load can be aborted by a navigation the app itself starts in the same moment (a redirect, a new release
+  // taking over). A script loads pages faster than a person can, so it tries once more.
   const go = async (path = '/') => {
     const to = `${base}${path.startsWith('/') ? path : `/${path}`}`;
     try {
@@ -132,22 +131,39 @@ async function servedBuild(base) {
 
 /**
  * Makes sure the page runs the build the server has now. A persistent profile keeps the last release in its service
- * worker, and the app only moves to a new one at a launch, so the first run after a rebuild would otherwise test the
- * old release without saying so (a fixed bug then "reproduces", and a scorecard is for the wrong code). Each reload
- * is a launch; a few are enough for the new worker to install and take over.
+ * worker, and the app only moves to a new one at a launch after the new worker has installed, so the first run after a
+ * rebuild would otherwise test the old release without saying so (a fixed bug then "reproduces", and a scorecard is
+ * for the wrong code). Waiting for the app's own takeover is slow and can outlast a script, so an old release is
+ * dropped here instead: the profile's worker and its kept files are removed and the page is loaded again from the
+ * server, which registers the new worker. Everything else the device keeps (sign-in, places, downloads) stays.
  *
  * @returns {Promise<{served: string|null, running: string|null, current: boolean|null}>} `current` is null when the
- *   server's build can't be told (the dev server), false when the old release is still running after the reloads.
+ *   server's build can't be told (the dev server), false when the old release is still running after all that.
  */
 async function ensureCurrentBuild(page, base, go) {
+  const within = (ms, work) => Promise.race([work, new Promise((done) => setTimeout(() => done(undefined), ms))]);
   const running = () =>
-    page.evaluate((src) => [...document.scripts].map((el) => new RegExp(src).exec(el.src)?.[1]).find(Boolean) ?? null, BUILD_SCRIPT.source);
+    within(
+      5000,
+      page
+        .evaluate((src) => [...document.scripts].map((el) => new RegExp(src).exec(el.src)?.[1]).find(Boolean) ?? null, BUILD_SCRIPT.source)
+        .catch(() => null)
+    ).then((v) => v ?? null);
   const served = await servedBuild(base);
   let now = await running();
   if (!served) return { served, running: now, current: null };
-  for (let launch = 0; launch < 4 && now !== served; launch++) {
-    await page.waitForTimeout(1500); // the new worker installs in the background
-    await go('/');
+  for (let attempt = 0; attempt < 3 && now !== served; attempt++) {
+    await within(
+      10_000,
+      page
+        .evaluate(async () => {
+          for (const reg of (await navigator.serviceWorker?.getRegistrations()) ?? []) await reg.unregister();
+          for (const key of await caches.keys()) await caches.delete(key);
+        })
+        .catch(() => undefined)
+    );
+    await go('/').catch(() => undefined);
+    await page.waitForTimeout(1500); // the app may reload once more as its new worker takes over
     now = await running();
   }
   return { served, running: now, current: now === served };

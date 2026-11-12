@@ -76,6 +76,11 @@ describe('finishedElsewhere: a finish written by someone else, which a sync from
     expect(finishedElsewhere(finished(99_000), { ...atEnd, position: 4000 }, duration)).toBe(false);
   });
 
+  it('yes: marked finished elsewhere at the very place we last sent (Mark as finished keeps the place)', () => {
+    expect(finishedElsewhere(finished(60_000, 1000), ours, duration)).toBe(true);
+    expect(finishedElsewhere(finished(60_000, 1003), ours, duration)).toBe(true);
+  });
+
   it('no: our own place is at the very end, where a sync keeps the book finished', () => {
     expect(finishedElsewhere(finished(), { ...ours, position: duration - FINISH_WINDOW_S }, duration)).toBe(false);
     expect(finishedElsewhere(finished(), { ...ours, position: duration - FINISH_WINDOW_S - 1 }, duration)).toBe(true);

@@ -20,7 +20,7 @@ interface Props {
 
 /**
  * A bottom sheet on narrow screens, a centred panel on wide ones. It is the Dialog (a native <dialog> opened with
- * showModal(): inert page behind, Esc, a backdrop click and the browser's Back close it, focus returns to the opener) restyled, with
+ * showModal(): inert page behind, Esc and a backdrop click close it, focus returns to the opener) restyled, with
  * a scrolling body. Popovers inside it open in the top layer, so the sheet cannot clip them.
  *
  * As a bottom sheet it has a grab bar and pulls down to close: from the bar, the title row, or the body while the body

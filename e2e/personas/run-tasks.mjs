@@ -99,6 +99,17 @@ async function main() {
 
   let session = await openSession({ persona: persona.name, device: persona.device, fresh: args.fresh, account, out });
   const abs = await absSession(persona.name, account);
+  // The seed puts the account back; this puts back the few things the device keeps that the tasks measure against, and
+  // that an exploring persona may have left changed: which progress the bar shows, a kept sleep timer, the "fell asleep"
+  // offer and each book's own speed. The rest of the profile (sign-in, places, downloads, the worker) stays as it was.
+  await session.page
+    .evaluate(() => {
+      for (const key of ['storyshelf.progressMode', 'storyshelf.sleepTimer', 'storyshelf.fellAsleep', 'storyshelf.bookSpeeds']) {
+        localStorage.removeItem(key);
+      }
+    })
+    .catch(() => undefined);
+  await session.go('/');
   let other;
   const ctx = {
     persona: persona.name,
@@ -135,7 +146,21 @@ async function main() {
   try {
     for (const task of tasks) {
       process.stdout.write(`${task.id} ... `);
-      const r = await task(ctx);
+      // A task that never comes back (a page that will not load, a browser that has gone) must not hold the run: after
+      // five minutes it is a script error, and the rest is skipped, since the browser can no longer be trusted.
+      let timer;
+      const r = await Promise.race([
+        task(ctx),
+        new Promise((done) => {
+          timer = setTimeout(() => done({ id: task.id, title: task.title, pass: false, scriptError: true, steps: 0, seconds: 300, note: 'Script error: the task did not finish within 5 minutes' }), 300_000);
+        }),
+      ]);
+      clearTimeout(timer);
+      if (r.note === 'Script error: the task did not finish within 5 minutes') {
+        results.push(r);
+        console.log('SCRIPT ERROR (timed out; stopping the run)');
+        break;
+      }
       if (r.pass === false) await shot(session.page, `failed-${r.id}`).catch(() => undefined);
       await session.context.setOffline(false).catch(() => undefined);
       if (other) await other.context.setOffline(false).catch(() => undefined);
@@ -166,10 +191,11 @@ async function main() {
     };
     writeFileSync(resolve(out, 'scorecard.json'), JSON.stringify(card, null, 2));
     writeFileSync(resolve(out, 'scorecard.md'), md(card));
-    await session.close();
-    if (other) await other.close();
     console.log(`\n${md(card)}\nWritten to ${out}`);
-    process.exitCode = card.summary.scriptErrors > 0 ? 1 : 0;
+    // The scorecard is written; a browser that will not close must not keep the process alive.
+    const closing = Promise.all([session.close(), other?.close()]);
+    await Promise.race([closing, new Promise((done) => setTimeout(done, 10_000))]);
+    process.exit(card.summary.scriptErrors > 0 ? 1 : 0);
   }
 }
 

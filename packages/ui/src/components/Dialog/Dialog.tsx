@@ -2,7 +2,6 @@ import { useId, useLayoutEffect, useRef } from 'react';
 import type { FormEvent, ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { useBackToClose } from '../../hooks/useBackToClose';
 import styles from './Dialog.module.css';
 
 interface Props {
@@ -34,9 +33,6 @@ interface Props {
  * inert, so Tab stays inside without a hand-written trap. Esc closes; focus goes to the first field (or to
  * an element marked data-autofocus, or the dialog itself) and returns to the opener on close. Portalled
  * to <body> so a parent's drag region or overflow can't reach it.
- *
- * It closes by the close button, Esc, a backdrop click (not in a form dialog), the caller unmounting it, and the browser's
- * Back: while open it holds one history entry (hooks/useBackToClose), so Back closes it and the page stays put.
  */
 export function Dialog({
   title,
@@ -54,7 +50,6 @@ export function Dialog({
   const ownRef = useRef<HTMLDialogElement>(null);
   const ref = rootRef ?? ownRef;
   const titleId = useId();
-  useBackToClose(true, onClose);
 
   useLayoutEffect(() => {
     const dialog = ref.current;
