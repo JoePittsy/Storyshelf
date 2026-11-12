@@ -61,9 +61,10 @@ export const FINISH_WINDOW_S = 10;
 
 /**
  * True when the server's record says the book is finished and another device wrote that after this player last
- * verified the server's place (`lastUpdate` later than this player's last write, and not the place this player sent: its
- * own finish is that place), and this player's own place is somewhere a sync would take the book off its end. Sending
- * it would un-finish the book (see FINISH_WINDOW_S), so the player must not: it tells the listener instead.
+ * verified the server's place (`lastUpdate` later than this player's last write, and not this player's own finish, which
+ * is the end of the book as it sent it), and this player's own place is somewhere a sync would take the book off its
+ * end. Sending it would un-finish the book (see FINISH_WINDOW_S), so the player must not: it tells the listener instead.
+ * The finish may sit at any place: playing to the end leaves it there, Mark as finished leaves it where the book was.
  *
  * A finish that was already on the server when this player opened the book is not this: pressing Play on a finished
  * book is the listener starting it again, and its first sync un-finishes it on purpose.
@@ -71,7 +72,10 @@ export const FINISH_WINDOW_S = 10;
 export function finishedElsewhere(server: ServerPlace | null, ours: OurPlace, duration: number): boolean {
   if (!server?.isFinished) return false;
   if (!(server.lastUpdate > ours.lastWriteAt)) return false;
-  if (Math.abs(server.currentTime - ours.lastSent) <= SAME_PLACE_S) return false;
+  // Our own finish is the end of the book, sent from here. A finish at the place we last sent that is not the end is
+  // someone marking the book finished elsewhere (Mark as finished keeps the place), and a sync from here would undo it.
+  const sentTheEnd = duration - ours.lastSent <= FINISH_WINDOW_S;
+  if (sentTheEnd && Math.abs(server.currentTime - ours.lastSent) <= SAME_PLACE_S) return false;
   return duration - ours.position > FINISH_WINDOW_S;
 }
 
