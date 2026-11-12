@@ -75,3 +75,4 @@ export { GrabSheet } from './components/GrabSheet';
 export { IconTray, TrayButton } from './components/IconTray';
 export { StepperRow } from './components/StepperRow';
 export { shouldDismiss, dismissThreshold, releaseVelocity } from './lib/dragDismiss';
+export { useBackToClose, usePopoverBackToClose } from './hooks/useBackToClose';

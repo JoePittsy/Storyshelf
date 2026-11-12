@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Dialog } from './Dialog';
+import { freshHistory, routerHears, settle } from '../../test/history';
 
 function Opener({ onSubmit }: { onSubmit?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -74,5 +75,91 @@ describe('Dialog', () => {
     );
     fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  describe('Back', () => {
+    beforeEach(freshHistory);
+
+    it('closes it, leaves the route alone and returns focus to the opener', async () => {
+      const router = routerHears();
+      const user = userEvent.setup();
+      render(<Opener />);
+      const opener = screen.getByRole('button', { name: 'Open it' });
+      await user.click(opener);
+      await settle();
+      history.back();
+      await settle();
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(location.pathname).toBe('/b');
+      expect(router.heard).toEqual([]);
+      expect(opener).toHaveFocus();
+      router.stop();
+    });
+
+    it('leaves history as it was after a normal close: the next Back goes to the previous route', async () => {
+      const router = routerHears();
+      const user = userEvent.setup();
+      render(<Opener />);
+      await user.click(screen.getByRole('button', { name: 'Open it' }));
+      await settle();
+      await user.keyboard('{Escape}');
+      await settle();
+      expect(router.heard).toEqual([]);
+      history.back();
+      await settle();
+      expect(location.pathname).toBe('/a');
+      expect(router.heard).toEqual(['/a']);
+      router.stop();
+    });
+
+    it('closes when unmounted by its parent, with no stray entry', async () => {
+      const router = routerHears();
+      const { unmount } = render(
+        <Dialog title="Info" onClose={vi.fn()}>
+          body
+        </Dialog>
+      );
+      await settle();
+      unmount();
+      await settle();
+      history.back();
+      await settle();
+      expect(location.pathname).toBe('/a');
+      expect(router.heard).toEqual(['/a']);
+      router.stop();
+    });
+
+    it('a form dialog closes on Back too', async () => {
+      const onClose = vi.fn();
+      render(
+        <Dialog title="Rename" onClose={onClose} onSubmit={vi.fn()}>
+          <input aria-label="Name" />
+        </Dialog>
+      );
+      await settle();
+      history.back();
+      await settle();
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes only the top one of two', async () => {
+      const lower = vi.fn();
+      const upper = vi.fn();
+      render(
+        <>
+          <Dialog title="Lower" onClose={lower}>
+            a
+          </Dialog>
+          <Dialog title="Upper" onClose={upper}>
+            b
+          </Dialog>
+        </>
+      );
+      await settle();
+      history.back();
+      await settle();
+      expect(upper).toHaveBeenCalledTimes(1);
+      expect(lower).not.toHaveBeenCalled();
+    });
   });
 });
