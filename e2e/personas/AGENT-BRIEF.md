@@ -33,7 +33,7 @@ Drive the app with Playwright through the kit's session helper, so you use the s
 
 ```js
 import { openSession, snapshot, position, tapTargets, shot } from '../lib/session.mjs';
-const s = await openSession({ persona: '{persona}', device: '{device}' });
+const s = await openSession({ persona: '{persona}', device: '{device}', out: '{out}' });
 const { page } = s;
 // ...
 await s.close();
@@ -42,7 +42,7 @@ await s.close();
 - `snapshot(page)` gives you what is on screen: the main text, the "Now playing" bar, every live region's text, and the focused control's role and name.
 - `position(page)` is where the book is, in seconds.
 - `tapTargets(page)` lists controls with their sizes and whether the hit area is under 44 px.
-- `shot(page, name)` saves a screenshot into the output folder. **Look at screenshots (open the file) before you judge anything visual.**
+- `shot(page, name)` saves a screenshot into the folder you passed to `openSession` as `out` (without `out` it lands in `runs/adhoc-<time>/`, not your output folder). **Look at screenshots (open the file) before you judge anything visual.**
 - `lib/abs.mjs` reads your own account's progress and bookmarks from the server, to tell a screen problem from a sync problem.
 
 Rules while exploring:
@@ -81,7 +81,7 @@ Anything you find goes in `{out}/findings.json`: a JSON array, one object per fi
 
 ```js
 import { openSession } from '../../../lib/session.mjs'; // adjust to where the repro sits
-const s = await openSession({ persona: '{persona}', device: '{device}' });
+const s = await openSession({ persona: '{persona}', device: '{device}', out: '{out}' });
 let observed = false;
 try {
   // ...the steps from "did"...
