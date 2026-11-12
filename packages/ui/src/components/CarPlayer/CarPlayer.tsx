@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { RotateCcw, RotateCw, SkipBack, SkipForward, Undo2, X } from 'lucide-react';
+import { Moon, RotateCcw, RotateCw, SkipBack, SkipForward, Undo2, X } from 'lucide-react';
 import styles from './CarPlayer.module.css';
 
 interface Props {
@@ -9,6 +9,12 @@ interface Props {
   timeLeft: string;
   /** What `timeLeft` counts down to: printed after it ("left in chapter") and part of its spoken name. */
   timeLeftOf: 'chapter' | 'book';
+  /**
+   * A sleep timer is running: what it says, already formatted ("Stops in 12:30"), the mini player's own wording. Shown
+   * as a quiet line under the time left, only while a timer runs. A readout, not a control: car mode has nothing to
+   * tap for it. Plain text, not a live region, so a screen reader reads it where it finds it and is not told every second.
+   */
+  sleepStatus?: string;
   /** 0 to 1 through the chapter (or the book). */
   progress: number;
   playing: boolean;
@@ -36,13 +42,15 @@ interface Props {
 /**
  * A full-screen player for the car or a walk: glanceable, one-handed, almost no words. The chapter and the time left in
  * it, a thick progress bar, then the controls as big, well-spaced targets (64px and up; Play far bigger) so a mis-tap
- * lands on nothing rather than a neighbour. Stateless: the app owns playback and passes values in. It fills its
+ * lands on nothing rather than a neighbour. A running sleep timer is a one-line readout under the time left (never a
+ * control). Stateless: the app owns playback and passes values in. It fills its
  * container; sizes follow the smaller side of the viewport, and it lays out in two columns in landscape.
  */
 export function CarPlayer({
   chapter,
   timeLeft,
   timeLeftOf,
+  sleepStatus,
   progress,
   playing,
   busy = false,
@@ -93,6 +101,12 @@ export function CarPlayer({
             left {of}
           </span>
         </p>
+        {sleepStatus && (
+          <p className={styles.sleep}>
+            <Moon className={styles.moon} aria-hidden="true" />
+            {sleepStatus}
+          </p>
+        )}
         <div
           className={styles.track}
           role="progressbar"

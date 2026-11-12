@@ -235,6 +235,12 @@ export const useLibraryItems = (
 /** Most extra book lists fetched per search, by kind. */
 export const SEARCH_CAPS = { authors: 5, narrators: 3, series: 3 } as const;
 
+/** An author's page, by id. */
+export const authorPath = (id: string): string => `/author/${encodeURIComponent(id)}`;
+
+/** A series' page, by id. */
+export const seriesPath = (id: string): string => `/series/${encodeURIComponent(id)}`;
+
 /** The library filtered to a narrator. Narrators have no id or page in ABS, so the name is the filter. */
 export const narratorPath = (name: string, libraryId?: string | null): string => {
   const p = new URLSearchParams();

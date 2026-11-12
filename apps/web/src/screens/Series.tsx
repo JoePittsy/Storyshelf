@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Artwork, ExpandableText, HeroBand, PeopleLinks, PillButton } from '@joepittsy/ui';
 import { useAuthorIds, useSeries, useSeriesBooks } from '../api/authors';
-import { coverUrl, mergeProgress, useProgress } from '../api/libraries';
+import { authorPath, coverUrl, mergeProgress, useProgress } from '../api/libraries';
 import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { usePanelColor } from '../frame/usePanelColor';
 import { BackLink } from '../components/BackLink';
@@ -93,7 +93,8 @@ export function Series({ onPlay }: Props) {
             {linkable ? (
               <PeopleLinks
                 people={names.join(', ')}
-                onOpenPerson={(name) => void navigate(`/author/${encodeURIComponent(ids.get(name) ?? '')}`)}
+                onOpenPerson={(name) => void navigate(authorPath(ids.get(name) ?? ''))}
+                hrefFor={(name) => authorPath(ids.get(name) ?? '')}
               />
             ) : (
               names.join(', ')

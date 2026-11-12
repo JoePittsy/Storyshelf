@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ArtCard } from './ArtCard';
 import { Artwork } from './Artwork';
 import { ChartHead, ChartRow } from './ChartRow';
-import { PeopleLinks } from './ItemLinks';
+import { PeopleLinks, TitleButton } from './ItemLinks';
 import { ItemRow } from './ItemRow';
 import { TopResultCard } from './TopResultCard';
 import { UserAvatar } from './UserAvatar';
@@ -31,6 +31,57 @@ describe('PeopleLinks', () => {
     fireEvent.click(screen.getByRole('button', { name: 'B, open' }));
     expect(onOpenPerson).toHaveBeenCalledWith('B', false);
     expect(outer).not.toHaveBeenCalled();
+  });
+});
+
+describe('PeopleLinks and TitleButton with an href', () => {
+  const hrefFor = (name: string) => `/people/${name}`;
+
+  it('renders real links named by the name alone, keeping the comma inside the link text', () => {
+    const { container } = render(<PeopleLinks people="A, B" onOpenPerson={() => {}} hrefFor={hrefFor} />);
+    expect(container.textContent).toBe('A, B');
+    const a = screen.getByRole('link', { name: 'A' });
+    expect(a).toHaveAttribute('href', '/people/A');
+    expect(a.textContent).toBe('A,');
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('routes a plain click, and leaves modified and middle clicks to the browser', () => {
+    const onOpenPerson = vi.fn();
+    const outer = vi.fn();
+    render(
+      <div onClick={outer}>
+        <PeopleLinks people="A, B" onOpenPerson={onOpenPerson} hrefFor={hrefFor} />
+      </div>
+    );
+    const b = screen.getByRole('link', { name: 'B' });
+    expect(fireEvent.click(b, { ctrlKey: true })).toBe(true);
+    expect(fireEvent.click(b, { metaKey: true })).toBe(true);
+    expect(fireEvent.click(b, { button: 1 })).toBe(true);
+    expect(onOpenPerson).not.toHaveBeenCalled();
+    // The default is prevented for the plain click only, so the browser does not also navigate.
+    expect(fireEvent.click(b)).toBe(false);
+    expect(onOpenPerson).toHaveBeenCalledExactlyOnceWith('B', false);
+    expect(outer).not.toHaveBeenCalled();
+  });
+
+  it('stays a button for a name hrefFor has no destination for', () => {
+    render(
+      <PeopleLinks people="A, B" onOpenPerson={() => {}} hrefFor={(n) => (n === 'A' ? '/people/A' : undefined)} />
+    );
+    expect(screen.getByRole('link', { name: 'A' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'B, open' })).toBeInTheDocument();
+  });
+
+  it('TitleButton with an href is a link: a plain click opens, a modified click does not', () => {
+    const onOpen = vi.fn();
+    render(<TitleButton title="Golden Hour" href="/series/1" onOpen={onOpen} />);
+    const a = screen.getByRole('link', { name: 'Golden Hour' });
+    expect(a).toHaveAttribute('href', '/series/1');
+    fireEvent.click(a, { shiftKey: true });
+    expect(onOpen).not.toHaveBeenCalled();
+    fireEvent.click(a);
+    expect(onOpen).toHaveBeenCalledOnce();
   });
 });
 

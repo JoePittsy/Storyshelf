@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { miniPlayerTimes } from './miniTimes';
+import { miniPlayerTimes, sleepStopsIn } from './miniTimes';
 
 const chapters = [
   { id: 0, start: 0, end: 1038, title: 'Part I' },
@@ -32,5 +32,16 @@ describe('miniPlayerTimes', () => {
 
   it('says nothing while the length is unknown', () => {
     expect(at(0, { duration: 0, chapters: [], chapterIndex: -1 })).toEqual({ remaining: undefined, side: undefined });
+  });
+});
+
+describe('sleepStopsIn', () => {
+  it('says nothing without a timer, and otherwise what the mini player says (car mode shares it)', () => {
+    expect(sleepStopsIn(null, 311, 1)).toBeUndefined();
+    expect(sleepStopsIn({ kind: 'minutes', remainingMs: 750_000 }, 311, 1)).toBe('Stops in 12:30');
+    expect(sleepStopsIn({ kind: 'chapter', endsAt: 1038 }, 311, 2)).toBe('Stops in 6:04');
+    expect(sleepStopsIn({ kind: 'minutes', remainingMs: 510_000 }, 311, 1)).toBe(
+      at(311, { sleep: { kind: 'minutes', remainingMs: 510_000 } }).side
+    );
   });
 });

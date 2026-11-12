@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ExpandableText, HeroBand, TitleButton, UserAvatar } from '@joepittsy/ui';
 import { useAuthor } from '../api/authors';
-import { authorImageUrl, mergeProgress, useProgress } from '../api/libraries';
+import { authorImageUrl, mergeProgress, seriesPath, useProgress } from '../api/libraries';
 import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { BackLink } from '../components/BackLink';
 import { BookGrid, BookGridSkeleton } from '../components/BookGrid';
@@ -69,7 +69,7 @@ export function Author() {
           {sections.map((s) => (
             <section key={s.id} aria-labelledby={`series-${s.id}`}>
               <h2 id={`series-${s.id}`} className={styles.heading}>
-                <TitleButton title={s.name} onOpen={() => void navigate(`/series/${encodeURIComponent(s.id)}`)} />
+                <TitleButton title={s.name} href={seriesPath(s.id)} onOpen={() => void navigate(seriesPath(s.id))} />
               </h2>
               <BookGrid tiles={tiles(s.books)} />
             </section>

@@ -49,6 +49,12 @@ export const NoChapters: Story = {
     onNextChapter: undefined,
   },
 };
+/** A sleep timer is running: "Stops in 14:58" under the time left, a readout with nothing to tap. */
+export const SleepTimerRunning: Story = { args: { sleepStatus: 'Stops in 14:58' } };
+/** The longest wording on the narrowest screen: it wraps inside the column and moves nothing else. */
+export const SleepTimerLongClock: Story = {
+  args: { sleepStatus: 'Stops in 1:59:58', chapter: null, timeLeft: '2:41:07', timeLeftOf: 'book' },
+};
 /** The last chapter: Next is disabled. */
 export const LastChapter: Story = { args: { nextDisabled: true } };
 export const Loading: Story = { args: { busy: true, playing: false } };
