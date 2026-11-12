@@ -18,3 +18,7 @@ e2e/.env
 # Impeccable engine binaries (fetched on first use)
 .claude/skills/impeccable/scripts/bin/
 __pycache__/
+
+# Playwright output (apps/web, pnpm test:e2e)
+test-results/
+playwright-report/
