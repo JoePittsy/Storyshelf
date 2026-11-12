@@ -61,6 +61,7 @@ import { bookSpeed, forgetBookSpeeds, putBackBookSpeeds, rememberBookSpeed } fro
 import { fellAsleepPlace, forgetFellAsleep, rememberFellAsleep } from './fellAsleep';
 import { rewindSeconds, rewindTarget } from './rewind';
 import { fadeLevel, sleepAtChapterEnd, sleepInMinutes, sleepRemainingMs, tickSleep, type SleepTimer } from './sleep';
+import { forgetKeptSleep, keepSleep, keptSleep } from './sleepKept';
 import { dueOnStop, dueWhilePlaying, markSynced, payload, startClock, tick } from './sync';
 import { clampSeek, locate, toBookTime, totalDuration, type AudioTrack } from './timeline';
 
@@ -438,9 +439,21 @@ async function heldBack(cur: PlaybackSession, p: Progress, final: boolean): Prom
   return true;
 }
 
-/** Keeps the loaded book's place on the device (see places.ts). */
+/** Keeps the loaded book's place on the device (see places.ts), and its sleep timer's time left. */
 function keepPlace(): void {
   if (session && track) savePlace(session.libraryItemId, position());
+  keepSleepTimer();
+}
+
+/**
+ * Keeps the loaded book's sleep timer on the device so a reload brings it back (see sleepKept.ts), or forgets it when
+ * the book has none. Called wherever the place is kept, so a running timer's time left is never more than a sync old,
+ * and when the timer is set or changed. With no book loaded (before the last one is restored) there is nothing to say.
+ */
+function keepSleepTimer(): void {
+  if (!state.item) return;
+  if (state.sleep) keepSleep(state.item.id, state.sleep);
+  else forgetKeptSleep();
 }
 
 /** A local session's sync: the listening goes in the device's queue, and on to the server when it can be reached. */
@@ -781,6 +794,7 @@ function onTimeUpdate(): void {
     const r = tickSleep(state.sleep, dt, pos);
     set({ sleep: r.expired ? null : r.timer });
     if (r.expired) {
+      forgetKeptSleep(); // ran out: a reload must not bring it back
       rememberWhereAsleep(pos);
       getAudio().pause(); // the pause handler syncs, and puts the volume back
     } else fadeTo(fadeLevel(sleepRemainingMs(r.timer, pos, state.rate)));
@@ -1213,6 +1227,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
     rate: rateFor(itemId),
   });
   setMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
+  keepSleepTimer(); // another book starts with no timer, so none is kept; the same book's carried one is
   load(tr, offset, true);
 }
 
@@ -1248,8 +1263,28 @@ export function restore(given: Restorable, chapters: Chapter[]): void {
   lastRequest = { itemId: r.id }; // no `from`: Play starts from the server's place, or from a move made here
   movedHere = null;
   restoredAt = r.updatedAt;
-  set({ ...patch, rate: rateFor(r.id) });
+  set({ ...patch, rate: rateFor(r.id), ...restoredSleep(r.id, chapters, patch.position) });
   setMetadata(patch.item, chapters[patch.chapterIndex]?.title ?? '');
+}
+
+/**
+ * The sleep timer this device kept for the book (see sleepKept.ts), as the restored book shows it: a minutes timer with
+ * the time it had left (nothing counted down while the book sat paused), an end-of-chapter one worked out for the
+ * restored place (Play works it out again for where playback really starts: see `carriedSleep`). A timer kept for
+ * another book, or too old, is forgotten here, so it can't come back for a later one.
+ */
+function restoredSleep(
+  itemId: string,
+  chapters: Chapter[],
+  at: number
+): Pick<PlayerState, 'sleep'> & Partial<Pick<PlayerState, 'sleepFrom'>> {
+  const kept = keptSleep(itemId);
+  if (!kept) {
+    forgetKeptSleep();
+    return { sleep: null };
+  }
+  const sleep = kept.kind === 'chapter' ? sleepAtChapterEnd(chapters, at) : kept;
+  return sleep ? { sleep, sleepFrom: at } : { sleep: null };
 }
 
 /**
@@ -1367,18 +1402,23 @@ export function setRewindOnResume(on: boolean): void {
 
 export function setSleep(choice: SleepChoice): void {
   restoreVolume(); // changed or turned off mid-fade: the next tick fades again if it should
-  if (choice === 'off') return set({ sleep: null });
+  if (choice === 'off') {
+    set({ sleep: null });
+    return forgetKeptSleep();
+  }
   if (typeof choice === 'object' && 'addMinutes' in choice) {
     // More time on the running minutes timer, from where it is: its window (`sleepFrom`) is the same listening. It has
     // no row of its own length now, so `minutes` goes. With no minutes timer there is nothing to add to.
     const was = state.sleep;
     if (was?.kind !== 'minutes') return;
-    return set({ sleep: { kind: 'minutes', remainingMs: was.remainingMs + choice.addMinutes * 60_000 } });
+    set({ sleep: { kind: 'minutes', remainingMs: was.remainingMs + choice.addMinutes * 60_000 } });
+    return keepSleepTimer();
   }
   set({
     sleep: choice === 'chapter' ? sleepAtChapterEnd(state.chapters, position()) : sleepInMinutes(choice.minutes),
     sleepFrom: position(),
   });
+  keepSleepTimer();
 }
 
 /** Stop, forget the book and close the server session (best effort). */
@@ -1394,6 +1434,7 @@ export async function stop(): Promise<void> {
   clearTimeout(moveTimer);
   const { defaultRate, skipBack, skipForward, rewindOnResume, volume, muted } = state;
   set({ ...initial(), rate: defaultRate, defaultRate, skipBack, skipForward, rewindOnResume, volume, muted });
+  forgetKeptSleep(); // the book is forgotten, and so is its timer (signing out stops the player first)
   updateMetadata(null, '');
   updatePlaybackState('none');
   if (old) {

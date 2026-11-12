@@ -5,6 +5,7 @@ import { logout } from '../api/auth';
 import { stop } from '../player/engine';
 import { flushListening, forgetListening } from '../player/localSessions';
 import { forgetPlaces } from '../player/places';
+import { forgetKeptSleep } from '../player/sleepKept';
 import { fmtBytes, removeAllDownloads, useDownloads } from '../downloads';
 
 /** How long signing out waits to send listening done offline. */
@@ -29,12 +30,13 @@ export function useSignOut(): { ask: () => void; confirming: boolean; busy: bool
     void stop()
       // Listening done offline and not yet sent gets a last try (briefly: signing out mustn't hang on a bad connection).
       .then(() => within(flushListening(), FLUSH_MS).catch(() => undefined))
-      // The device keeps nothing of the listener's once they sign out: downloads, places and unsent listening. Before
+      // The device keeps nothing of the listener's once they sign out: downloads, places, a sleep timer and unsent listening. Before
       // logout, which forgets who they were.
       .then(removeAllDownloads)
       .then(() => {
         forgetListening();
         forgetPlaces();
+        forgetKeptSleep();
       })
       .then(logout)
       .then(() => qc.setQueryData(['session'], null));
