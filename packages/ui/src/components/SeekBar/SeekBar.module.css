@@ -172,11 +172,27 @@
   }
 }
 
-/* Touch and phone widths: a hit area of at least 32px around the thin track (the track itself keeps its size). */
+/* Touch and phone widths: the box is at least 32px tall around the thin track (the track itself keeps its size). */
 @media (pointer: coarse), (width < 40em) {
   .seek,
   .slim {
     min-height: 32px;
+  }
+}
+
+/* A finger needs a hit area of at least 44px (PRODUCT.md), a mouse is happy with the 32px box. On a coarse pointer the
+   extra comes from a transparent ::before that reaches past the box, so the layout and the track do not move. It
+   reaches 3px above the box (the smallest gap the player leaves above the bar, on a short phone) and the rest below,
+   over the time labels, which are not controls; never over the chapter row above or the transport below. Not for
+   .slim: the mini player's bar sizes its own hit area inside the bar (MiniPlayer.module.css). */
+@media (pointer: coarse) {
+  .seek:not(.slim)::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: max(44px, calc(100% + 3px));
   }
 }
 
