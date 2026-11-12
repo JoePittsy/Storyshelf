@@ -91,6 +91,8 @@ describe('Author page', () => {
     const sandman = screen.getByRole('region', { name: 'The Sandman' });
     const titles = within(sandman)
       .getAllByRole('link')
+      // The shelf's own heading is a link to the series too: only the books are tiles.
+      .filter((l) => l.getAttribute('href')?.startsWith('/book/'))
       .map((l) => l.textContent);
     expect(titles[0]).toContain('Act I');
     expect(titles[1]).toContain('Act II');
@@ -106,7 +108,7 @@ describe('Author page', () => {
   it('REQ-27 links the series name to its page', async () => {
     serve({ '/api/authors/a1': author });
     renderAt('/author/a1');
-    await userEvent.click(await screen.findByRole('button', { name: 'The Sandman, open' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'The Sandman' }));
     expect(screen.getByTestId('where')).toHaveTextContent('/series/s1');
   });
 
@@ -159,7 +161,7 @@ describe('Series page', () => {
       'aria-valuenow',
       '40'
     );
-    await userEvent.click(await screen.findByRole('button', { name: 'Neil Gaiman, open' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'Neil Gaiman' }));
     expect(screen.getByTestId('where')).toHaveTextContent('/author/a9');
   });
 
@@ -223,7 +225,7 @@ describe('Full player (REQ-34)', () => {
       error: null,
     } as unknown as ReturnType<typeof usePlayer> & PlayerState);
     renderAt('/now-playing');
-    await userEvent.click(await screen.findByRole('button', { name: 'Neil Gaiman, open' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'Neil Gaiman' }));
     expect(screen.getByTestId('where')).toHaveTextContent('/author/a9');
   });
 });

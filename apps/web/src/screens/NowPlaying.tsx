@@ -24,7 +24,7 @@ import {
   useMediaQuery,
 } from '@joepittsy/ui';
 import { useBook } from '../api/items';
-import { narratorPath } from '../api/libraries';
+import { authorPath, narratorPath } from '../api/libraries';
 import { usePlayer } from '../player/engine';
 import { canSetVolume } from '../player/volume';
 import { ProgressModeControl } from '../player/ProgressModeControl';
@@ -248,7 +248,11 @@ export function NowPlaying() {
                     people={authors.map((a) => a.name).join(', ')}
                     onOpenPerson={(name) => {
                       const a = authors.find((x) => x.name === name);
-                      if (a) void navigate(`/author/${encodeURIComponent(a.id)}`);
+                      if (a) void navigate(authorPath(a.id));
+                    }}
+                    hrefFor={(name) => {
+                      const a = authors.find((x) => x.name === name);
+                      return a ? authorPath(a.id) : undefined;
                     }}
                   />
                 ) : (
@@ -341,7 +345,11 @@ export function NowPlaying() {
                   people={authors.map((a) => a.name).join(', ')}
                   onOpenPerson={(name) => {
                     const a = authors.find((x) => x.name === name);
-                    if (a) void navigate(`/author/${encodeURIComponent(a.id)}`);
+                    if (a) void navigate(authorPath(a.id));
+                  }}
+                  hrefFor={(name) => {
+                    const a = authors.find((x) => x.name === name);
+                    return a ? authorPath(a.id) : undefined;
                   }}
                 />
               ) : (
@@ -351,7 +359,11 @@ export function NowPlaying() {
             {!!narrators?.length && (
               <p className={styles.line}>
                 Narrated by{' '}
-                <PeopleLinks people={narrators.join(', ')} onOpenPerson={(name) => void navigate(narratorPath(name))} />
+                <PeopleLinks
+                  people={narrators.join(', ')}
+                  onOpenPerson={(name) => void navigate(narratorPath(name))}
+                  hrefFor={(name) => narratorPath(name)}
+                />
               </p>
             )}
             {/* One line, the words of the phone's chapter row: "Part I · 1 of 3", or just "Chapter 6". */}
