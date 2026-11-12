@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useToast } from '@joepittsy/ui';
 import { fmtClock } from '../screens/bookHelpers';
-import { checkHandoff, onHandoffNotice, seek } from './engine';
-import { writerPlace, writerSubject } from './handoff';
+import { carryOnHere, checkHandoff, onHandoffNotice, seek } from './engine';
+import { describeFinished, writerPlace, writerSubject } from './handoff';
 import { usePlayerJump } from './useUndoableJump';
 
 /**
@@ -16,8 +16,9 @@ const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 /**
  * Keeps the player's place honest across devices (see engine `checkHandoff`): asks when the page wakes or gets focus,
- * and every minute while it is visible. Says what the player did by itself: took a newer place on Play (with Undo), or
- * carried on over another device that was playing too (with a way there). Renders nothing.
+ * and every minute while it is visible. Says what the player did by itself: took a newer place on Play (with Undo),
+ * carried on over another device that was playing too (with a way there), or stopped saving its place because another
+ * device finished the book (with a way to carry on). Renders nothing.
  */
 export function HandoffWatch() {
   const { showToast } = useToast();
@@ -41,6 +42,15 @@ export function HandoffWatch() {
     () =>
       onHandoffNotice((n) => {
         const who = writerSubject(n.device);
+        if (n.kind === 'finished') {
+          const f = describeFinished(n.device);
+          // Stays longer than the others: until it goes, this player is saving nothing, and the offer on the player says so too.
+          return showToast(f.toast, 'info', {
+            action: { label: f.action, onClick: carryOnHere },
+            durationMs: 20000,
+            replaceKey: 'handoff-finished',
+          });
+        }
         if (n.kind === 'adopted')
           return showToast(`Picked up where ${lower(who)} left off, ${fmtClock(n.to, false)}`, 'info', {
             action: { label: 'Undo', shortcutKey: 'u', onClick: () => seek(n.from) },

@@ -42,13 +42,37 @@ export interface OurPlace {
  * - not the place this player sent (so it isn't our own write, whatever either clock says);
  * - and more than `HANDOFF_THRESHOLD_S` from where this player is now, ahead or behind.
  *
- * A finished book is left alone: finishing is a decision of its own, not a place to offer.
+ * A finished record is never offered as a place to jump to: finishing is a decision of its own. A finish written
+ * elsewhere is what `finishedElsewhere` is for.
  */
 export function newerElsewhere(server: ServerPlace | null, ours: OurPlace): boolean {
   if (!server || server.isFinished) return false;
   if (!(server.lastUpdate > ours.lastWriteAt)) return false;
   if (Math.abs(server.currentTime - ours.lastSent) <= SAME_PLACE_S) return false;
   return Math.abs(server.currentTime - ours.position) > HANDOFF_THRESHOLD_S;
+}
+
+/**
+ * How near the end (book seconds) a place can be and still leave a finished record finished: ABS un-finishes a finished
+ * record when a sync moves `currentTime` and the place isn't within this of the end (its default
+ * `markAsFinishedTimeRemaining`; a library can set another rule, and then this errs towards holding back).
+ */
+export const FINISH_WINDOW_S = 10;
+
+/**
+ * True when the server's record says the book is finished and another device wrote that after this player last
+ * verified the server's place (`lastUpdate` later than this player's last write, and not the place this player sent: its
+ * own finish is that place), and this player's own place is somewhere a sync would take the book off its end. Sending
+ * it would un-finish the book (see FINISH_WINDOW_S), so the player must not: it tells the listener instead.
+ *
+ * A finish that was already on the server when this player opened the book is not this: pressing Play on a finished
+ * book is the listener starting it again, and its first sync un-finishes it on purpose.
+ */
+export function finishedElsewhere(server: ServerPlace | null, ours: OurPlace, duration: number): boolean {
+  if (!server?.isFinished) return false;
+  if (!(server.lastUpdate > ours.lastWriteAt)) return false;
+  if (Math.abs(server.currentTime - ours.lastSent) <= SAME_PLACE_S) return false;
+  return duration - ours.position > FINISH_WINDOW_S;
 }
 
 /** Who wrote the newer place. `name` is a kind of device ("iPhone"); null when unknown. */
@@ -145,11 +169,27 @@ export function describeHandoff(
       };
 }
 
+/** The words for a book finished on another device while this one was still on it. */
+export function describeFinished(device: Writer): { toast: string; label: string; shortLabel: string; action: string } {
+  const who = writerSubject(device);
+  return {
+    toast: `${who} finished this book. Your place isn't being saved here.`,
+    label: `${who} finished this book · Carry on from here`,
+    shortLabel: 'Finished elsewhere · Carry on here',
+    action: 'Carry on from here',
+  };
+}
+
 /**
- * Which offer the player shows when more than one applies. The hand-off wins: it says this player's place is not the
- * latest, a place that could be lost; the sleep timer's "fell asleep" offer is a comfort within this player's own,
- * older listen, and it goes anyway once the newer place is taken (any move forgets it).
+ * Which offer the player shows when more than one applies. A finish another device wrote comes first: this player is
+ * saving nothing until the listener answers. Then the hand-off: it says this player's place is not the latest, a place
+ * that could be lost; the sleep timer's "fell asleep" offer is a comfort within this player's own, older listen, and it
+ * goes anyway once the newer place is taken (any move forgets it).
  */
-export function offerToShow(o: { handoff: boolean; asleep: boolean }): 'handoff' | 'asleep' | null {
-  return o.handoff ? 'handoff' : o.asleep ? 'asleep' : null;
+export function offerToShow(o: {
+  handoff: boolean;
+  asleep: boolean;
+  finished?: boolean;
+}): 'finished' | 'handoff' | 'asleep' | null {
+  return o.finished ? 'finished' : o.handoff ? 'handoff' : o.asleep ? 'asleep' : null;
 }
