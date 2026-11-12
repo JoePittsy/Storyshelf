@@ -138,7 +138,8 @@ export function Settings() {
               </PillButton>
             )}
             <p className={styles.note}>
-              After a pause, playback goes back a few seconds, up to 30 after a long one, so you can pick up the thread.
+              After a pause, playback goes back a few seconds, up to 30 seconds after a long one, so you can pick up the
+              thread.
             </p>
           </div>
         </SectionCard>
