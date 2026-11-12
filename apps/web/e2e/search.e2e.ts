@@ -4,7 +4,7 @@ test('search finds books by narrator and offers the narrator as a chip', async (
   const { narrated } = seed;
   await signIn(page);
 
-  await page.getByRole('searchbox', { name: 'Search books' }).fill(narrated.narrator);
+  await page.getByRole('searchbox', { name: 'Search your library' }).fill(narrated.narrator);
 
   await expect(page.getByRole('heading', { name: /^Search results/ })).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(escapeRe(narrated.title)) }).first()).toBeVisible();
