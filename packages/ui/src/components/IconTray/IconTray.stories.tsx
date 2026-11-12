@@ -18,12 +18,16 @@ function Demo() {
           compact
           value={sleep}
           onChange={(c) =>
-            setSleep(
+            setSleep((cur) =>
               c === 'off'
                 ? null
                 : c === 'chapter'
                   ? { kind: 'chapter' }
-                  : { kind: 'minutes', remainingMs: c.minutes * 60000 }
+                  : 'addMinutes' in c
+                    ? cur?.kind === 'minutes'
+                      ? { kind: 'minutes', remainingMs: cur.remainingMs + c.addMinutes * 60000 }
+                      : cur
+                    : { kind: 'minutes', remainingMs: c.minutes * 60000 }
             )
           }
         />

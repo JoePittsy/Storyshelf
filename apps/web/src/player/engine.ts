@@ -57,7 +57,7 @@ import { dueOnStop, dueWhilePlaying, markSynced, payload, startClock, tick } fro
 import { clampSeek, locate, toBookTime, totalDuration, type AudioTrack } from './timeline';
 
 export type Status = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
-export type SleepChoice = 'off' | 'chapter' | { minutes: number };
+export type SleepChoice = 'off' | 'chapter' | { minutes: number } | { addMinutes: number };
 
 /** A newer place for the loaded book, written by another device while this player sat paused (see handoff.ts). */
 export interface Handoff {
@@ -1255,6 +1255,13 @@ export function setRewindOnResume(on: boolean): void {
 export function setSleep(choice: SleepChoice): void {
   restoreVolume(); // changed or turned off mid-fade: the next tick fades again if it should
   if (choice === 'off') return set({ sleep: null });
+  if (typeof choice === 'object' && 'addMinutes' in choice) {
+    // More time on the running minutes timer, from where it is: its window (`sleepFrom`) is the same listening. It has
+    // no row of its own length now, so `minutes` goes. With no minutes timer there is nothing to add to.
+    const was = state.sleep;
+    if (was?.kind !== 'minutes') return;
+    return set({ sleep: { kind: 'minutes', remainingMs: was.remainingMs + choice.addMinutes * 60_000 } });
+  }
   set({
     sleep: choice === 'chapter' ? sleepAtChapterEnd(state.chapters, position()) : sleepInMinutes(choice.minutes),
     sleepFrom: position(),

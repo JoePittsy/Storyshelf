@@ -657,6 +657,34 @@ describe('the sleep timer fades out', () => {
   });
 });
 
+describe('extending the sleep timer', () => {
+  it('adds the minutes to what is left, ends a fade in progress, and keeps where the window began', async () => {
+    const a = await playing();
+    a.volume = 0.8;
+    engine.setSleep({ minutes: 1 });
+    run(a, 55_000); // 5 s left, mid-fade
+    a.currentTime = 100; // book 500: the window began at 450 and must stay there
+    expect(a.volume).toBeLessThan(0.8);
+    engine.setSleep({ addMinutes: 15 });
+    expect(a.volume).toBe(0.8);
+    expect(snapshot().sleep).toEqual({ kind: 'minutes', remainingMs: 905_000 }); // no length: no row to tick
+    expect(snapshot().sleepFrom).toBe(450);
+    run(a, 10_000); // would have paused by now
+    expect(a.paused).toBe(false);
+    expect(snapshot().sleep).toMatchObject({ remainingMs: 895_000 });
+  });
+
+  it('does nothing without a minutes timer', async () => {
+    await playing();
+    engine.setSleep({ addMinutes: 15 });
+    expect(snapshot().sleep).toBeNull();
+    engine.setSleep('chapter');
+    const chapter = snapshot().sleep;
+    engine.setSleep({ addMinutes: 15 });
+    expect(snapshot().sleep).toEqual(chapter);
+  });
+});
+
 describe('a sleep timer set before Play', () => {
   // The book is put back paused at 100 (in chapter One); the server's place, where Play really starts, is 450 (Two).
   const book = { id: 'li_1', title: 'The Book', author: 'An Author', duration: 1000, position: 100, updatedAt: 0 };

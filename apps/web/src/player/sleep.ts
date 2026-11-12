@@ -1,6 +1,6 @@
 import { chapterIndexAt, type Chapter } from './chapters';
 
-/** A minutes timer keeps the length it was set to, so the sleep list can tick that row while it counts down. */
+/** A minutes timer keeps the length it was set to, so the sleep list can tick that row while it counts down. Extending it drops that length: it no longer matches a row. */
 export type SleepTimer =
   { kind: 'minutes'; remainingMs: number; minutes?: number } | { kind: 'chapter'; endsAt: number };
 
