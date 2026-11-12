@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 import { ArrowDown, Check, Download, Pause, RotateCw } from 'lucide-react';
-import { Dialog, PillButton, useToast, usePopoverBackToClose } from '@joepittsy/ui';
+import { Dialog, PillButton, useToast } from '@joepittsy/ui';
 import { useOffline } from '../api/connectivity';
 import {
   downloadsSupported,
@@ -59,7 +59,6 @@ export function BookDownload({ itemId, title, quiet = false }: Props) {
   const menuId = useId();
   const hintId = useId();
   const menu = useRef<HTMLDivElement>(null);
-  const back = usePopoverBackToClose();
   const button = useRef<HTMLButtonElement>(null);
   const [confirming, setConfirming] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -130,15 +129,7 @@ export function BookDownload({ itemId, title, quiet = false }: Props) {
           <span id={hintId} className={styles.srOnly}>
             {view.hint}
           </span>
-          <div
-            id={menuId}
-            ref={menu}
-            popover="auto"
-            {...back}
-            className={styles.pop}
-            role="group"
-            aria-label={view.menuLabel}
-          >
+          <div id={menuId} ref={menu} popover="auto" className={styles.pop} role="group" aria-label={view.menuLabel}>
             <p className={styles.state}>{view.state}</p>
             {book.error && book.status !== 'complete' && <p className={styles.reason}>{book.error}</p>}
             <button

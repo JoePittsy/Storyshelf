@@ -1,8 +1,7 @@
-import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Sheet } from './Sheet';
-import { freshHistory, routerHears, settle } from '../../test/history';
 
 describe('Sheet', () => {
   it('has a primary Done at the bottom by default', () => {
@@ -91,49 +90,6 @@ describe('Sheet', () => {
       pull(screen.getByText('Rows'), 300);
       vi.advanceTimersByTime(400);
       expect(onClose).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Back', () => {
-    beforeEach(freshHistory);
-
-    it('closes it and leaves the route alone; closing by Done leaves no stray entry', async () => {
-      const router = routerHears();
-      const onClose = vi.fn();
-      const { rerender } = render(
-        <Sheet open onClose={onClose} title="Chapters" doneLabel="Done">
-          Rows
-        </Sheet>
-      );
-      await settle();
-      history.back();
-      await settle();
-      expect(onClose).toHaveBeenCalledTimes(1);
-      expect(location.pathname).toBe('/b');
-      expect(router.heard).toEqual([]);
-      // Reopened and closed the normal way (the parent flips `open`): Back then goes to the previous route.
-      rerender(
-        <Sheet open={false} onClose={onClose} title="Chapters" doneLabel="Done">
-          Rows
-        </Sheet>
-      );
-      rerender(
-        <Sheet open onClose={onClose} title="Chapters" doneLabel="Done">
-          Rows
-        </Sheet>
-      );
-      await settle();
-      rerender(
-        <Sheet open={false} onClose={onClose} title="Chapters" doneLabel="Done">
-          Rows
-        </Sheet>
-      );
-      await settle();
-      expect(router.heard).toEqual([]);
-      history.back();
-      await settle();
-      expect(location.pathname).toBe('/a');
-      router.stop();
     });
   });
 });

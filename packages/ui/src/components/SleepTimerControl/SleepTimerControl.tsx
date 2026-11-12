@@ -1,7 +1,6 @@
 import { useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Moon } from 'lucide-react';
-import { usePopoverBackToClose } from '../../hooks/useBackToClose';
 import styles from '../SpeedControl/SpeedControl.module.css';
 import { fmtRemaining } from '../../lib/fmtRemaining';
 import { sleepLabel } from './sleep';
@@ -50,7 +49,7 @@ function Option({
  * A moon button showing the timer's state, opening a native popover: "End of chapter" first (the bedtime choice), then
  * the minute options, then "Add 15 minutes" while a minutes timer runs, then "Off". The current choice is ticked; the
  * add row never is, since it is an action on the timer and not a timer of its own. Choosing one calls onChange and closes the popover.
- * Esc, an outside click and the browser's Back close it too, and focus returns to the button.
+ * Esc and outside click close it too, and focus returns to the button.
  */
 export function SleepTimerControl({
   value,
@@ -63,7 +62,6 @@ export function SleepTimerControl({
 }: Props) {
   const id = useId();
   const pop = useRef<HTMLDivElement>(null);
-  const back = usePopoverBackToClose();
   const label = sleepLabel(value);
   const shown =
     compact && value?.kind === 'chapter' && value.remainingMs !== undefined ? fmtRemaining(value.remainingMs) : label;
@@ -92,7 +90,6 @@ export function SleepTimerControl({
         id={id}
         ref={pop}
         popover="auto"
-        {...back}
         className={`${styles.pop} ${styles.popList}`}
         role="group"
         aria-label="Sleep timer"
