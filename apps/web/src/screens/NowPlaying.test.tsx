@@ -5,7 +5,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { BrowserRouter, MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { ToastProvider } from '@joepittsy/ui';
 
 vi.mock('../api/auth', async (orig) => ({ ...(await orig<typeof import('../api/auth')>()), absFetch: vi.fn() }));
@@ -169,5 +169,64 @@ describe('Now Playing on a desk', () => {
     expect(keys).toHaveAttribute('title', 'Keyboard shortcuts (?)');
     await userEvent.click(keys);
     expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveTextContent('Bookmark where you are');
+  });
+});
+
+describe('Back on Now Playing', () => {
+  const settle = () => new Promise<void>((r) => setTimeout(r, 40));
+  const Where = () => <p data-testid="where">{useLocation().pathname}</p>;
+
+  /** The real browser history (jsdom's), as the app has it: the library, then the player. */
+  async function renderInBrowser() {
+    await settle(); // an earlier test's overlay may still be taking its history entry off
+    Element.prototype.scrollIntoView ??= () => {}; // jsdom has none; the Chapters list scrolls to the current one
+    window.history.replaceState(null, '', '/');
+    window.history.pushState(null, '', '/now-playing');
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ToastProvider>
+          <BrowserRouter>
+            <Where />
+            <Routes>
+              <Route path="/" element={<p>Library</p>} />
+              <Route path="/now-playing" element={<NowPlaying />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </QueryClientProvider>
+    );
+    await settle();
+  }
+
+  it('closes the Chapters sheet without changing the route, then the next Back leaves the player', async () => {
+    screenIs('phone');
+    await renderInBrowser();
+    const chapters = screen.getByRole('button', { name: 'Chapters' });
+    await userEvent.click(chapters);
+    expect(screen.getByRole('dialog', { name: 'Chapters' })).toBeInTheDocument();
+    await settle();
+    window.history.back();
+    await settle();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('where')).toHaveTextContent('/now-playing');
+    expect(screen.getByRole('button', { name: 'Chapters' })).toHaveFocus();
+    window.history.back();
+    await settle();
+    expect(screen.getByTestId('where')).toHaveTextContent('/');
+    expect(screen.getByText('Library')).toBeInTheDocument();
+  });
+
+  it('closing the sheet with Done leaves no entry behind: one Back leaves the player', async () => {
+    screenIs('phone');
+    await renderInBrowser();
+    await userEvent.click(screen.getByRole('button', { name: 'Chapters' }));
+    await settle();
+    await userEvent.keyboard('{Escape}');
+    await settle();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    window.history.back();
+    await settle();
+    expect(screen.getByTestId('where')).toHaveTextContent('/');
   });
 });

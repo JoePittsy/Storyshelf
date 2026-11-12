@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { UserAvatar } from '@joepittsy/ui';
+import { UserAvatar, useBackToClose } from '@joepittsy/ui';
 import { restoreSession } from '../api/auth';
 import { useSignOut } from './useSignOut';
 import styles from './AccountMenu.module.css';
@@ -34,6 +34,12 @@ export function AccountMenu({ onShowShortcuts }: { onShowShortcuts?: () => void 
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  // The browser's Back closes the panel instead of leaving the page, and focus goes back to the button, as for Esc.
+  useBackToClose(open, () => {
+    setOpen(false);
+    trigger.current?.focus();
+  });
 
   // The dialog hands focus back to what opened it, which was the Sign out item in a panel that has since closed;
   // when it goes away without signing out, focus belongs on the account button.
