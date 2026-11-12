@@ -5,6 +5,7 @@ import { pickLibrary, storedLibrary, useLibraries } from '../api/libraries';
 import { useDocumentTitle } from '../frame/useDocumentTitle';
 import { carView } from '../player/carMode';
 import { usePlayer } from '../player/engine';
+import { sleepStopsIn } from '../player/miniTimes';
 import { RestoreLastBook } from '../player/RestoreLastBook';
 import { useRestoreSettled } from '../player/restoreStatus';
 import { playerKeyAction } from '../player/shortcuts';
@@ -103,6 +104,7 @@ export function CarMode() {
         chapter={v.title}
         timeLeft={fmtRemaining(v.secondsLeft * 1000)}
         timeLeftOf={v.hasChapters ? 'chapter' : 'book'}
+        sleepStatus={sleepStopsIn(p.sleep, p.position, p.rate)}
         progress={v.progress}
         playing={p.status === 'playing'}
         busy={p.status === 'loading'}

@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Volume1, Volume2, VolumeX } from 'lucide-react';
+import { usePopoverBackToClose } from '../../hooks/useBackToClose';
 import styles from '../SpeedControl/SpeedControl.module.css';
 
 interface Props {
@@ -23,6 +24,7 @@ const percent = (v: number) => Math.round((Math.min(1, Math.max(0, Number.isFini
  */
 export function VolumeControl({ value, onChange, muted = false, onMutedChange, className }: Props) {
   const id = useId();
+  const back = usePopoverBackToClose();
   const level = percent(value);
   const silent = muted || level === 0;
   const text = muted ? 'Muted' : `${level}%`;
@@ -32,7 +34,7 @@ export function VolumeControl({ value, onChange, muted = false, onMutedChange, c
       <button type="button" className={styles.trigger} popoverTarget={id} aria-label={`Volume ${text.toLowerCase()}`}>
         <Icon size="1.2em" aria-hidden="true" />
       </button>
-      <div id={id} popover="auto" className={styles.pop} role="group" aria-label="Volume">
+      <div id={id} popover="auto" {...back} className={styles.pop} role="group" aria-label="Volume">
         <span className={styles.readout} aria-hidden="true">
           {text}
         </span>

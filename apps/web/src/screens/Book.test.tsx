@@ -72,7 +72,7 @@ describe('Book screen', () => {
     serve(item);
     const { onPlay } = renderBook();
     expect(await screen.findByRole('heading', { level: 1, name: 'The Hobbit' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Rob Inglis, open' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Rob Inglis' }).length).toBeGreaterThan(0);
     expect(screen.getByText('Chapter 2 of 2')).toBeInTheDocument();
     expect(screen.getByText('There and back again.')).toBeInTheDocument();
     const resume = screen.getByRole('button', { name: 'Resume · 8h 57m left' });
@@ -152,16 +152,18 @@ describe('Book screen', () => {
           </MemoryRouter>
         </QueryClientProvider>
       );
-    for (const [name, expected] of [
-      ['Neil Gaiman, open', 'author: /author/au 1'],
-      ['Zoë Wanamaker, open', 'narrator: /?narrator=Zoë+Wanamaker'],
-      ['The Sandman, open', 'series: /series/se_1'],
+    for (const [name, expected, href] of [
+      ['Neil Gaiman', 'author: /author/au 1', '/author/au%201'],
+      ['Zoë Wanamaker', 'narrator: /?narrator=Zoë+Wanamaker', '/?narrator=Zo%C3%AB+Wanamaker'],
+      ['The Sandman', 'series: /series/se_1', '/series/se_1'],
     ] as const) {
       cleanup();
       renderAt();
       // The hero and the Details list both carry the link.
-      const links = await screen.findAllByRole('button', { name });
+      const links = await screen.findAllByRole('link', { name });
       expect(links).toHaveLength(2);
+      // Real links, so Ctrl/Cmd-click and middle-click can open them in a new tab.
+      for (const l of links) expect(l).toHaveAttribute('href', href);
       await userEvent.click(links[0] as HTMLElement);
       expect(await screen.findByText(new RegExp(`^${expected}`.replace(/[?+]/g, '\\$&')))).toBeInTheDocument();
     }

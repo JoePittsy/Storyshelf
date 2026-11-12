@@ -6,6 +6,7 @@
   font: inherit;
   color: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-fast);
 }

@@ -6,8 +6,8 @@ export type Heard = Pick<PlayerState, 'status' | 'item' | 'rate' | 'sleep' | 'po
 /** How close to its end a sleep timer must be for its disappearing to count as running out, not being turned off. */
 const EXPIRY_WINDOW_S = 2;
 
-/** "1", "1.25", "1.5": the speed without trailing zeros. */
-const fmtRate = (rate: number): string => String(Number(rate.toFixed(2)));
+/** "1.0", "1.5", "1.3": the speed to one decimal, as the player's speed button writes it. */
+const fmtRate = (rate: number): string => rate.toFixed(1);
 
 function sleepLength(t: NonNullable<Heard['sleep']>): string {
   if (t.kind === 'chapter') return 'c';
@@ -35,7 +35,7 @@ function ranOut(timer: NonNullable<Heard['sleep']>, position: number): boolean {
  * chapter jump has its toast.
  * - playing: "Playing {title}" for a book that has not played yet this visit, "Playing" when it carries on
  * - paused: "Paused", including when the sleep timer paused it (its offer to go back is not a live region)
- * - the listener's speed change on the same book (another book's own remembered speed is not theirs): "Speed 1.25×"
+ * - the listener's speed change on the same book (another book's own remembered speed is not theirs): "Speed 1.5×"
  * - the sleep timer set, changed (another length) or turned off by the listener, but not its countdown or its running out
  * `lastPlayedId` is the book that last played, to tell a first start from a resume.
  */

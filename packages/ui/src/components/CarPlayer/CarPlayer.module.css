@@ -77,6 +77,25 @@
   font-weight: 600;
   color: var(--on-art-2);
 }
+/* The sleep timer's readout: secondary text, the same size and colour as "left in chapter", on its own line under the
+   time. Text only, never a target; a wrapped line stays inside the column. */
+.sleep {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  font-size: var(--fs-title-dialog);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--on-art-2);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.moon {
+  flex: none;
+  width: 1em;
+  height: 1em;
+}
 .track {
   height: 0.75em;
   border-radius: var(--r-pill);

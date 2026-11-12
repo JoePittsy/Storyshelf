@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SleepTimerControl } from './SleepTimerControl';
 import { sleepLabel } from './sleep';
+import { freshHistory, routerHears, settle, fakePopover } from '../../test/history';
 
 describe('sleepLabel', () => {
   it('says Sleep when off', () => expect(sleepLabel(null)).toBe('Sleep'));
@@ -102,5 +103,56 @@ describe('SleepTimerControl', () => {
   it('can disable the chapter option', () => {
     render(<SleepTimerControl value={null} onChange={vi.fn()} chapterOptionDisabled />);
     expect(screen.getByRole('button', { name: 'End of chapter', hidden: true })).toBeDisabled();
+  });
+
+  describe('Back', () => {
+    beforeEach(freshHistory);
+
+    it('closes the open popover and leaves the route alone', async () => {
+      const router = routerHears();
+      const { container } = render(<SleepTimerControl value={null} onChange={vi.fn()} />);
+      const pop = container.querySelector<HTMLElement>('[popover]')!;
+      const hide = vi.fn();
+      const native = fakePopover(pop);
+      const hidePopover = pop.hidePopover;
+      pop.hidePopover = () => {
+        hide();
+        hidePopover();
+      };
+      native.show();
+      await settle();
+      history.back();
+      await settle();
+      expect(hide).toHaveBeenCalledTimes(1);
+      expect(location.pathname).toBe('/b');
+      expect(router.heard).toEqual([]);
+      router.stop();
+    });
+
+    it('light dismiss, Esc or choosing a row leaves no stray entry: the next Back goes to the previous route', async () => {
+      const router = routerHears();
+      const { container } = render(<SleepTimerControl value={null} onChange={vi.fn()} />);
+      const native = fakePopover(container.querySelector<HTMLElement>('[popover]')!);
+      native.show();
+      await settle();
+      native.hide();
+      await settle();
+      expect(router.heard).toEqual([]);
+      history.back();
+      await settle();
+      expect(location.pathname).toBe('/a');
+      router.stop();
+    });
+
+    it('unmounting while open releases its entry', async () => {
+      const { container, unmount } = render(<SleepTimerControl value={null} onChange={vi.fn()} />);
+      fakePopover(container.querySelector<HTMLElement>('[popover]')!).show();
+      await settle();
+      unmount();
+      await settle();
+      history.back();
+      await settle();
+      expect(location.pathname).toBe('/a');
+    });
   });
 });

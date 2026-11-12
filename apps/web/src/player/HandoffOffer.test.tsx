@@ -10,9 +10,11 @@ type Player = {
   position: number;
   status: string;
   handoff: { itemId: string; position: number; lastUpdate: number; device: typeof iPhone } | null;
+  finishedElsewhere?: { itemId: string; device: typeof iPhone; lastUpdate: number } | null;
 };
 let player: Player;
-vi.mock('./engine', () => ({ usePlayer: () => player }));
+const carryOnHere = vi.fn();
+vi.mock('./engine', () => ({ usePlayer: () => player, carryOnHere: () => carryOnHere() }));
 const jumpTo = vi.fn();
 vi.mock('./useUndoableJump', () => ({ usePlayerJump: () => ({ jumpTo }) }));
 
@@ -64,6 +66,23 @@ describe('PlayerOffer', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     player = { ...player, status: 'paused', handoff: { ...player.handoff!, itemId: 'b2' } };
     rerender(<PlayerOffer variant="inline" />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('a book finished on another device is offered whatever the player is doing, and one tap carries on', async () => {
+    player = { ...player, status: 'playing', finishedElsewhere: { itemId: 'b1', device: iPhone, lastUpdate: 1 } };
+    render(<PlayerOffer variant="inline" />);
+    await userEvent.click(screen.getByRole('button', { name: /^Your iPhone finished this book · Carry on from here/ }));
+    expect(carryOnHere).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows that rather than a newer place when both apply, and not for another book', () => {
+    player = { ...player, finishedElsewhere: { itemId: 'b1', device: iPhone, lastUpdate: 1 } };
+    const { rerender } = render(<PlayerOffer variant="bar" />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /finished this book/ })).toBeInTheDocument();
+    player = { ...player, handoff: null, finishedElsewhere: { itemId: 'b2', device: iPhone, lastUpdate: 1 } };
+    rerender(<PlayerOffer variant="bar" />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

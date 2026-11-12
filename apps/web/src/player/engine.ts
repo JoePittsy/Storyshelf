@@ -18,7 +18,15 @@ import {
   type SyncResult,
 } from './localSessions';
 import { localStart, placeOf, savePlace, type KnownPlace } from './places';
-import { newerElsewhere, SAME_PLACE_S, whoWrote, type ServerPlace, type Writer } from './handoff';
+import {
+  FINISH_WINDOW_S,
+  finishedElsewhere,
+  newerElsewhere,
+  SAME_PLACE_S,
+  whoWrote,
+  type ServerPlace,
+  type Writer,
+} from './handoff';
 import { recentSessions, serverPlace } from './handoffServer';
 import { BIG_SEEK_SECONDS, recordJump } from './jumpLog';
 import { installHandlers, updateMetadata, updatePlaybackState, updatePositionState } from './mediaSession';
@@ -53,6 +61,7 @@ import { bookSpeed, forgetBookSpeeds, putBackBookSpeeds, rememberBookSpeed } fro
 import { fellAsleepPlace, forgetFellAsleep, rememberFellAsleep } from './fellAsleep';
 import { rewindSeconds, rewindTarget } from './rewind';
 import { fadeLevel, sleepAtChapterEnd, sleepInMinutes, sleepRemainingMs, tickSleep, type SleepTimer } from './sleep';
+import { forgetKeptSleep, keepSleep, keptSleep } from './sleepKept';
 import { dueOnStop, dueWhilePlaying, markSynced, payload, startClock, tick } from './sync';
 import { clampSeek, locate, toBookTime, totalDuration, type AudioTrack } from './timeline';
 
@@ -74,7 +83,21 @@ export type HandoffNotice =
   /** Play was pressed with a newer place elsewhere: the player took it. `from` is the place it left, for an Undo. */
   | { kind: 'adopted'; itemId: string; from: number; to: number; device: Writer }
   /** Another device moved the book while this one was playing. This one carried on; `at` is the other's place. */
-  | { kind: 'conflict'; itemId: string; at: number; device: Writer };
+  | { kind: 'conflict'; itemId: string; at: number; device: Writer }
+  /**
+   * Another device finished the book while this one was on it. This one carries on playing but sends nothing for the
+   * book until the listener says so (`carryOnHere`): a sync from here would un-finish it.
+   */
+  | { kind: 'finished'; itemId: string; device: Writer };
+
+/** A book finished on another device while this player was on it: see `finishedElsewhere` in handoff.ts. */
+export interface FinishedElsewhere {
+  itemId: string;
+  /** Who finished it; unknown (name null) until the book's sessions have been looked at. */
+  device: Writer;
+  /** ms since the epoch: when the server got the finish. */
+  lastUpdate: number;
+}
 
 export interface PlayerItem {
   id: string;
@@ -117,6 +140,11 @@ export interface PlayerState {
   ended: boolean;
   /** A newer place another device wrote while this book sat paused: offered, never jumped to. Play takes it; a move dismisses it. */
   handoff: Handoff | null;
+  /**
+   * The loaded book was finished on another device after this player last verified the server's place. Nothing is sent
+   * for it while this is set (a sync from here would un-finish it); `carryOnHere` is the listener's way to resume.
+   */
+  finishedElsewhere: FinishedElsewhere | null;
 }
 
 const MSG_FORMAT = "This book's audio format can't play in this browser yet.";
@@ -147,6 +175,7 @@ const initial = (): PlayerState => ({
   restored: false,
   ended: false,
   handoff: null,
+  finishedElsewhere: null,
 });
 
 let state = initial();
@@ -216,6 +245,11 @@ let checking: Promise<CheckResult> | null = null;
 let placeEpoch = 0;
 // Date.now() when the last "another device was also playing" notice went out.
 let conflictAt = -Infinity;
+// Date.now() when the server's place for the loaded book was last read (a check, or the guard before a sync), or the
+// session opened. A sync soon after one doesn't ask again.
+let lastCheckedAt = 0;
+// A page that is going away can't wait for an answer: these let a sync queued behind a read go at once.
+const guardWaiters = new Set<() => void>();
 
 const getMimes = (a: HTMLAudioElement) => (mimes ??= supportedMimeTypes(a));
 const coverFor = (id: string) => absUrl(`/api/items/${id}/cover?width=512&format=jpeg`);
@@ -294,13 +328,13 @@ function mediaPosition(): void {
  * whether another device has moved on (`verify`). If one has, a paused book offers that place and sends nothing; a
  * book that has just been played takes it, and sends that.
  */
-function doSync(): Promise<void> {
+function doSync(final = false): Promise<void> {
   if (!session || !audio) return Promise.resolve();
   keepPlace();
-  if (verified) return send();
+  if (verified) return send(final);
   // One sync waits for the answer; any that come due meanwhile are that one (it sends the place as it is then).
   held ??= verify()
-    .then((r) => (verified || r === 'clear' || r === 'failed' ? send() : undefined))
+    .then((r) => (verified || r === 'clear' || r === 'failed' ? send(final) : undefined))
     .finally(() => {
       held = null;
     });
@@ -308,8 +342,12 @@ function doSync(): Promise<void> {
 }
 let held: Promise<void> | null = null;
 
-/** Send progress now. Serialised, so a slow sync can't be overtaken; a failed one keeps its listened time for the next. */
-function send(): Promise<void> {
+/**
+ * Send progress now. Serialised, so a slow sync can't be overtaken; a failed one keeps its listened time for the next.
+ * Before it goes the server is asked whether another device has finished the book (`heldBack`), unless `final`: the
+ * page is hiding or closing, and a sync waiting on an answer would never be sent.
+ */
+function send(final = false): Promise<void> {
   const cur = session;
   if (!cur || !audio) return Promise.resolve();
   const p: Progress = payload(clock, position(), cur.duration);
@@ -320,6 +358,13 @@ function send(): Promise<void> {
   }
   syncChain = syncChain.then(async () => {
     if (!session || session.libraryItemId !== cur.libraryItemId) return;
+    const skip = await heldBack(cur, p, final);
+    if (!session || session.libraryItemId !== cur.libraryItemId) return;
+    if (skip) {
+      // Not lost: the listening stays on the clock, and goes with the place if the listener carries on from here.
+      clock = { listened: clock.listened + p.timeListened, lastSynced: clock.lastSynced };
+      return;
+    }
     try {
       const before = session.id;
       const sentAt = Date.now();
@@ -341,13 +386,74 @@ function send(): Promise<void> {
   return syncChain;
 }
 
-function syncIfDue(): Promise<void> {
-  return session && dueOnStop(clock, position()) ? doSync() : Promise.resolve();
+function syncIfDue(final = false): Promise<void> {
+  return session && dueOnStop(clock, position()) ? doSync(final) : Promise.resolve();
 }
 
-/** Keeps the loaded book's place on the device (see places.ts). */
+/** How long a read of the server's place (for the finish guard) may take: a pause or a book change waits no longer. */
+const GUARD_TIMEOUT_MS = 3000;
+/** A sync within this of the last read of the server's place doesn't read it again. */
+const GUARD_FRESH_MS = 2000;
+
+/** Whether a book finished elsewhere is held back from sending `place`: a place near the end leaves a finish alone. */
+const holdsFinish = (itemId: string, place: number, duration: number): boolean =>
+  state.finishedElsewhere?.itemId === itemId && duration - place > FINISH_WINDOW_S;
+
+/**
+ * The server's place, read before a write that could undo a finish, or null when it can't be had in time (a page that
+ * is going away, or a slow server): the write then goes, as it always did. Never throws.
+ */
+async function readBeforeWrite(itemId: string): Promise<ServerPlace | null> {
+  let release: () => void = () => undefined;
+  const leaving = new Promise<null>((resolve) => {
+    release = () => resolve(null);
+    guardWaiters.add(release);
+  });
+  try {
+    return await within(Promise.race([serverPlace(itemId), leaving]), GUARD_TIMEOUT_MS);
+  } catch (e) {
+    diag.log('finish guard failed', errInfo(e));
+    return null;
+  } finally {
+    guardWaiters.delete(release);
+  }
+}
+
+/**
+ * True when this sync must not go, because another device has finished the book since this player last verified the
+ * server's place (ABS un-finishes a finished book when a sync moves its place off the end, and a sync's answer says
+ * nothing of what the server held). Known already, or found by reading the server's place now: that is one small read
+ * per sync, skipped when a check has just made one, when the place is at the very end (it keeps a finish a finish), and
+ * when there is no server to ask. A read that fails or is cut short lets the sync go.
+ */
+async function heldBack(cur: PlaybackSession, p: Progress, final: boolean): Promise<boolean> {
+  const id = cur.libraryItemId;
+  if (holdsFinish(id, p.currentTime, cur.duration)) return true;
+  if (final || localSession || isOffline() || cur.duration - p.currentTime <= FINISH_WINDOW_S) return false;
+  if (Date.now() - lastCheckedAt < GUARD_FRESH_MS) return false;
+  const server = await readBeforeWrite(id);
+  if (!server || session?.libraryItemId !== id) return false;
+  lastCheckedAt = Date.now();
+  if (!finishedElsewhere(server, { position: p.currentTime, lastSent, lastWriteAt }, cur.duration)) return false;
+  holdFinish(id, server);
+  return true;
+}
+
+/** Keeps the loaded book's place on the device (see places.ts), and its sleep timer's time left. */
 function keepPlace(): void {
   if (session && track) savePlace(session.libraryItemId, position());
+  keepSleepTimer();
+}
+
+/**
+ * Keeps the loaded book's sleep timer on the device so a reload brings it back (see sleepKept.ts), or forgets it when
+ * the book has none. Called wherever the place is kept, so a running timer's time left is never more than a sync old,
+ * and when the timer is set or changed. With no book loaded (before the last one is restored) there is nothing to say.
+ */
+function keepSleepTimer(): void {
+  if (!state.item) return;
+  if (state.sleep) keepSleep(state.item.id, state.sleep);
+  else forgetKeptSleep();
 }
 
 /** A local session's sync: the listening goes in the device's queue, and on to the server when it can be reached. */
@@ -364,9 +470,17 @@ function keepListening(s: PlaybackSession, p: Progress): void {
   if (!isOffline()) void flushListening();
 }
 
+/** The close's place is sent only if it can't undo a finish another device wrote (see `heldBack`). */
+async function closeIsSafe(old: Detached, p: Progress): Promise<boolean> {
+  if (isOffline() || old.s.duration - p.currentTime <= FINISH_WINDOW_S || Date.now() - old.checkedAt < GUARD_FRESH_MS)
+    return true;
+  const server = await readBeforeWrite(old.s.libraryItemId);
+  return !server || !finishedElsewhere(server, { position: p.currentTime, ...old.sent }, old.s.duration);
+}
+
 /** Closes what `detach` let go of: the server session, or a local session's last listening. */
 async function closeDetached(old: Detached): Promise<void> {
-  if (!old.local) return closeSession(old.s, old.p);
+  if (!old.local) return closeSession(old.s, old.p && ((await closeIsSafe(old, old.p)) ? old.p : undefined));
   if (old.p) keepListening(old.s, old.p);
   endListening(old.s.libraryItemId);
   if (!isOffline()) await flushListening();
@@ -680,6 +794,7 @@ function onTimeUpdate(): void {
     const r = tickSleep(state.sleep, dt, pos);
     set({ sleep: r.expired ? null : r.timer });
     if (r.expired) {
+      forgetKeptSleep(); // ran out: a reload must not bring it back
       rememberWhereAsleep(pos);
       getAudio().pause(); // the pause handler syncs, and puts the volume back
     } else fadeTo(fadeLevel(sleepRemainingMs(r.timer, pos, state.rate)));
@@ -773,7 +888,8 @@ function getAudio(): HTMLAudioElement {
     // iOS needs src and play() inside this handler, on the same element, to carry on through a lock or background.
     if (next) return load(next, 0, true);
     restoreVolume();
-    set({ status: 'paused', position: totalDuration(tracks), ended: true });
+    // The listener's own finish, at the end: it can't undo anyone's, so a finish elsewhere stops mattering here.
+    set({ status: 'paused', position: totalDuration(tracks), ended: true, finishedElsewhere: null });
     updatePlaybackState('paused');
     const id = session.libraryItemId;
     void doSync().then(() => {
@@ -831,7 +947,8 @@ if (typeof document !== 'undefined') {
     if (document.visibilityState === 'hidden') {
       note('visibilitychange hidden');
       keepPlace();
-      void syncIfDue();
+      guardWaiters.forEach((cb) => cb());
+      void syncIfDue(true);
       flushMoved();
       diag.flush();
     } else wake('visibilitychange visible');
@@ -839,7 +956,8 @@ if (typeof document !== 'undefined') {
   addEventListener('pagehide', () => {
     note('pagehide');
     keepPlace();
-    void syncIfDue();
+    guardWaiters.forEach((cb) => cb());
+    void syncIfDue(true);
     flushMoved();
     diag.flush();
   });
@@ -857,6 +975,9 @@ interface Detached {
   s: PlaybackSession;
   p: Progress | undefined;
   local: boolean;
+  /** What the server last took from this player, and when its place was last read, when the book was let go. */
+  sent: { lastSent: number; lastWriteAt: number };
+  checkedAt: number;
 }
 
 /** Stop using the current session: remember where it was, then silence the element. */
@@ -866,8 +987,13 @@ function detach(): Detached | null {
   keepPlace();
   // Paused, and the place unchecked since: the close leaves the server's place alone (the pause sync already sent this
   // one), in case another device has moved on.
-  const p = verified ? payload(clock, position(), s.duration) : undefined;
+  // Nor does it send a place that would undo a finish another device wrote.
+  const p =
+    verified && !holdsFinish(s.libraryItemId, position(), s.duration)
+      ? payload(clock, position(), s.duration)
+      : undefined;
   const local = localSession;
+  const sent = { lastSent, lastWriteAt };
   session = null;
   track = null;
   pendingAt = null;
@@ -880,7 +1006,7 @@ function detach(): Detached | null {
   localSession = false;
   getAudio().pause();
   restoreVolume();
-  return { s, p, local };
+  return { s, p, local, sent, checkedAt: lastCheckedAt };
 }
 
 /** The book's files on the device fit the server session's tracks: the same files, so the same book times. */
@@ -1022,7 +1148,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
   const old = detach();
   unlock(a);
   const mine = ++token;
-  set({ status: 'loading', error: null, restored: false, ended: false, handoff: null });
+  set({ status: 'loading', error: null, restored: false, ended: false, handoff: null, finishedElsewhere: null });
   if (old) {
     await closeDetached(old);
     emitSaved();
@@ -1067,6 +1193,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
     // The server holds the session's place, and whatever this starts from is chosen: nothing to check yet.
     lastSent = s.currentTime;
     lastWriteAt = Date.now();
+    lastCheckedAt = lastWriteAt;
     startAt = chooseStart(from, local, s.currentTime);
     if (pausedSince && state.rewindOnResume && Math.abs(s.currentTime - pausedSince.position) < 1)
       startAt = rewindTarget(startAt, rewindSeconds(Date.now() - pausedSince.at), s.chapters);
@@ -1100,6 +1227,7 @@ export async function play(itemId: string, from?: number): Promise<void> {
     rate: rateFor(itemId),
   });
   setMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
+  keepSleepTimer(); // another book starts with no timer, so none is kept; the same book's carried one is
   load(tr, offset, true);
 }
 
@@ -1135,8 +1263,28 @@ export function restore(given: Restorable, chapters: Chapter[]): void {
   lastRequest = { itemId: r.id }; // no `from`: Play starts from the server's place, or from a move made here
   movedHere = null;
   restoredAt = r.updatedAt;
-  set({ ...patch, rate: rateFor(r.id) });
+  set({ ...patch, rate: rateFor(r.id), ...restoredSleep(r.id, chapters, patch.position) });
   setMetadata(patch.item, chapters[patch.chapterIndex]?.title ?? '');
+}
+
+/**
+ * The sleep timer this device kept for the book (see sleepKept.ts), as the restored book shows it: a minutes timer with
+ * the time it had left (nothing counted down while the book sat paused), an end-of-chapter one worked out for the
+ * restored place (Play works it out again for where playback really starts: see `carriedSleep`). A timer kept for
+ * another book, or too old, is forgotten here, so it can't come back for a later one.
+ */
+function restoredSleep(
+  itemId: string,
+  chapters: Chapter[],
+  at: number
+): Pick<PlayerState, 'sleep'> & Partial<Pick<PlayerState, 'sleepFrom'>> {
+  const kept = keptSleep(itemId);
+  if (!kept) {
+    forgetKeptSleep();
+    return { sleep: null };
+  }
+  const sleep = kept.kind === 'chapter' ? sleepAtChapterEnd(chapters, at) : kept;
+  return sleep ? { sleep, sleepFrom: at } : { sleep: null };
 }
 
 /**
@@ -1254,18 +1402,23 @@ export function setRewindOnResume(on: boolean): void {
 
 export function setSleep(choice: SleepChoice): void {
   restoreVolume(); // changed or turned off mid-fade: the next tick fades again if it should
-  if (choice === 'off') return set({ sleep: null });
+  if (choice === 'off') {
+    set({ sleep: null });
+    return forgetKeptSleep();
+  }
   if (typeof choice === 'object' && 'addMinutes' in choice) {
     // More time on the running minutes timer, from where it is: its window (`sleepFrom`) is the same listening. It has
     // no row of its own length now, so `minutes` goes. With no minutes timer there is nothing to add to.
     const was = state.sleep;
     if (was?.kind !== 'minutes') return;
-    return set({ sleep: { kind: 'minutes', remainingMs: was.remainingMs + choice.addMinutes * 60_000 } });
+    set({ sleep: { kind: 'minutes', remainingMs: was.remainingMs + choice.addMinutes * 60_000 } });
+    return keepSleepTimer();
   }
   set({
     sleep: choice === 'chapter' ? sleepAtChapterEnd(state.chapters, position()) : sleepInMinutes(choice.minutes),
     sleepFrom: position(),
   });
+  keepSleepTimer();
 }
 
 /** Stop, forget the book and close the server session (best effort). */
@@ -1281,6 +1434,7 @@ export async function stop(): Promise<void> {
   clearTimeout(moveTimer);
   const { defaultRate, skipBack, skipForward, rewindOnResume, volume, muted } = state;
   set({ ...initial(), rate: defaultRate, defaultRate, skipBack, skipForward, rewindOnResume, volume, muted });
+  forgetKeptSleep(); // the book is forgotten, and so is its timer (signing out stops the player first)
   updateMetadata(null, '');
   updatePlaybackState('none');
   if (old) {
@@ -1293,7 +1447,7 @@ export async function stop(): Promise<void> {
 
 // ---- Device hand-off ----------------------------------------------------------------------------------------------
 
-type CheckResult = 'clear' | 'offered' | 'adopted' | 'conflict' | 'failed' | 'stale';
+type CheckResult = 'clear' | 'offered' | 'adopted' | 'conflict' | 'finished' | 'failed' | 'stale';
 
 /** A check that hasn't heard back by then has failed: it must never hold a playing book's syncs back for long. */
 const CHECK_TIMEOUT_MS = 8000;
@@ -1340,6 +1494,9 @@ async function writerOf(itemId: string, place: ServerPlace): Promise<Writer> {
  * - Play has been pressed since the pause (`verified` false): the player takes it, and says so for an Undo;
  * - playing on (`verified`): a conflict. This player carries on and wins at its next sync; a notice says another device
  *   was playing too, and their place goes in this visit's History.
+ * A finish written elsewhere is the exception to all three (see `holdFinish`): a place is only moved, a finish is the
+ * listener's record of having reached the end, and this player's next sync would undo it. While this player plays, it
+ * stops sending and says so; it never takes the finish as a place to jump to, and never wins over it unasked.
  * Nothing newer while playing makes the place safe to send. A move made, or another book opened, while the question was
  * out makes the answer stale: it is dropped.
  */
@@ -1352,6 +1509,7 @@ async function check(): Promise<CheckResult> {
     return 'clear';
   }
   const epoch = placeEpoch;
+  const duration = session.duration;
   const still = () => placeEpoch === epoch && session?.libraryItemId === item.id;
   let server: ServerPlace | null;
   try {
@@ -1364,6 +1522,18 @@ async function check(): Promise<CheckResult> {
     return 'failed';
   }
   if (!still()) return 'stale';
+  lastCheckedAt = Date.now();
+  if (finishedElsewhere(server, { position: position(), lastSent, lastWriteAt }, duration)) {
+    // Not a place to offer: a finish. While this plays, say so and hold back its syncs (see `holdFinish`). Paused, nothing
+    // is being sent, and Play asks again.
+    if (playingHere()) {
+      verified = true;
+      holdFinish(item.id, server as ServerPlace);
+    }
+    return 'finished';
+  }
+  // No finish to hold back from any more: the book was started again elsewhere, or this player has caught up with its end.
+  if (state.finishedElsewhere?.itemId === item.id) set({ finishedElsewhere: null });
   if (!newerElsewhere(server, { position: position(), lastSent, lastWriteAt })) {
     if (state.handoff) set({ handoff: null });
     if (playingHere()) verified = true;
@@ -1395,6 +1565,43 @@ function adopt(h: Handoff): void {
   recordJump(h.itemId, from, { to: h.position });
   seekBook(h.position); // a chosen place now: the offer goes, and it is sent
   notify({ kind: 'adopted', itemId: h.itemId, from, to: h.position, device: h.device });
+}
+
+/**
+ * Another device finished the book while this one is on it: nothing goes to the server for it until the listener says
+ * so (`carryOnHere`), because the next sync would un-finish it and put it back in Continue listening at this place. The
+ * listener is told, and the player stays as it is: nothing is cut off, and nothing is lost that carrying on can't undo
+ * (the listening stays on the clock). Said once for each finish, however many checks find it.
+ */
+function holdFinish(itemId: string, server: ServerPlace): void {
+  const was = state.finishedElsewhere;
+  if (was?.itemId === itemId && was.lastUpdate === server.lastUpdate) return;
+  diag.log('finished elsewhere', { at: Math.round(position()), playing: playingHere() });
+  set({ finishedElsewhere: { itemId, device: { name: null, sameBrowser: false }, lastUpdate: server.lastUpdate } });
+  void writerOf(itemId, server).then((device) => {
+    const now = state.finishedElsewhere;
+    if (now?.itemId !== itemId || now.lastUpdate !== server.lastUpdate) return; // carried on, or moved on, meanwhile
+    set({ finishedElsewhere: { ...now, device } });
+    notify({ kind: 'finished', itemId, device });
+  });
+}
+
+/**
+ * The listener's answer to "finished on another device": carry on from here. This player's place is sent now, and from
+ * then on, as the listener's own choice: it un-finishes the book (ABS does that when a place away from the end is sent),
+ * which is what starting the book again means. Does nothing when no finish is being held.
+ */
+export function carryOnHere(): void {
+  const f = state.finishedElsewhere;
+  if (!f) return;
+  set({ finishedElsewhere: null });
+  if (!session || session.libraryItemId !== f.itemId) return;
+  note('carry on over a finish elsewhere');
+  // The finish is acknowledged: the server's place as of then is verified, so the next read doesn't find it again.
+  lastWriteAt = Math.max(lastWriteAt, f.lastUpdate);
+  placeEpoch++;
+  verified = true;
+  void doSync();
 }
 
 /** Another device moved the book while this one played: this one wins. Their place stays in History, a tap away. */

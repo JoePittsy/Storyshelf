@@ -44,9 +44,9 @@ describe('playerAnnouncement: playing and paused', () => {
 
 describe('playerAnnouncement: speed', () => {
   it('says the new speed when the listener changes it on the same book', () => {
-    expect(playerAnnouncement(state(), state({ rate: 1.25 }), 'b1')).toBe('Speed 1.25×');
+    expect(playerAnnouncement(state(), state({ rate: 1.25 }), 'b1')).toBe('Speed 1.3×');
     expect(playerAnnouncement(state({ rate: 1.25 }), state({ rate: 1.5 }), 'b1')).toBe('Speed 1.5×');
-    expect(playerAnnouncement(state({ rate: 1.5 }), state({ rate: 1 }), 'b1')).toBe('Speed 1×');
+    expect(playerAnnouncement(state({ rate: 1.5 }), state({ rate: 1 }), 'b1')).toBe('Speed 1.0×');
   });
 
   it('does not say it when another book arrives with its own speed', () => {

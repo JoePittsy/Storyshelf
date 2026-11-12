@@ -17,7 +17,7 @@ import {
 import type { DetailItem } from '@joepittsy/ui';
 import { AbsError } from '../api/auth';
 import { coverUrl, useBook } from '../api/items';
-import { narratorPath } from '../api/libraries';
+import { authorPath, narratorPath, seriesPath } from '../api/libraries';
 import {
   bookDetails,
   bookProgress,
@@ -141,9 +141,14 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
         const author = m.authors.find((a) => a.name === name);
         if (author) void navigate(`/author/${encodeURIComponent(author.id)}`);
       }}
+      hrefFor={(name) => {
+        const author = m.authors.find((a) => a.name === name);
+        return author ? authorPath(author.id) : undefined;
+      }}
     />
   );
   const openNarrator = (name: string) => void navigate(narratorPath(name));
+  const narratorHref = (name: string) => narratorPath(name);
   const heroNarrators = m.narrators.slice(0, NARRATORS_IN_HERO);
   const moreNarrators = m.narrators.length - heroNarrators.length;
   const series = m.series.length > 0 && (
@@ -151,7 +156,7 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
       {m.series.map((s, i) => (
         <Fragment key={s.id}>
           {i > 0 && ', '}
-          <TitleButton title={s.name} onOpen={() => void navigate(`/series/${encodeURIComponent(s.id)}`)} />
+          <TitleButton title={s.name} href={seriesPath(s.id)} onOpen={() => void navigate(seriesPath(s.id))} />
           {s.sequence && ` #${s.sequence}`}
         </Fragment>
       ))}
@@ -160,7 +165,10 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
   const meta = [m.publishedYear, duration > 0 && `${fmtLong(duration)} long`].filter(Boolean).join(' · ');
   const details: DetailItem[] = bookDetails(item).map((d) =>
     d.label === 'Narrators'
-      ? { label: d.label, value: <PeopleLinks people={m.narrators.join(', ')} onOpenPerson={openNarrator} /> }
+      ? {
+          label: d.label,
+          value: <PeopleLinks people={m.narrators.join(', ')} onOpenPerson={openNarrator} hrefFor={narratorHref} />,
+        }
       : d.label === 'Series' && series
         ? { label: d.label, value: series }
         : d
@@ -199,7 +207,8 @@ export function Book({ onPlay = noop, onChapter = noop }: Props) {
             {authors && <p className={styles.line}>{authors}</p>}
             {m.narrators.length > 0 && (
               <p className={styles.line}>
-                Narrated by <PeopleLinks people={heroNarrators.join(', ')} onOpenPerson={openNarrator} />
+                Narrated by{' '}
+                <PeopleLinks people={heroNarrators.join(', ')} onOpenPerson={openNarrator} hrefFor={narratorHref} />
                 {moreNarrators > 0 && ` and ${moreNarrators} more`}
               </p>
             )}
