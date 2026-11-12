@@ -15,6 +15,10 @@ coverage
 e2e/data/
 e2e/.env
 
+# Persona testing kit: browser profiles and run output (see e2e/personas/README.md)
+e2e/personas/.profiles/
+e2e/personas/runs/
+
 # Impeccable engine binaries (fetched on first use)
 .claude/skills/impeccable/scripts/bin/
 __pycache__/

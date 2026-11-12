@@ -153,3 +153,7 @@ The suite stops with a message if `e2e/.env` is missing or ABS isn't answering o
 - **Timing.** The audio is real (silent on the stand-ins) and the position moves in real time, so the tests wait on the progress slider and the button names, never on fixed pauses. They run one at a time. A full run takes a few minutes.
 - **Browser.** Playwright looks for its own Chromium (`pnpm --filter @storyshelf/web exec playwright install chromium`). If you have a different Chromium already, point `PLAYWRIGHT_CHROMIUM_PATH` at its executable instead, for example `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`.
 - **Output.** Failure screenshots go to `apps/web/test-results/` (gitignored). Traces and video are off.
+
+## Persona testing
+
+`e2e/personas/` holds a kit for testing the app as seven made-up users (margaret, dan, priya, sam, leo, ruth, joe), each with their own ABS account, a browser profile that persists between runs, a fixed task list that gives a comparable scorecard, and a separate verifier for anything an agent finds. Run one persona's tasks with `node e2e/personas/run-tasks.mjs dan`. It needs the persona passwords in `e2e/.env` (`ABS_E2E_PERSONA_<NAME>_PASSWORD`). See [`personas/README.md`](personas/README.md).
