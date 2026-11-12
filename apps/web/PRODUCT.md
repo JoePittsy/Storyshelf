@@ -48,7 +48,7 @@ It's also a personal tool on a personal server, with nothing to sell and no cata
 - **Same origin:** it talks to the ABS REST API (v2.26+, tested on 2.37.2) from the same origin through a reverse proxy, with no backend of its own.
 - **Auth:** access and refresh tokens, with the refresh token held in ABS's httpOnly cookie.
 - **Playback:** sessions are opened through ABS, which syncs progress every 10s, on pause and when the app is hidden. It plays books split across many files, on desktop and on iPhone.
-- **Out of scope for now:** podcasts, offline downloads, admin features, multi-user switching and uploads.
+- **Out of scope for now:** podcasts, admin features, multi-user switching and uploads.
 - **Design system:** `@joepittsy/ui`, a hard fork of TrueTunes, is the design authority. Its design language is in `packages/ui/DESIGN.md`, and the app uses components only from that package.
 - **Undecided:** production hosting details, beyond "nginx container in the same Docker setup as ABS".
 
