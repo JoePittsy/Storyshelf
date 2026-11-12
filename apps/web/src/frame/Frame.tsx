@@ -253,21 +253,24 @@ function NowPlayingTitle() {
 
 /**
  * A route change has to be noticed without sight: focus moves to the new page (its main, so the next Tab starts in its
- * content) and its title is announced once it settles, since a screen sets it only when its data arrives. Not on the
- * first load, and not for a query-string change (a filter, the library picker) on the same page.
+ * content) and its title is announced once it settles, since a screen sets it only when its data arrives. Not for a
+ * query-string change (a filter, the library picker) on the same page. The first page the frame shows (a load, or the
+ * landing after sign-in) is announced too, but focus stays where the browser put it: the frame mounts before the
+ * page's title is set, so what it says first is only the app's name, and the title has to follow it.
  */
 function useRouteAnnouncement(pathname: string): string {
   const [text, setText] = useState('');
-  // The path the effect last ran for: the same path again (the first load, or StrictMode's second run) is no change.
-  const last = useRef(pathname);
+  // The path the effect last ran for: the same path again (StrictMode's second run) moves no focus.
+  const last = useRef<string>(undefined);
   useEffect(() => {
-    if (last.current === pathname) return;
-    last.current = pathname;
-    const main = document.querySelector<HTMLElement>('main');
-    if (main) {
-      main.tabIndex = -1;
-      main.focus({ preventScroll: true });
+    if (last.current !== undefined && last.current !== pathname) {
+      const main = document.querySelector<HTMLElement>('main');
+      if (main) {
+        main.tabIndex = -1;
+        main.focus({ preventScroll: true });
+      }
     }
+    last.current = pathname;
     const title = document.querySelector('title');
     const say = () => setText(document.title);
     const settle = setTimeout(say, 300);

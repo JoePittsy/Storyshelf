@@ -14,6 +14,7 @@ import { play } from './player/engine';
 import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { HandoffWatch } from './player/HandoffWatch';
+import { PlayerAnnouncer } from './player/PlayerAnnouncer';
 import { PlayerToasts } from './player/PlayerToasts';
 import { UpdatePrompt } from './frame/UpdatePrompt';
 import { AuthorList } from './screens/AuthorList';
@@ -80,6 +81,7 @@ export function App() {
   return (
     <>
       <PlayerToasts />
+      <PlayerAnnouncer />
       <UpdatePrompt />
       <HandoffWatch />
       <AppRoutes />

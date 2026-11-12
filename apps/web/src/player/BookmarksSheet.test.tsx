@@ -26,7 +26,12 @@ const bm = (time: number, title: string): Bookmark => ({ libraryItemId: 'li_1', 
 function serve(list: Bookmark[]) {
   absFetch.mockImplementation((path, init) => {
     if (path === '/api/me') return Promise.resolve({ bookmarks: list });
-    if (init?.method === 'POST') return Promise.resolve(JSON.parse(String(init.body)));
+    if (init?.method === 'POST') {
+      // The server keeps what it is sent, so a refetch finds it.
+      const sent = JSON.parse(String(init.body)) as { time: number; title: string };
+      list.push(bm(sent.time, sent.title));
+      return Promise.resolve(sent);
+    }
     return Promise.resolve(undefined);
   });
 }
@@ -42,6 +47,13 @@ function renderSheet(onClose = vi.fn()) {
   );
   return { onClose };
 }
+
+// The sheet's own line: the toast region is a status too, but sits outside the dialog.
+const sheetStatus = () => {
+  const line = screen.getAllByRole('status').find((el) => el.closest('dialog'));
+  if (!line) throw new Error('no status line in the sheet');
+  return line;
+};
 
 beforeEach(() => {
   // jsdom has <dialog> but not its modal methods.
@@ -150,5 +162,31 @@ describe('BookmarksSheet', () => {
         expect.objectContaining({ method: 'POST', body: JSON.stringify({ time: 1000, title: 'Roast Mutton' }) })
       )
     );
+  });
+
+  it('adding the first bookmark keeps focus on the add button and says so in a standing status line', async () => {
+    serve([]);
+    renderSheet();
+    await screen.findByText('No bookmarks yet');
+    const status = sheetStatus();
+    expect(status).toBeEmptyDOMElement();
+    await userEvent.click(screen.getByRole('button', { name: 'Bookmark 16:40' }));
+    await screen.findByRole('list', { name: 'Bookmarks, in book order' });
+    // The empty state is gone, but it is the same status line, and focus is on the add button in the list's place.
+    expect(sheetStatus()).toBe(status);
+    expect(status).toHaveTextContent('Bookmark added at 16:40');
+    expect(screen.getByRole('button', { name: 'Bookmark 16:40' })).toHaveFocus();
+  });
+
+  it('says so, and keeps focus, when the second is already bookmarked', async () => {
+    serve([bm(1000, 'Roast Mutton')]);
+    renderSheet();
+    const add = await screen.findByRole('button', { name: 'Bookmark 16:40' });
+    await userEvent.click(add);
+    expect(sheetStatus()).toHaveTextContent('Already bookmarked at 16:40');
+    expect(add).toHaveFocus();
+    const first = sheetStatus().textContent;
+    await userEvent.click(add);
+    expect(sheetStatus().textContent).not.toBe(first);
   });
 });

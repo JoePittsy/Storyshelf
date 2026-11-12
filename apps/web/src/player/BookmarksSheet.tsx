@@ -3,11 +3,13 @@ import { ActionRow, EmptyState, PillButton, Sheet } from '@joepittsy/ui';
 import { useAddBookmark, useBookmarks, useDeleteBookmark, useRenameBookmark, type Bookmark } from '../api/bookmarks';
 import { fmtClock } from '../screens/bookHelpers';
 import { bookmarkChapter, bookmarkSecond } from './bookmarks';
+import { sayAgain } from './announce';
 import { usePlayer } from './engine';
 import { RenameBookmarkDialog } from './RenameBookmarkDialog';
 import { useBookmarkHere } from './useBookmarkHere';
 import { usePlayerJump } from './useUndoableJump';
 import styles from './BookmarksSheet.module.css';
+import hidden from './ModeAnnouncer.module.css';
 
 /**
  * The playing book's bookmarks, in time order: choosing one jumps there (with Undo) and closes. Rows can be renamed
@@ -37,7 +39,28 @@ export function BookmarksSheet({ open, onClose }: { open: boolean; onClose: () =
 const key = (b: Bookmark) => `${b.libraryItemId}@${b.time}`;
 
 // Its own component, so the list is only read while the sheet is open, and deleted rows are forgotten when it closes.
+// The status line stands outside what the list swaps between (loading, empty, rows), so it exists before it speaks.
 function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b: Bookmark) => void }) {
+  const [said, setSaid] = useState('');
+  return (
+    <>
+      <p className={hidden.sr} role="status" aria-live="polite">
+        {said}
+      </p>
+      <BookmarkRows onClose={onClose} onRename={onRename} say={(text) => setSaid((now) => sayAgain(now, text))} />
+    </>
+  );
+}
+
+function BookmarkRows({
+  onClose,
+  onRename,
+  say,
+}: {
+  onClose: () => void;
+  onRename: (b: Bookmark) => void;
+  say: (text: string) => void;
+}) {
   const p = usePlayer();
   const id = p.item?.id ?? '';
   const { data: list = [], isPending, isError, refetch } = useBookmarks(id);
@@ -52,6 +75,13 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
   const deleting = useRef(new Map<string, Promise<unknown>>());
   // The row just deleted: its Undo takes the focus the delete button had.
   const focusUndo = useRef<string | null>(null);
+  // Set when the add button is pressed; the add button that mounts next takes the focus.
+  const keepFocus = useRef(false);
+  const focusAdd = (el: HTMLDivElement | null) => {
+    if (!el || !keepFocus.current) return;
+    keepFocus.current = false;
+    el.querySelector('button')?.focus();
+  };
 
   const del = (b: Bookmark) => {
     focusUndo.current = key(b);
@@ -81,9 +111,23 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
   const rows = [...list.map((b) => ({ b, gone: false })), ...deleted.map((b) => ({ b, gone: true }))].sort(
     (x, y) => x.b.time - y.b.time
   );
-  // Quiet: the new row is the confirmation, since a toast can't be reached over the sheet.
+  // Quiet: no toast, which can't be reached over the sheet. The new row confirms it to the eye, the status line to a
+  // screen reader. The first bookmark swaps the empty state for the list, which unmounts the button that was pressed:
+  // `keepFocus` puts focus on the add button in its new place, where it stays for the next one.
   const addHere = (
-    <PillButton variant="primary" onClick={() => bookmarkHere({ quiet: true })}>
+    <PillButton
+      variant="primary"
+      onClick={() => {
+        const plan = bookmarkHere({ quiet: true });
+        if (!plan) return;
+        keepFocus.current = rows.length === 0;
+        say(
+          plan.kind === 'add'
+            ? `Bookmark added at ${fmtClock(plan.time, false)}`
+            : `Already bookmarked at ${fmtClock(plan.bookmark.time, false)}`
+        );
+      }}
+    >
       Bookmark {fmtClock(bookmarkSecond(p.position), false)}
     </PillButton>
   );
@@ -97,7 +141,9 @@ function BookmarkList({ onClose, onRename }: { onClose: () => void; onRename: (b
 
   return (
     <>
-      <div className={styles.add}>{addHere}</div>
+      <div className={styles.add} ref={focusAdd}>
+        {addHere}
+      </div>
       <ul className={styles.list} aria-label="Bookmarks, in book order">
         {rows.map(({ b, gone }) =>
           gone ? (

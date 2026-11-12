@@ -14,6 +14,8 @@ import { Library } from './Library';
 import { NarratorRedirect } from './NarratorRedirect';
 
 const absFetch = vi.mocked(auth.absFetch);
+// The box's name, which is also its placeholder: its only visible label.
+const SEARCH = 'Search your library';
 
 const book = (id: string, title: string, genres: string[] = []) => ({
   id,
@@ -147,7 +149,7 @@ describe('REQ-37 REQ-38 REQ-41 REQ-42 filters from the URL', () => {
     renderAt('/?library=L1');
     const heading = screen.getByRole('heading', { level: 2, name: 'All books' });
     const head = heading.parentElement;
-    expect(head).toContainElement(screen.getByRole('searchbox', { name: 'Search books' }));
+    expect(head).toContainElement(screen.getByRole('searchbox', { name: SEARCH }));
     expect(head).toContainElement(screen.getByLabelText('Sort by'));
     expect(await screen.findByRole('heading', { level: 2, name: 'All books · 2' })).toBe(heading);
   });
@@ -263,7 +265,53 @@ describe('REQ-32 search chips', () => {
     // The box's debounce is 300 ms: wait it out, so a stale write would have landed.
     await new Promise((r) => setTimeout(r, 600));
     expect(screen.getByTestId('where').textContent).not.toMatch(/[?&]q=/);
-    expect(screen.getByRole('searchbox', { name: 'Search books' })).toHaveValue('');
+    expect(screen.getByRole('searchbox', { name: SEARCH })).toHaveValue('');
+  });
+});
+
+describe('search results are announced', () => {
+  // The library's own status line: the toast region and "Loading more" are statuses too.
+  const line = () => screen.getAllByRole('status').find((el) => el.className.includes('srOnly')) as HTMLElement;
+
+  it('names the box as it shows it', () => {
+    mockAbs();
+    renderAt('/?library=L1');
+    const box = screen.getByRole('searchbox', { name: SEARCH });
+    expect(box).toHaveAttribute('placeholder', SEARCH);
+  });
+
+  it('says nothing while not searching, and nothing while the search loads, then the count', async () => {
+    mockAbs();
+    renderAt('/?library=L1&q=gaiman');
+    expect(line()).toBeEmptyDOMElement();
+    await screen.findByText('Mistborn');
+    expect(line()).toHaveTextContent('3 results for “gaiman”');
+    expect(screen.getByRole('heading', { level: 2, name: 'Search results · 3' })).toBeInTheDocument();
+  });
+
+  it('says there were none', async () => {
+    mockAbs();
+    const base = absFetch.getMockImplementation();
+    absFetch.mockImplementation((path: string, init?: RequestInit) =>
+      new URL(path, 'http://x').pathname.endsWith('/search')
+        ? Promise.resolve({ book: [], authors: [], narrators: [], series: [] })
+        : (base?.(path, init) as Promise<never>)
+    );
+    renderAt('/?library=L1&q=zzzz');
+    await screen.findByText('No results');
+    expect(line()).toHaveTextContent('No results for “zzzz”');
+  });
+
+  it('follows the box once the typing settles, and empties when the search is cleared', async () => {
+    mockAbs();
+    renderAt('/?library=L1');
+    await screen.findByText('Mistborn');
+    await userEvent.type(screen.getByRole('searchbox', { name: SEARCH }), 'glass');
+    // Typing alone, before the URL follows the box, says nothing.
+    expect(line()).toBeEmptyDOMElement();
+    await waitFor(() => expect(line()).toHaveTextContent('3 results for “glass”'));
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+    await waitFor(() => expect(line()).toBeEmptyDOMElement());
   });
 });
 
