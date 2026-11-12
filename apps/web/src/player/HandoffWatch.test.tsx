@@ -6,9 +6,11 @@ import type { HandoffNotice } from './engine';
 let notify: (n: HandoffNotice) => void = () => undefined;
 const checkHandoff = vi.fn<(why: string) => Promise<void>>(() => Promise.resolve());
 const seek = vi.fn();
+const carryOnHere = vi.fn();
 vi.mock('./engine', () => ({
   checkHandoff: (why: string) => checkHandoff(why),
   seek: (t: number) => seek(t),
+  carryOnHere: () => carryOnHere(),
   onHandoffNotice: (cb: (n: HandoffNotice) => void) => {
     notify = cb;
     return () => undefined;
@@ -69,5 +71,17 @@ describe('HandoffWatch', () => {
     expect(text).toBe('Another device was also playing, at 1:02:00. Carrying on here.');
     opts.action.onClick();
     expect(jumpTo).toHaveBeenCalledWith(3720, "the other device's place");
+  });
+
+  it('a book finished on another device: says so, that nothing is saved here, and offers to carry on', () => {
+    render(<HandoffWatch />);
+    act(() => notify({ kind: 'finished', itemId: 'b1', device: iPhone }));
+    const [text, kind, opts] = showToast.mock.calls[0];
+    expect(text).toBe("Your iPhone finished this book. Your place isn't being saved here.");
+    expect(kind).toBe('info');
+    expect(opts.durationMs).toBeGreaterThan(12000); // it stays: until it is answered, nothing is saved
+    expect(opts.action.label).toBe('Carry on from here');
+    opts.action.onClick();
+    expect(carryOnHere).toHaveBeenCalledTimes(1);
   });
 });

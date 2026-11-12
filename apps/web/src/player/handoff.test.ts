@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ListeningSession } from '../api/history';
 import {
+  FINISH_WINDOW_S,
   HANDOFF_THRESHOLD_S,
+  describeFinished,
   describeHandoff,
   deviceName,
+  finishedElsewhere,
   fmtGap,
   newerElsewhere,
   offerToShow,
@@ -44,6 +47,38 @@ describe('newerElsewhere: is there a newer place written by someone else?', () =
   it('no: nothing on the server, or the book is finished there', () => {
     expect(newerElsewhere(null, ours)).toBe(false);
     expect(newerElsewhere(server(4000, 60_000, true), ours)).toBe(false);
+  });
+});
+
+describe('finishedElsewhere: a finish written by someone else, which a sync from here would undo', () => {
+  // The book is 10_000 s long; the player last sent 1000 s at t = 50_000 ms, and is still there.
+  const finished = (lastUpdate = 60_000, currentTime = 10_000) => server(currentTime, lastUpdate, true);
+  const duration = 10_000;
+
+  it('yes: finished after our last write, at a place that is not the one we sent, while we are away from the end', () => {
+    expect(finishedElsewhere(finished(), ours, duration)).toBe(true);
+  });
+
+  it('no: not finished, or nothing on the server', () => {
+    expect(finishedElsewhere(server(10_000, 60_000, false), ours, duration)).toBe(false);
+    expect(finishedElsewhere(null, ours, duration)).toBe(false);
+  });
+
+  it('no: finished before our last write: the book was already finished when we opened it, and playing it again is chosen', () => {
+    expect(finishedElsewhere(finished(49_000), ours, duration)).toBe(false);
+    expect(finishedElsewhere(finished(50_000), ours, duration)).toBe(false);
+  });
+
+  it('no: the finish is the place we sent (our own finish, whatever either clock says)', () => {
+    const atEnd = { position: 10_000, lastSent: 10_000, lastWriteAt: 50_000 };
+    expect(finishedElsewhere(finished(99_000), atEnd, duration)).toBe(false);
+    // Moved back since, to listen again: still our own record, so the next sync may move it.
+    expect(finishedElsewhere(finished(99_000), { ...atEnd, position: 4000 }, duration)).toBe(false);
+  });
+
+  it('no: our own place is at the very end, where a sync keeps the book finished', () => {
+    expect(finishedElsewhere(finished(), { ...ours, position: duration - FINISH_WINDOW_S }, duration)).toBe(false);
+    expect(finishedElsewhere(finished(), { ...ours, position: duration - FINISH_WINDOW_S - 1 }, duration)).toBe(true);
   });
 });
 
@@ -180,7 +215,28 @@ describe('describeHandoff: the words', () => {
   });
 });
 
+describe('describeFinished: the words', () => {
+  it('names the device, says nothing is saved here, and offers to carry on', () => {
+    expect(describeFinished({ name: 'iPhone', sameBrowser: false })).toEqual({
+      toast: "Your iPhone finished this book. Your place isn't being saved here.",
+      label: 'Your iPhone finished this book · Carry on from here',
+      shortLabel: 'Finished elsewhere · Carry on here',
+      action: 'Carry on from here',
+    });
+  });
+
+  it('another tab, or a device it knows nothing about', () => {
+    expect(describeFinished({ name: null, sameBrowser: true }).toast).toMatch(/^Another tab finished/);
+    expect(describeFinished({ name: null, sameBrowser: false }).toast).toMatch(/^Another device finished/);
+  });
+});
+
 describe('offerToShow: one offer at a time', () => {
+  it('a finish written elsewhere comes first: nothing is being saved until it is answered', () => {
+    expect(offerToShow({ finished: true, handoff: true, asleep: true })).toBe('finished');
+    expect(offerToShow({ finished: true, handoff: false, asleep: false })).toBe('finished');
+  });
+
   it('the hand-off wins over the sleep timer\'s "fell asleep" offer', () => {
     expect(offerToShow({ handoff: true, asleep: true })).toBe('handoff');
     expect(offerToShow({ handoff: true, asleep: false })).toBe('handoff');

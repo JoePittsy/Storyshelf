@@ -19,6 +19,7 @@ vi.mock('../downloads', async (orig) => ({
 import * as auth from '../api/auth';
 import { stop } from '../player/engine';
 import { removeAllDownloads, setDownloadsForTests } from '../downloads';
+import { keepSleep, keptSleep } from '../player/sleepKept';
 import { AccountMenu } from './AccountMenu';
 
 afterEach(() => {
@@ -85,6 +86,17 @@ describe('account menu', () => {
     expect(vi.mocked(removeAllDownloads).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(auth.logout).mock.invocationCallOrder[0] ?? 0
     );
+  });
+
+  it("forgets the device's sleep timer on signing out: the next person to sign in finds none", async () => {
+    keepSleep('li_1', { kind: 'minutes', remainingMs: 600_000 });
+    expect(keptSleep('li_1')).not.toBeNull();
+    renderMenu();
+    await userEvent.click(await screen.findByRole('button', { name: 'Account: joe' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign out' }));
+    await vi.waitFor(() => expect(auth.logout).toHaveBeenCalledOnce());
+    expect(keptSleep('li_1')).toBeNull();
   });
 
   it('closes on Escape and returns focus to the button', async () => {
