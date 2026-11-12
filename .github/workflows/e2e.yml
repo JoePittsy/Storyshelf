@@ -1,0 +1,67 @@
+name: E2E
+
+# The Playwright suite (apps/web/e2e) against a local Audiobookshelf in Docker, twice: on the Vite dev server, then on
+# the production build served by the real nginx config (./e2e/up.sh --app). See e2e/README.md.
+#
+# This is its own workflow on purpose, not a job in ci.yml: ci.yml gates releases (release.yml calls it), and a
+# dependency on Docker and archive.org must not be able to block a release.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# NODE_ENV is deliberately left unset, as in ci.yml: "production" would make pnpm skip devDependencies.
+
+jobs:
+  e2e:
+    name: Playwright against local Audiobookshelf
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6 # version from packageManager in package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # --with-deps adds apt packages (extra fonts; the runner image already has Chromium's libraries). When the
+      # runner can't reach the Ubuntu mirror, install the browser alone rather than fail before any test runs.
+      - name: Install Playwright Chromium
+        run: |
+          pnpm --filter @storyshelf/web exec playwright install --with-deps chromium ||
+            pnpm --filter @storyshelf/web exec playwright install chromium
+      # up.sh needs Docker with Compose, curl, jq and openssl (all on the ubuntu-latest image), and for the stand-in
+      # books ffmpeg and Pillow, which that image doesn't promise. apt does nothing for what is already there.
+      - name: Install the stand-in books' tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg python3-pil fonts-dejavu-core
+      # ABS (pulled from ghcr.io), both sets of books (LibriVox if archive.org answers, and the stand-ins), the users,
+      # then the production build behind nginx on http://localhost:18080.
+      - name: Start Audiobookshelf and the production build
+        run: ./e2e/up.sh --both --app
+      - name: Playwright on the Vite dev server
+        run: pnpm --filter @storyshelf/web test:e2e --output=test-results/dev
+      - name: Playwright on the production build
+        # Runs even if the dev-server run failed, so one push shows both results.
+        if: ${{ !cancelled() }}
+        env:
+          E2E_BASE_URL: http://localhost:18080
+        run: pnpm --filter @storyshelf/web test:e2e --output=test-results/production
+      - name: Audiobookshelf's log
+        if: failure()
+        run: docker logs storyshelf-e2e-abs 2>&1 | tail -100
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: apps/web/test-results
+          if-no-files-found: ignore

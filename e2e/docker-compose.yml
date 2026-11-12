@@ -17,3 +17,24 @@ services:
       # No login rate limit: screenshot and test runs sign in far more than 40 times in 10 minutes.
       - RATE_LIMIT_AUTH_MAX=0
     restart: unless-stopped
+
+  # The production build of apps/web behind the repo's real nginx config, with its service worker, next to ABS.
+  # Only with `docker compose --profile app up -d` (./up.sh --app); plain `up -d` starts ABS alone.
+  # This does not build apps/web/Dockerfile: that build needs registry access from inside a Docker build (the node
+  # base image, pnpm), which many sandboxes block. It mounts the repo's own nginx template and a dist built on the
+  # host (pnpm --filter @storyshelf/web build) into the stock nginx image instead.
+  storyshelf:
+    profiles: [app]
+    image: nginx:alpine
+    container_name: storyshelf-e2e-web
+    depends_on:
+      - audiobookshelf
+    ports:
+      - '18080:80'
+    environment:
+      # Substituted into the template by the nginx image at start.
+      - ABS_UPSTREAM=http://audiobookshelf:80
+    volumes:
+      - ../apps/web/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ../apps/web/dist:/usr/share/nginx/html:ro
+    restart: unless-stopped

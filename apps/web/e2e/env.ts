@@ -50,3 +50,31 @@ export async function assertAbsUp(absUrl: string): Promise<void> {
     );
   }
 }
+
+/**
+ * E2E_BASE_URL: an already-running Storyshelf to test instead of the Vite dev server (for example the production
+ * build from `./e2e/up.sh --app`, on http://localhost:18080). Unset, the suite starts the dev server itself.
+ */
+export function externalBaseUrl(): string | undefined {
+  const raw = process.env.E2E_BASE_URL?.trim();
+  if (!raw) return undefined;
+  try {
+    new URL(raw);
+  } catch (e) {
+    throw new Error(`E2E_BASE_URL isn't a URL: ${raw}`, { cause: e });
+  }
+  return raw.replace(/\/+$/, '');
+}
+
+/** Fails with a clear message unless the app at E2E_BASE_URL answers (it serves its own page, and proxies ABS's /status). */
+export async function assertAppUp(baseUrl: string): Promise<void> {
+  try {
+    const res = await fetch(`${baseUrl}/status`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (e) {
+    throw new Error(
+      `Nothing is answering at E2E_BASE_URL ${baseUrl}/status (${e instanceof Error ? e.message : String(e)}). Start it with ./e2e/up.sh --app, or unset E2E_BASE_URL to use the dev server`,
+      { cause: e }
+    );
+  }
+}

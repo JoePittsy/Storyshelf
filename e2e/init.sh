@@ -3,6 +3,8 @@
 #   - creates the root user (password generated and saved to .env)
 #   - creates the "E2E Audiobooks" book library on /audiobooks and scans it
 #   - creates a second, non-admin user (also saved to .env)
+#   - creates seven persona users (margaret, dan, priya, sam, leo, ruth, joe), also non-admin; one that exists
+#     already with no password in .env gets a new one, set through the admin API
 #   - prints a summary of what ABS scanned
 # Safe to re-run: each step is skipped if already done. Never prints passwords.
 set -euo pipefail
@@ -20,17 +22,33 @@ ABS_E2E_URL=${ABS_E2E_URL:-http://localhost:13378}
 ABS_E2E_USER=${ABS_E2E_USER:-root}
 ABS_E2E_USER2=${ABS_E2E_USER2:-e2e-user}
 
+# The persona users for the persona test agents. Their starting state is seed-personas.sh's job.
+PERSONAS=(margaret dan priya sam leo ruth joe)
+persona_key() { local n=${1^^}; echo "ABS_E2E_PERSONA_${n}_PASSWORD"; } # name -> .env key
+persona_password() { local k; k=$(persona_key "$1"); echo "${!k:-}"; }
+set_persona_password() { printf -v "$(persona_key "$1")" %s "$2"; }
+
 genpass() { openssl rand -base64 18 | tr -d '\r\n/+='; }
 
+# Rewrites .env from the values above, and keeps any other line it already had (nothing is lost on a re-run).
 write_env() {
   umask 077
-  cat >"$ENV_FILE" <<ENV
+  local keep="" p
+  if [[ -f $ENV_FILE ]]; then
+    keep=$(grep -Ev '^(ABS_E2E_(URL|USER|PASSWORD|USER2|PASSWORD2)|ABS_E2E_PERSONA_[A-Z0-9_]*_PASSWORD)=' "$ENV_FILE" || true)
+  fi
+  {
+    cat <<ENV
 ABS_E2E_URL=$ABS_E2E_URL
 ABS_E2E_USER=$ABS_E2E_USER
 ABS_E2E_PASSWORD=${ABS_E2E_PASSWORD:-}
 ABS_E2E_USER2=$ABS_E2E_USER2
 ABS_E2E_PASSWORD2=${ABS_E2E_PASSWORD2:-}
 ENV
+    for p in "${PERSONAS[@]}"; do echo "$(persona_key "$p")=$(persona_password "$p")"; done
+    [[ -z $keep ]] || echo "$keep"
+  } >"$ENV_FILE.tmp"
+  mv "$ENV_FILE.tmp" "$ENV_FILE"
 }
 
 api() { # method path [json-body]
@@ -99,7 +117,29 @@ else
   echo "Created user '$ABS_E2E_USER2' (password in $ENV_FILE)"
 fi
 
-# 6. Summary
+# 6. Persona users: created if missing; a user that exists with no password in .env gets a new one
+users=$(api GET /api/users)
+for p in "${PERSONAS[@]}"; do
+  id=$(jqr --arg u "$p" '.users[] | select(.username == $u) | .id' <<<"$users")
+  pw=$(persona_password "$p")
+  if [[ -z $id ]]; then
+    set_persona_password "$p" "$(genpass)"
+    body=$(jq -n --arg u "$p" --arg p "$(persona_password "$p")" '{username: $u, password: $p, type: "user", isActive: true}')
+    api POST /api/users "$body" >/dev/null
+    write_env
+    echo "Created persona '$p' (password in $ENV_FILE)"
+  elif [[ -z $pw || $pw == change-me ]]; then
+    set_persona_password "$p" "$(genpass)"
+    body=$(jq -n --arg p "$(persona_password "$p")" '{password: $p}')
+    api PATCH "/api/users/$id" "$body" >/dev/null
+    write_env
+    echo "Persona '$p' existed with no password in $ENV_FILE; set a new one (in $ENV_FILE)"
+  else
+    echo "Persona '$p' already exists"
+  fi
+done
+
+# 7. Summary
 echo
 echo "Library id: $LIB_ID"
 echo "path | author | series | narrators | audio files | tracks | chapters | duration | cover"
