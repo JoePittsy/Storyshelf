@@ -61,8 +61,8 @@ describe('PlayerAnnouncer', () => {
 
   it('says the speed and the sleep timer, but not its countdown', () => {
     const change = renderAnnouncer();
-    change({ rate: 1.25 });
-    expect(said()).toBe('Speed 1.25×');
+    change({ rate: 1.5 });
+    expect(said()).toBe('Speed 1.5×');
     change({ sleep: { kind: 'minutes', remainingMs: 900_000, minutes: 15 } });
     expect(said()).toBe('Sleep timer: 15 minutes');
     const before = screen.getByRole('status').textContent;

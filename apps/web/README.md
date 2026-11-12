@@ -26,7 +26,7 @@ To build it yourself, from the repository root (the image needs the whole worksp
 docker build -f apps/web/Dockerfile -t storyshelf .
 ```
 
-The build includes a service worker (`vite-plugin-pwa`) that keeps the app itself on the device, so the installed app opens with no network, signed in, showing what it last loaded (kept in IndexedDB). It never answers ABS's paths or keeps anything ABS sends. A new release takes over at the next launch, never while the app is open; see `src/pwa/serviceWorker.ts`. Whatever serves the build must not cache `/sw.js` or `index.html` for long (`public/_headers` and the nginx template send `no-cache`).
+The build includes a service worker (`vite-plugin-pwa`) that keeps the app itself on the device, so the installed app opens with no network, signed in as the last user. Offline it shows the books downloaded to the device and the book you were last in; the rest of the library needs a connection. It never answers ABS's paths or keeps anything ABS sends. A new release takes over at the next launch, never while the app is open; see `src/pwa/serviceWorker.ts`. Whatever serves the build must not cache `/sw.js` or `index.html` for long (`public/_headers` and the nginx template send `no-cache`).
 
 The hosted site (Cloudflare Pages) is the same build with no proxy: the browser calls the user's ABS server directly, which is why ABS must allow its origin. `public/_headers` and `public/_redirects` are for Pages only; nginx does not serve them.
 
