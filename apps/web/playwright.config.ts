@@ -1,13 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
-import { assertAbsUp, loadEnv } from './e2e/env';
+import { assertAbsUp, assertAppUp, externalBaseUrl, loadEnv } from './e2e/env';
 
-// End-to-end smoke tests: the real app (Vite dev server) against the local Audiobookshelf from ./e2e/up.sh.
-// See e2e/README.md ("End-to-end tests").
+// End-to-end smoke tests: the real app against the local Audiobookshelf from ./e2e/up.sh. By default the Vite dev
+// server, started here; with E2E_BASE_URL set, an app that is already running (the production build from
+// ./e2e/up.sh --app) and no dev server. See e2e/README.md ("End-to-end tests").
 const { absUrl } = loadEnv();
 await assertAbsUp(absUrl);
 
 const PORT = 5185;
-const baseURL = `http://localhost:${PORT}`;
+const external = externalBaseUrl();
+if (external) await assertAppUp(external);
+const baseURL = external ?? `http://localhost:${PORT}`;
 
 // A browser Playwright can't find (a machine with a different Chromium installed) is pointed at with this.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
@@ -46,11 +49,13 @@ export default defineConfig({
       use: { ...devices['iPhone 14'], defaultBrowserType: 'chromium' },
     },
   ],
-  webServer: {
-    command: `pnpm exec vite --port ${PORT} --strictPort`,
-    url: baseURL,
-    reuseExistingServer: false,
-    timeout: 60_000,
-    env: { ABS_URL: absUrl },
-  },
+  webServer: external
+    ? undefined
+    : {
+        command: `pnpm exec vite --port ${PORT} --strictPort`,
+        url: baseURL,
+        reuseExistingServer: false,
+        timeout: 60_000,
+        env: { ABS_URL: absUrl },
+      },
 });
