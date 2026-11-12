@@ -60,3 +60,14 @@ export function playerAnnouncement(prev: Heard, next: Heard, lastPlayedId: strin
   if (was && !ranOut(was, prev.position)) return 'Sleep timer off';
   return null;
 }
+
+/** Invisible, so the same words can be set twice with the text node changed. */
+const MARK = String.fromCharCode(0x200b);
+
+/**
+ * The text for a live region to show when `text` is to be said, given what it shows now. A screen reader reads a
+ * change of text, so the same words twice in a row (the same timer chosen again) get an invisible mark the second time.
+ */
+export function sayAgain(current: string | null, text: string): string {
+  return current === text ? `${text}${MARK}` : text;
+}

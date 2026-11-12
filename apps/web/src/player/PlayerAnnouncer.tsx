@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { usePlayer } from './engine';
-import { playerAnnouncement, type Heard } from './announce';
+import { playerAnnouncement, sayAgain, type Heard } from './announce';
 import styles from './ModeAnnouncer.module.css';
-
-/** Invisible, so the same words can be set twice with the text node changed. */
-const MARK = String.fromCharCode(0x200b);
 
 const heard = (p: Heard): Heard => ({
   status: p.status,
@@ -33,8 +30,7 @@ export function PlayerAnnouncer() {
     prev.current = settled ? next : { ...next, status: prev.current.status };
     if (next.status === 'playing') lastPlayedId.current = next.item?.id ?? null;
     if (text && line.current) {
-      // The same words twice in a row (the same timer chosen again) are only read if the text changes: add a mark.
-      line.current.textContent = line.current.textContent === text ? `${text}${MARK}` : text;
+      line.current.textContent = sayAgain(line.current.textContent, text);
     }
   });
   return <p ref={line} className={styles.sr} role="status" aria-live="polite" />;
