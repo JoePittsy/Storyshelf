@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { Link, MemoryRouter, Route, Routes } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@joepittsy/ui';
 
@@ -19,7 +19,13 @@ vi.mock('./AccountMenu', () => ({ AccountMenu: () => null }));
 
 import { Frame } from './Frame';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
+
+// The route announcement: the frame's own status line (the toast region is another).
+const announcement = () => screen.getAllByRole('status').find((el) => el.className.includes('announce')) as HTMLElement;
 
 function renderFrame() {
   render(
@@ -28,7 +34,15 @@ function renderFrame() {
         <MemoryRouter initialEntries={['/settings']}>
           <Routes>
             <Route element={<Frame />}>
-              <Route path="/settings" element={<main>Settings page</main>} />
+              <Route
+                path="/settings"
+                element={
+                  <main>
+                    Settings page <Link to="/authors">Authors</Link>
+                  </main>
+                }
+              />
+              <Route path="/authors" element={<main>Authors page</main>} />
             </Route>
           </Routes>
         </MemoryRouter>
@@ -45,5 +59,26 @@ describe('Frame', () => {
     expect(link).toHaveAttribute('href', '#main');
     const target = document.getElementById('main');
     expect(target).toContainElement(screen.getByRole('main'));
+  });
+
+  // The frame mounts before the page's title is set, so what it says at first is the app's name alone. The page it
+  // lands on (a load, or the landing after sign-in) has to be said once its title is there, without taking focus.
+  it('announces the page it lands on, once its title is set, and leaves focus alone', () => {
+    vi.useFakeTimers();
+    renderFrame();
+    const status = announcement();
+    expect(document.title).toBe('Settings · Storyshelf');
+    act(() => void vi.advanceTimersByTime(300));
+    expect(status).toHaveTextContent('Settings · Storyshelf');
+    expect(document.body).toHaveFocus();
+  });
+
+  it('announces the next page and moves focus to it', () => {
+    vi.useFakeTimers();
+    renderFrame();
+    fireEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Authors' }));
+    act(() => void vi.advanceTimersByTime(300));
+    expect(announcement()).toHaveTextContent('Authors · Storyshelf');
+    expect(screen.getByRole('main')).toHaveFocus();
   });
 });

@@ -32,8 +32,16 @@ function FullPlayer() {
     setPosition(0);
   };
   const onSleep = (c: SleepChoice) =>
-    setSleep(
-      c === 'off' ? null : c === 'chapter' ? { kind: 'chapter' } : { kind: 'minutes', remainingMs: c.minutes * 60000 }
+    setSleep((cur) =>
+      c === 'off'
+        ? null
+        : c === 'chapter'
+          ? { kind: 'chapter' }
+          : 'addMinutes' in c
+            ? cur?.kind === 'minutes'
+              ? { kind: 'minutes', remainingMs: cur.remainingMs + c.addMinutes * 60000 }
+              : cur
+            : { kind: 'minutes', remainingMs: c.minutes * 60000 }
     );
 
   return (

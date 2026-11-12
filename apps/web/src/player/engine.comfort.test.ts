@@ -657,6 +657,92 @@ describe('the sleep timer fades out', () => {
   });
 });
 
+describe('extending the sleep timer', () => {
+  it('adds the minutes to what is left, ends a fade in progress, and keeps where the window began', async () => {
+    const a = await playing();
+    a.volume = 0.8;
+    engine.setSleep({ minutes: 1 });
+    run(a, 55_000); // 5 s left, mid-fade
+    a.currentTime = 100; // book 500: the window began at 450 and must stay there
+    expect(a.volume).toBeLessThan(0.8);
+    engine.setSleep({ addMinutes: 15 });
+    expect(a.volume).toBe(0.8);
+    expect(snapshot().sleep).toEqual({ kind: 'minutes', remainingMs: 905_000 }); // no length: no row to tick
+    expect(snapshot().sleepFrom).toBe(450);
+    run(a, 10_000); // would have paused by now
+    expect(a.paused).toBe(false);
+    expect(snapshot().sleep).toMatchObject({ remainingMs: 895_000 });
+  });
+
+  it('does nothing without a minutes timer', async () => {
+    await playing();
+    engine.setSleep({ addMinutes: 15 });
+    expect(snapshot().sleep).toBeNull();
+    engine.setSleep('chapter');
+    const chapter = snapshot().sleep;
+    engine.setSleep({ addMinutes: 15 });
+    expect(snapshot().sleep).toEqual(chapter);
+  });
+});
+
+describe('a sleep timer set before Play', () => {
+  // The book is put back paused at 100 (in chapter One); the server's place, where Play really starts, is 450 (Two).
+  const book = { id: 'li_1', title: 'The Book', author: 'An Author', duration: 1000, position: 100, updatedAt: 0 };
+  /** Presses Play on the restored book and lets it reach `playing` at 450. */
+  async function pressPlay() {
+    engine.toggle();
+    // The restored book is already the item: the session has opened once the place is the server's.
+    await vi.waitFor(() => expect(snapshot().position).toBe(450));
+    const a = audio();
+    a.paused = false;
+    a.fire('playing');
+    a.currentTime = 50;
+    return a;
+  }
+
+  it('a minutes timer survives the first Play of the restored book, then counts down', async () => {
+    engine.restore(book, session.chapters);
+    engine.setSleep({ minutes: 15 });
+    expect(snapshot()).toMatchObject({ restored: true, sleep: { kind: 'minutes', minutes: 15 } });
+    const a = await pressPlay();
+    expect(snapshot()).toMatchObject({
+      sleep: { kind: 'minutes', remainingMs: 900_000, minutes: 15 },
+      sleepFrom: 450, // where listening really began, not where the book sat
+    });
+    run(a, 60_000);
+    expect(snapshot().sleep).toMatchObject({ kind: 'minutes', remainingMs: 840_000 });
+  });
+
+  it('a chapter timer is worked out again for the place Play really starts at, and pauses at that chapter end', async () => {
+    engine.restore(book, session.chapters);
+    engine.setSleep('chapter');
+    expect(snapshot().sleep).toEqual({ kind: 'chapter', endsAt: 300 }); // set in chapter One
+    const a = await pressPlay(); // the server's place is in chapter Two
+    expect(snapshot().sleep).toEqual({ kind: 'chapter', endsAt: 1000 });
+    expect(snapshot().sleepFrom).toBe(450);
+    a.currentTime = 599.6; // book 999.6: within half a second of the end of Two
+    a.fire('timeupdate');
+    expect(a.paused).toBe(true);
+    expect(snapshot()).toMatchObject({ status: 'paused', sleep: null });
+  });
+
+  it('playing a different book clears it', async () => {
+    engine.restore(book, session.chapters);
+    engine.setSleep({ minutes: 15 });
+    void engine.play('li_2');
+    await vi.waitFor(() => expect(snapshot().item?.id).toBe('li_2'));
+    expect(snapshot().sleep).toBeNull();
+  });
+
+  it('a timer set while already playing is unaffected', async () => {
+    const a = await playing();
+    engine.setSleep({ minutes: 15 });
+    run(a, 60_000);
+    expect(snapshot().sleep).toMatchObject({ kind: 'minutes', remainingMs: 840_000 });
+    expect(snapshot().sleepFrom).toBe(450);
+  });
+});
+
 describe('you fell asleep here', () => {
   it('when the timer pauses playback, the place it began is offered back, until playback starts again', async () => {
     const a = await playing(); // book 450

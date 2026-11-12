@@ -22,6 +22,9 @@ interface Props {
   className?: string;
 }
 
+/** How much "Add … minutes" gives a running timer. */
+const EXTEND_MINUTES = 15;
+
 /** One row of the list: its words, then a tick when it is the current choice, so the choice never rests on weight alone. */
 function Option({
   on,
@@ -44,13 +47,14 @@ function Option({
 
 /**
  * A moon button showing the timer's state, opening a native popover: "End of chapter" first (the bedtime choice), then
- * the minute options, then "Off". The current choice is ticked. Choosing one calls onChange and closes the popover.
+ * the minute options, then "Add 15 minutes" while a minutes timer runs, then "Off". The current choice is ticked; the
+ * add row never is, since it is an action on the timer and not a timer of its own. Choosing one calls onChange and closes the popover.
  * Esc and outside click close it too, and focus returns to the button.
  */
 export function SleepTimerControl({
   value,
   onChange,
-  minuteOptions = [15, 30, 45, 60],
+  minuteOptions = [5, 10, 15, 30, 45, 60],
   chapterOptionDisabled,
   stableWidth,
   compact,
@@ -82,7 +86,14 @@ export function SleepTimerControl({
           </span>
         )}
       </button>
-      <div id={id} ref={pop} popover="auto" className={styles.pop} role="group" aria-label="Sleep timer">
+      <div
+        id={id}
+        ref={pop}
+        popover="auto"
+        className={`${styles.pop} ${styles.popList}`}
+        role="group"
+        aria-label="Sleep timer"
+      >
         <div className={styles.menu}>
           <Option on={value?.kind === 'chapter'} disabled={chapterOptionDisabled} onClick={() => pick('chapter')}>
             End of chapter
@@ -92,6 +103,11 @@ export function SleepTimerControl({
               {m} minutes
             </Option>
           ))}
+          {value?.kind === 'minutes' && (
+            <Option on={false} onClick={() => pick({ addMinutes: EXTEND_MINUTES })}>
+              Add {EXTEND_MINUTES} minutes
+            </Option>
+          )}
           <Option on={!value} onClick={() => pick('off')}>
             Off
           </Option>

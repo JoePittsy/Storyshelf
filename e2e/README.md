@@ -78,3 +78,21 @@ They go into `data/audiobooks` alongside any LibriVox books.
 | --- | --- |
 | `ABS_E2E_USER` / `ABS_E2E_PASSWORD` | `root` (admin) |
 | `ABS_E2E_USER2` / `ABS_E2E_PASSWORD2` | `e2e-user`, ordinary user, for multi-user and progress-isolation tests |
+
+## End-to-end tests
+
+A small Playwright suite in `apps/web/e2e/` drives the real app (the Vite dev server, started for you on port 5185) against this server: signing in, resuming a book and keeping your place, the sleep timer, a double tap on the home shelf (phone only), search by narrator and signing out. It runs twice, as a desktop browser (1440×900) and as an iPhone 14 screen, both in Chromium.
+
+Before running it:
+
+```sh
+./e2e/up.sh                                  # ABS on http://localhost:13378, and e2e/.env
+pnpm --filter @storyshelf/web test:e2e
+```
+
+The suite stops with a message if `e2e/.env` is missing or ABS isn't answering on `/status`. Pass Playwright's usual arguments after the command, for example `-- --project=phone` or `-- e2e/sleep-timer.e2e.ts`.
+
+- **User.** Every test signs in as the ordinary user (`ABS_E2E_USER2`, `e2e-user`) and never touches root or anyone else. Before each test it **deletes that user's listening progress** over the ABS API and seeds two part-way books (the later one is the resume hero), so it passes on a fresh server and on a used one. Books are chosen by what they have (chapters, length, a narrator), not by title, so the LibriVox books and the stand-ins both work.
+- **Timing.** The audio is real (silent on the stand-ins) and the position moves in real time, so the tests wait on the progress slider and the button names, never on fixed pauses. They run one at a time. A full run takes a few minutes.
+- **Browser.** Playwright looks for its own Chromium (`pnpm --filter @storyshelf/web exec playwright install chromium`). If you have a different Chromium already, point `PLAYWRIGHT_CHROMIUM_PATH` at its executable instead, for example `PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`.
+- **Output.** Failure screenshots go to `apps/web/test-results/` (gitignored). Traces and video are off.

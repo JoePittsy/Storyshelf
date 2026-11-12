@@ -4,7 +4,8 @@ import { expect, fn, userEvent, within } from 'storybook/test';
 import { SleepTimerControl } from './SleepTimerControl';
 import type { SleepValue } from './sleep';
 
-// The story owns the timer, as an app would; a minutes choice here just shows 30:00 (no countdown runs).
+// The story owns the timer, as an app would; a minutes choice here just shows its length (no countdown runs), and
+// adding minutes lengthens it and drops its row's tick, as the player does.
 function Controlled(props: Parameters<typeof SleepTimerControl>[0]) {
   const [value, setValue] = useState<SleepValue>(props.value);
   return (
@@ -13,12 +14,16 @@ function Controlled(props: Parameters<typeof SleepTimerControl>[0]) {
         {...props}
         value={value}
         onChange={(c) => {
-          setValue(
+          setValue((current) =>
             c === 'off'
               ? null
               : c === 'chapter'
                 ? { kind: 'chapter' }
-                : { kind: 'minutes', remainingMs: c.minutes * 60000 }
+                : 'addMinutes' in c
+                  ? current?.kind === 'minutes'
+                    ? { kind: 'minutes', remainingMs: current.remainingMs + c.addMinutes * 60000 }
+                    : current
+                  : { kind: 'minutes', remainingMs: c.minutes * 60000, minutes: c.minutes }
           );
           props.onChange(c);
         }}
@@ -56,5 +61,19 @@ export const OpenWithChoice: Story = {
     const row = within(canvasElement).getByRole('button', { name: 'End of chapter', pressed: true });
     await expect(row).toBeVisible();
     await expect(row.querySelector('svg')).not.toBeNull();
+  },
+};
+/** A minutes timer running: the list offers "Add 15 minutes" above Off, and choosing it lengthens the countdown. */
+export const RunningCanExtend: Story = {
+  args: { value: { kind: 'minutes', remainingMs: 750000, minutes: 15 } },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: /sleep timer/i }));
+    const add = canvas.getByRole('button', { name: 'Add 15 minutes' });
+    await expect(add).toBeVisible();
+    await expect(add).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(add);
+    await expect(args.onChange).toHaveBeenCalledWith({ addMinutes: 15 });
+    await expect(canvas.getByRole('button', { name: 'Sleep timer, 27:30' })).toBeVisible();
   },
 };

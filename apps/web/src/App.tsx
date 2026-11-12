@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router';
 import { onSignedOut, restoreSession } from './api/auth';
@@ -7,16 +7,14 @@ import { Frame } from './frame/Frame';
 import { OfflineLaunch } from './frame/Offline';
 import { useScrollRestoration } from './frame/useScrollRestoration';
 import { Author } from './screens/Author';
-import { Debug } from './screens/Debug';
-import { EdgeTest } from './screens/EdgeTest';
 import { diag } from './player/diag';
-import { StorageTest } from './screens/StorageTest';
 import { Book } from './screens/Book';
 import { CarMode } from './screens/CarMode';
 import { play } from './player/engine';
 import { useRefreshOnSave } from './player/useRefreshOnSave';
 import { MiniPlayerPortal } from './player/MiniPlayerPortal';
 import { HandoffWatch } from './player/HandoffWatch';
+import { PlayerAnnouncer } from './player/PlayerAnnouncer';
 import { PlayerToasts } from './player/PlayerToasts';
 import { UpdatePrompt } from './frame/UpdatePrompt';
 import { AuthorList } from './screens/AuthorList';
@@ -31,6 +29,10 @@ import { NowPlaying } from './screens/NowPlaying';
 import { Series } from './screens/Series';
 import { Settings } from './screens/Settings';
 import { SignIn } from './screens/SignIn';
+
+const Debug = lazy(() => import('./screens/Debug').then((m) => ({ default: m.Debug })));
+const StorageTest = lazy(() => import('./screens/StorageTest').then((m) => ({ default: m.StorageTest })));
+const EdgeTest = lazy(() => import('./screens/EdgeTest').then((m) => ({ default: m.EdgeTest })));
 
 /** restoreSession, with what it decided in the player log: how the app opened, readable later from Settings. */
 async function restoreLogged() {
@@ -79,6 +81,7 @@ export function App() {
   return (
     <>
       <PlayerToasts />
+      <PlayerAnnouncer />
       <UpdatePrompt />
       <HandoffWatch />
       <AppRoutes />
@@ -132,9 +135,30 @@ function AppRoutes() {
           <Route path="/book/:id" element={<PlayableBook />} />
           <Route path="/now-playing" element={<NowPlaying />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/debug" element={<Debug />} />
-          <Route path="/debug/storage" element={<StorageTest />} />
-          <Route path="/debug/edge" element={<EdgeTest />} />
+          <Route
+            path="/debug"
+            element={
+              <Suspense fallback={<div className="skeleton appLoading" role="status" aria-label="Loading" />}>
+                <Debug />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/debug/storage"
+            element={
+              <Suspense fallback={<div className="skeleton appLoading" role="status" aria-label="Loading" />}>
+                <StorageTest />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/debug/edge"
+            element={
+              <Suspense fallback={<div className="skeleton appLoading" role="status" aria-label="Loading" />}>
+                <EdgeTest />
+              </Suspense>
+            }
+          />
           <Route path="/author/:id" element={<Author />} />
           <Route path="/series/:id" element={<PlayableSeries />} />
           <Route path="/history" element={<History />}>

@@ -4,3 +4,5 @@ storybook-static
 coverage
 pnpm-lock.yaml
 .claude
+test-results
+playwright-report

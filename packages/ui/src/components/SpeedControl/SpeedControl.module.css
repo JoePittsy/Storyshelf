@@ -126,7 +126,13 @@
   color: var(--bg);
 }
 
-/* Menu rows (SleepTimerControl) */
+/* Menu rows (SleepTimerControl). A list this long can outgrow a short window (a phone on its side): the popover then
+   scrolls rather than dropping rows. */
+.popList {
+  max-height: calc(100dvh - 2em);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .menu {
   display: flex;
   flex-direction: column;

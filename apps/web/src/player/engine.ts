@@ -57,7 +57,7 @@ import { dueOnStop, dueWhilePlaying, markSynced, payload, startClock, tick } fro
 import { clampSeek, locate, toBookTime, totalDuration, type AudioTrack } from './timeline';
 
 export type Status = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
-export type SleepChoice = 'off' | 'chapter' | { minutes: number };
+export type SleepChoice = 'off' | 'chapter' | { minutes: number } | { addMinutes: number };
 
 /** A newer place for the loaded book, written by another device while this player sat paused (see handoff.ts). */
 export interface Handoff {
@@ -1012,6 +1012,10 @@ export async function play(itemId: string, from?: number): Promise<void> {
     state.restored && state.item?.id === itemId && local === null && from === undefined && restoredAt > 0
       ? { position: state.position, at: restoredAt }
       : null;
+  // The listener may have set the sleep timer on this very book before pressing Play (the bedtime flow): the load
+  // below must not clear it. Read here, before `set` flips `restored`; a failed open also leaves the book with no
+  // session, and a retry is still the same book.
+  const sameBook = state.item?.id === itemId && (state.restored || !session);
   clearTimeout(moveTimer);
   moveTimer = undefined;
   movedHere = null;
@@ -1092,11 +1096,27 @@ export async function play(itemId: string, from?: number): Promise<void> {
     duration: s.duration,
     position: start,
     chapterIndex: chapterIndexAt(s.chapters, start),
-    sleep: null,
+    ...carriedSleep(sameBook, s.chapters, start),
     rate: rateFor(itemId),
   });
   setMetadata(item, s.chapters[chapterIndexAt(s.chapters, start)]?.title ?? '');
   load(tr, offset, true);
+}
+
+/**
+ * The sleep timer a book's load keeps. Another book starts with none. The same book (a restored one, set a timer on
+ * before its first Play) keeps its timer: a minutes one unchanged, since it only counts down while playing; a chapter
+ * one is worked out again for the place playback really starts at, which a rewind after a long pause or a hand-off can
+ * have moved out of the chapter the timer was set in. Listening starts from `start`, so the sleep window does too.
+ */
+function carriedSleep(
+  sameBook: boolean,
+  chapters: Chapter[],
+  start: number
+): Pick<PlayerState, 'sleep'> & Partial<Pick<PlayerState, 'sleepFrom'>> {
+  const was = state.sleep;
+  if (!sameBook || !was) return { sleep: null };
+  return { sleep: was.kind === 'chapter' ? sleepAtChapterEnd(chapters, start) : was, sleepFrom: start };
 }
 
 /**
@@ -1235,6 +1255,13 @@ export function setRewindOnResume(on: boolean): void {
 export function setSleep(choice: SleepChoice): void {
   restoreVolume(); // changed or turned off mid-fade: the next tick fades again if it should
   if (choice === 'off') return set({ sleep: null });
+  if (typeof choice === 'object' && 'addMinutes' in choice) {
+    // More time on the running minutes timer, from where it is: its window (`sleepFrom`) is the same listening. It has
+    // no row of its own length now, so `minutes` goes. With no minutes timer there is nothing to add to.
+    const was = state.sleep;
+    if (was?.kind !== 'minutes') return;
+    return set({ sleep: { kind: 'minutes', remainingMs: was.remainingMs + choice.addMinutes * 60_000 } });
+  }
   set({
     sleep: choice === 'chapter' ? sleepAtChapterEnd(state.chapters, position()) : sleepInMinutes(choice.minutes),
     sleepFrom: position(),

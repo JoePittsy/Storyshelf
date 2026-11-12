@@ -38,6 +38,12 @@ import { OfflineHome } from '../components/OfflineHome';
 import { useOffline } from '../api/connectivity';
 import styles from './Library.module.css';
 
+/**
+ * The box's name and its placeholder, one string, since the placeholder is its only visible label. Search matches
+ * narrators and series as well as titles and authors, but listing them all is too long for a phone's width.
+ */
+const SEARCH_LABEL = 'Search your library';
+
 const SORT_OPTIONS = SORT_CHOICES.map((c) => ({ value: c.value, label: c.label }));
 
 interface Props {
@@ -195,9 +201,22 @@ function OnlineLibrary({ onPlay }: Required<Props>) {
         ? 'Matching books'
         : 'All books';
 
+  // Said once the search has settled: not while it loads (no count yet), and not for the keystrokes before the URL's q
+  // follows the box. Empty when not searching, and when the search failed, which the page says itself.
+  const searchResult =
+    searching && !loading && !failed
+      ? tiles.length === 0
+        ? `No results for “${q}”`
+        : `${tiles.length} ${tiles.length === 1 ? 'result' : 'results'} for “${q}”`
+      : '';
+
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Library</h1>
+      {/* Always mounted, so it is in place before it has anything to say. */}
+      <p className={styles.srOnly} role="status" aria-live="polite">
+        {searchResult}
+      </p>
       <LibrarySections current="books" libraryId={libraryId} counts={lists.counts} />
       {/* Not while searching or filtering: it would sit among narrowed results. Mounted once the section tabs are
           settled, so they never push it down. */}
@@ -213,8 +232,8 @@ function OnlineLibrary({ onPlay }: Required<Props>) {
         </h2>
         <SearchField
           className={styles.search}
-          label="Search books"
-          placeholder="Search title or author"
+          label={SEARCH_LABEL}
+          placeholder={SEARCH_LABEL}
           value={text}
           onChange={setText}
         />

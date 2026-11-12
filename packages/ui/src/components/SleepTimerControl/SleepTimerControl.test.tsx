@@ -45,10 +45,43 @@ describe('SleepTimerControl', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Off', hidden: true }));
     expect(onChange.mock.calls).toEqual([[{ minutes: 30 }], ['chapter'], ['off']]);
   });
-  it('leads with End of chapter, then 15 to 60 minutes, then Off', () => {
+  const rows = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('[popover] button')).map((b) => b.textContent);
+  it('leads with End of chapter, then 5 to 60 minutes, then Off', () => {
     const { container } = render(<SleepTimerControl value={null} onChange={vi.fn()} />);
-    const names = Array.from(container.querySelectorAll('[popover] button')).map((b) => b.textContent);
-    expect(names).toEqual(['End of chapter', '15 minutes', '30 minutes', '45 minutes', '60 minutes', 'Off']);
+    expect(rows(container)).toEqual([
+      'End of chapter',
+      '5 minutes',
+      '10 minutes',
+      '15 minutes',
+      '30 minutes',
+      '45 minutes',
+      '60 minutes',
+      'Off',
+    ]);
+  });
+  it('offers Add 15 minutes above Off while a minutes timer runs, and only then', () => {
+    const running = { kind: 'minutes', remainingMs: 600000, minutes: 30 } as const;
+    const { container, rerender } = render(<SleepTimerControl value={running} onChange={vi.fn()} />);
+    expect(rows(container).slice(-2)).toEqual(['Add 15 minutes', 'Off']);
+    rerender(<SleepTimerControl value={null} onChange={vi.fn()} />);
+    expect(rows(container)).not.toContain('Add 15 minutes');
+    rerender(<SleepTimerControl value={{ kind: 'chapter', remainingMs: 600000 }} onChange={vi.fn()} />);
+    expect(rows(container)).not.toContain('Add 15 minutes');
+  });
+  it('reports adding minutes, and never ticks that row', async () => {
+    const onChange = vi.fn();
+    render(<SleepTimerControl value={{ kind: 'minutes', remainingMs: 600000, minutes: 30 }} onChange={onChange} />);
+    const add = screen.getByRole('button', { name: 'Add 15 minutes', hidden: true });
+    expect(add).toHaveAttribute('aria-pressed', 'false');
+    expect(add.querySelector('svg')).toBeNull();
+    await userEvent.click(add);
+    expect(onChange).toHaveBeenCalledWith({ addMinutes: 15 });
+  });
+  it('ticks no minutes row for an extended timer, which no longer has a length of its own', () => {
+    render(<SleepTimerControl value={{ kind: 'minutes', remainingMs: 1500000 }} onChange={vi.fn()} />);
+    const ticked = Array.from(document.querySelectorAll('[popover] button')).filter((b) => b.querySelector('svg'));
+    expect(ticked).toEqual([]);
   });
   it('marks the current choice with a tick as well as aria-pressed, not by brightness alone', () => {
     const { rerender } = render(<SleepTimerControl value={null} onChange={vi.fn()} />);
